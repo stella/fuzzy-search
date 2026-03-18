@@ -92,12 +92,15 @@ fn is_whole_word_chars(
   start: usize,
   end: usize,
 ) -> bool {
+  if start >= end || end > chars.len() {
+    return false;
+  }
   let start_ok = start == 0
     || !is_word_char(chars[start - 1])
     || is_cjk(chars[start]);
   let end_ok = end >= chars.len()
     || !is_word_char(chars[end])
-    || (end > 0 && is_cjk(chars[end - 1]));
+    || is_cjk(chars[end - 1]);
   start_ok && end_ok
 }
 
@@ -309,7 +312,9 @@ fn find_start(
   let m = pattern.len();
   let k = dist as usize;
 
-  let min_len = m.saturating_sub(k);
+  // Enforce min_len >= 1 to avoid zero-length
+  // matches (e.g. pattern "ab" dist 2 matching "").
+  let min_len = m.saturating_sub(k).max(1);
   let max_len = (m + k).min(end);
 
   // Try exact pattern length first (most common).
@@ -634,17 +639,24 @@ impl FuzzySearch {
       }
     }
 
-    // Sort by start position, then distance.
+    // Sort by start position, then distance
+    // (prefer lower), then longer match.
     all.sort_unstable_by(|a, b| {
-      a.1.cmp(&b.1).then(a.3.cmp(&b.3))
+      a.1.cmp(&b.1).then(a.3.cmp(&b.3)).then(b.2.cmp(&a.2))
     });
 
+    // Greedy non-overlapping across all patterns.
     let mut packed = Vec::with_capacity(all.len() * 4);
+    let mut last_end: u32 = 0;
     for (pat, start, end, dist) in all {
+      if start < last_end {
+        continue;
+      }
       packed.push(pat);
       packed.push(start);
       packed.push(end);
       packed.push(dist);
+      last_end = end;
     }
 
     Uint32Array::new(packed)
@@ -674,7 +686,8 @@ impl FuzzySearch {
     );
 
     // Collect all matches across patterns.
-    let mut all: Vec<(usize, usize, u32)> = Vec::new();
+    // (start, end, pat_idx, distance)
+    let mut all: Vec<(usize, usize, u32, u8)> = Vec::new();
 
     for (idx, pat) in self.patterns.iter().enumerate() {
       let ends = myers_find_ends(
@@ -685,7 +698,7 @@ impl FuzzySearch {
       let matches =
         extract_matches(&pat.chars, &text_chars, &ends);
 
-      for (start, end, _) in matches {
+      for (start, end, dist) in matches {
         let orig_start = pos_map[start];
         let orig_end = pos_map[end];
 
@@ -698,13 +711,14 @@ impl FuzzySearch {
         {
           continue;
         }
-        all.push((orig_start, orig_end, idx as u32));
+        all.push((orig_start, orig_end, idx as u32, dist));
       }
     }
 
-    // Sort by start, then longest match first.
+    // Sort same as find_iter_packed: start, then
+    // distance (prefer lower), then longer match.
     all.sort_unstable_by(|a, b| {
-      a.0.cmp(&b.0).then(b.1.cmp(&a.1))
+      a.0.cmp(&b.0).then(a.3.cmp(&b.3)).then(b.1.cmp(&a.1))
     });
 
     // Build result, replacing non-overlapping
@@ -712,7 +726,7 @@ impl FuzzySearch {
     let mut result = String::with_capacity(haystack.len());
     let mut pos: usize = 0;
 
-    for (start, end, pat_idx) in &all {
+    for (start, end, pat_idx, _) in &all {
       if *start < pos {
         continue; // skip overlapping
       }

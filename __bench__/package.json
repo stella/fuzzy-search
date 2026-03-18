@@ -1,0 +1,10 @@
+{
+  "name": "fuzzy-search-bench",
+  "private": true,
+  "description": "Benchmarks comparing @stll/fuzzy-search against JS alternatives",
+  "dependencies": {
+    "fuse.js": "^7.0.0",
+    "fastest-levenshtein": "^1.0.16",
+    "fuzzball": "^2.1.3"
+  }
+}
