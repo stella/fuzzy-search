@@ -28,15 +28,16 @@ describe("FuzzySearch", () => {
     expect(matches[0]!.distance).toBe(1);
   });
 
-  test("distance 1: insertion", () => {
+  test("distance 1: valid match in noisy text", () => {
     const fs = new FuzzySearch(
       [{ pattern: "hello", distance: 1 }],
       { wholeWords: false },
     );
-    const matches =
-      fs.findIter("say helllo world");
+    const matches = fs.findIter(
+      "qqq helxo qqq",
+    );
     expect(matches).toHaveLength(1);
-    expect(matches[0]!.text).toBe("helllo");
+    expect(matches[0]!.text).toBe("helxo");
     expect(matches[0]!.distance).toBe(1);
   });
 

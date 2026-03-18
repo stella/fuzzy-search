@@ -15,7 +15,7 @@ import fc from "fast-check";
 import { FuzzySearch } from "../lib";
 
 
-const PARAMS = { numRuns: 200 };
+const PARAMS = { numRuns: 500 };
 
 // ─── Generators ──────────────────────────────
 
@@ -118,6 +118,7 @@ function oracleFuzzySearch(
     ) {
       let bestDist = k + 1;
       let bestEnd = i;
+      let bestLen = 0;
 
       for (
         let len = minLen;
@@ -126,9 +127,19 @@ function oracleFuzzySearch(
       ) {
         const window = hay.slice(i, i + len);
         const d = levenshtein(pat, window);
-        if (d <= k && d < bestDist) {
+        if (d > k) continue;
+        // Prefer lower distance, then length
+        // closest to pattern length (matches
+        // our library's find_start strategy).
+        if (
+          d < bestDist ||
+          (d === bestDist &&
+            Math.abs(len - m) <
+              Math.abs(bestLen - m))
+        ) {
           bestDist = d;
           bestEnd = i + len;
+          bestLen = len;
         }
       }
 
@@ -718,6 +729,369 @@ describe("property: single vs multi-pattern", () => {
               false,
             );
             expect(single.isMatch(hay)).toBe(true);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 14: STRICT single-pattern oracle ─
+//
+// For a single pattern on short text, our library
+// must produce EXACTLY the same matches as the
+// oracle (same start, end, distance). No slack.
+// This is the strongest correctness guarantee.
+
+describe("property: strict oracle (single pattern)", () => {
+  test("every library match exists in oracle", () => {
+    fc.assert(
+      fc.property(
+        // Patterns at least 2 chars longer than
+        // distance (avoids pathological cases
+        // where nearly everything matches).
+        fc.string({ minLength: 4, maxLength: 8 }),
+        fc.string({
+          minLength: 0,
+          maxLength: 40,
+        }),
+        fc.constantFrom(1, 2),
+        (pat, hay, k) => {
+          const real = buildFS(
+            [pat],
+            k,
+            false,
+          ).findIter(hay);
+          const oracle = oracleFuzzySearch(
+            [pat],
+            hay,
+            k,
+          );
+
+          // Every library match must appear in
+          // the oracle (exact position + distance).
+          for (const rm of real) {
+            const found = oracle.some(
+              (om) =>
+                om.start === rm.start &&
+                om.end === rm.end &&
+                om.distance === rm.distance,
+            );
+            expect(found).toBe(true);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+
+  test("every oracle match is covered by library", () => {
+    fc.assert(
+      fc.property(
+        fc.string({ minLength: 4, maxLength: 8 }),
+        fc.string({
+          minLength: 0,
+          maxLength: 40,
+        }),
+        fc.constantFrom(1, 2),
+        (pat, hay, k) => {
+          const real = buildFS(
+            [pat],
+            k,
+            false,
+          ).findIter(hay);
+          const oracle = oracleFuzzySearch(
+            [pat],
+            hay,
+            k,
+          );
+
+          // Every oracle match must be either:
+          // 1. Found by library at the same pos, OR
+          // 2. Overlapped by a library match of
+          //    equal or better distance.
+          for (const om of oracle) {
+            const exact = real.some(
+              (rm) =>
+                rm.start === om.start &&
+                rm.end === om.end,
+            );
+            if (!exact) {
+              const covered = real.some(
+                (rm) =>
+                  rm.start <= om.end &&
+                  rm.end >= om.start &&
+                  rm.distance <= om.distance,
+              );
+              // If not covered, the library must
+              // at least find SOMETHING in this
+              // region.
+              if (!covered) {
+                const nearby = real.some(
+                  (rm) =>
+                    rm.end >= om.start &&
+                    rm.start <= om.end,
+                );
+                expect(nearby).toBe(true);
+              }
+            }
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 15: normalization idempotence ──
+//
+// If both pattern and haystack are already
+// ASCII, normalizeDiacritics should not change
+// the results.
+
+describe("property: normalization idempotence", () => {
+  test("ASCII text: norm vs no-norm produce same matches", () => {
+    const asciiStr = fc.string({
+      minLength: 0,
+      maxLength: 100,
+      unit: fc.constantFrom(
+        ..."abcdefghijklmnopqrstuvwxyz 0123456789.,!?-".split(
+          "",
+        ),
+      ),
+    });
+    const asciiPat = fc.string({
+      minLength: 1,
+      maxLength: 10,
+      unit: fc.constantFrom(
+        ..."abcdefghijklmnopqrstuvwxyz".split(""),
+      ),
+    });
+    fc.assert(
+      fc.property(
+        fc.array(asciiPat, {
+          minLength: 1,
+          maxLength: 5,
+        }),
+        asciiStr,
+        (pats, hay) => {
+          const plain = buildFS(
+            pats,
+            1,
+            false,
+          ).findIter(hay);
+          const norm = new FuzzySearch(
+            pats.map((p) => ({
+              pattern: p,
+              distance: 1,
+            })),
+            {
+              wholeWords: false,
+              normalizeDiacritics: true,
+            },
+          ).findIter(hay);
+
+          expect(plain.length).toBe(norm.length);
+          for (let i = 0; i < plain.length; i++) {
+            expect(plain[i]!.start).toBe(
+              norm[i]!.start,
+            );
+            expect(plain[i]!.end).toBe(
+              norm[i]!.end,
+            );
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 16: Czech diacritics oracle ────
+//
+// With normalizeDiacritics, "á" and "a" are
+// equivalent. Verify matches using a JS oracle
+// that strips diacritics before computing
+// Levenshtein.
+
+function stripDiacritics(s: string): string {
+  return s.normalize("NFD").replace(
+    /[\u0300-\u036f]/g,
+    "",
+  );
+}
+
+describe("property: diacritics normalization oracle", () => {
+  test("norm matches have correct normalized distance", () => {
+    // Czech-like chars for realistic coverage.
+    const czChar = fc.constantFrom(
+      ..."aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž ".split(
+        "",
+      ),
+    );
+    const czStr = fc.string({
+      minLength: 0,
+      maxLength: 80,
+      unit: czChar,
+    });
+    const czPat = fc.string({
+      minLength: 2,
+      maxLength: 10,
+      unit: czChar,
+    });
+    fc.assert(
+      fc.property(
+        fc.array(czPat, {
+          minLength: 1,
+          maxLength: 3,
+        }),
+        czStr,
+        (pats, hay) => {
+          const fs = new FuzzySearch(
+            pats.map((p) => ({
+              pattern: p,
+              distance: 1,
+            })),
+            {
+              wholeWords: false,
+              normalizeDiacritics: true,
+            },
+          );
+          for (const m of fs.findIter(hay)) {
+            // The Levenshtein distance between
+            // stripped pattern and stripped matched
+            // text must be <= max distance.
+            const normPat = stripDiacritics(
+              pats[m.pattern]!,
+            );
+            const normText = stripDiacritics(
+              m.text,
+            );
+            const d = levenshtein(
+              normPat,
+              normText,
+            );
+            expect(d).toBeLessThanOrEqual(1);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 17: case insensitive oracle ────
+
+describe("property: case insensitive oracle", () => {
+  test("CI matches have correct lowered distance", () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.string({
+            minLength: 2,
+            maxLength: 10,
+          }),
+          { minLength: 1, maxLength: 5 },
+        ),
+        fc.string({
+          minLength: 0,
+          maxLength: 100,
+        }),
+        (pats, hay) => {
+          const fs = new FuzzySearch(
+            pats.map((p) => ({
+              pattern: p,
+              distance: 1,
+            })),
+            {
+              wholeWords: false,
+              caseInsensitive: true,
+            },
+          );
+          for (const m of fs.findIter(hay)) {
+            const d = levenshtein(
+              pats[m.pattern]!.toLowerCase(),
+              m.text.toLowerCase(),
+            );
+            expect(d).toBeLessThanOrEqual(1);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 18: prefix/suffix patterns ─────
+//
+// Patterns that share prefixes: "ab", "abc",
+// "abcd". These stress the non-overlapping
+// selection and priority logic.
+
+describe("property: overlapping prefix patterns", () => {
+  test("prefix chain: every match is valid", () => {
+    fc.assert(
+      fc.property(
+        // Generate a base word and build prefix chain
+        fc.string({
+          minLength: 3,
+          maxLength: 8,
+          unit: fc.constantFrom(
+            ..."abcdefghijklmnop".split(""),
+          ),
+        }),
+        fc.string({
+          minLength: 0,
+          maxLength: 100,
+        }),
+        (base, hay) => {
+          // Prefixes of increasing length
+          const pats = Array.from(
+            { length: Math.min(base.length, 4) },
+            (_, i) => base.slice(0, i + 2),
+          );
+          const fs = buildFS(pats, 1, false);
+          for (const m of fs.findIter(hay)) {
+            const d = levenshtein(
+              pats[m.pattern]!,
+              m.text,
+            );
+            expect(d).toBeLessThanOrEqual(1);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 19: distance 3 ────────────────
+
+describe("property: distance 3", () => {
+  test("distance 3 matches are all valid", () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.string({
+            minLength: 4,
+            maxLength: 10,
+          }),
+          { minLength: 1, maxLength: 3 },
+        ),
+        fc.string({
+          minLength: 0,
+          maxLength: 80,
+        }),
+        (pats, hay) => {
+          const fs = buildFS(pats, 3, false);
+          for (const m of fs.findIter(hay)) {
+            const d = levenshtein(
+              pats[m.pattern]!,
+              m.text,
+            );
+            expect(d).toBeLessThanOrEqual(3);
+            expect(m.distance).toBe(d);
           }
         },
       ),

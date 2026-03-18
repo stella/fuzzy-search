@@ -361,63 +361,79 @@ fn extract_matches(
   pattern: &[char],
   text: &[char],
   end_positions: &[(usize, u8)],
+  max_dist: u8,
 ) -> Vec<(usize, usize, u8)> {
   if end_positions.is_empty() {
     return vec![];
   }
 
-  // Find local minima: positions where distance
-  // is <= both neighbors (or at boundary).
-  let n = end_positions.len();
-  let mut minima: Vec<(usize, u8)> = Vec::new();
-
-  for i in 0..n {
-    let (pos, dist) = end_positions[i];
-    let prev_dist = if i > 0 {
-      end_positions[i - 1].1
-    } else {
-      u8::MAX
-    };
-    let next_dist = if i + 1 < n {
-      end_positions[i + 1].1
-    } else {
-      u8::MAX
-    };
-
-    // Local minimum: <= prev AND < next,
-    // OR at the last position of a plateau
-    // (== next_dist, but next+1 is higher).
-    if dist <= prev_dist && dist < next_dist {
-      minima.push((pos, dist));
-    } else if dist < prev_dist && dist == next_dist {
-      // Start of a plateau — skip, let the
-      // end of the plateau be chosen.
-    } else if dist <= prev_dist
-      && dist == next_dist
-      && i + 1 < n
-    {
-      // Mid-plateau — skip.
-    } else if i == n - 1 && dist <= prev_dist {
-      // Last position and it's a minimum.
-      if minima.last().is_none_or(|m| m.0 != pos) {
-        minima.push((pos, dist));
-      }
-    }
-  }
-
-  // Compute start positions and collect
-  // non-overlapping matches.
+  // Greedy left-to-right. For each end position,
+  // look ahead in a window of m positions and
+  // try find_start for each. Pick the best match
+  // (lowest distance, then closest to pattern
+  // length, then leftmost start).
+  let m = pattern.len();
   let mut matches = Vec::new();
-  let mut last_end: usize = 0;
+  let mut last_match_end: usize = 0;
+  let mut i = 0;
 
-  for (end, dist) in minima {
-    if let Some((start, actual_dist)) =
-      find_start(pattern, text, end, dist)
+  while i < end_positions.len() {
+    let (end, _) = end_positions[i];
+
+    // Evaluate candidates in a contiguous window.
+    // Window extends end + 2m + k to ensure we
+    // catch better matches further ahead (e.g.,
+    // an exact match preceded by noisy text).
+    let k = max_dist as usize;
+    let window_bound = end + 2 * m + k;
+    let mut best: Option<(usize, usize, u8)> = None;
+    let mut best_end_idx = i;
+    let mut j = i;
+    while j < end_positions.len()
+      && end_positions[j].0 <= window_bound
+      && (j == i
+        || end_positions[j].0 == end_positions[j - 1].0 + 1)
     {
-      if start >= last_end {
-        matches.push((start, end, actual_dist));
-        last_end = end;
+      let (je, jd) = end_positions[j];
+      if let Some((start, actual_dist)) =
+        find_start(pattern, text, je, jd)
+      {
+        if start >= last_match_end {
+          let len = je - start;
+          let len_diff = len.abs_diff(m);
+          let is_better = match best {
+            None => true,
+            Some((bs, be, bd)) => {
+              let bl = be - bs;
+              let bl_diff = bl.abs_diff(m);
+              actual_dist < bd
+                || (actual_dist == bd && len_diff < bl_diff)
+                || (actual_dist == bd
+                  && len_diff == bl_diff
+                  && start < bs)
+            }
+          };
+          if is_better {
+            best = Some((start, je, actual_dist));
+            best_end_idx = j;
+          }
+        }
       }
+      j += 1;
+    }
+
+    if let Some((start, be, dist)) = best {
+      matches.push((start, be, dist));
+      last_match_end = be;
+      // Skip past this match.
+      i = best_end_idx + 1;
+      while i < end_positions.len()
+        && end_positions[i].0 <= be
+      {
+        i += 1;
+      }
+    } else {
+      i += 1;
     }
   }
 
@@ -566,8 +582,12 @@ impl FuzzySearch {
         &text_chars,
         pat.max_dist,
       );
-      let matches =
-        extract_matches(&pat.chars, &text_chars, &ends);
+      let matches = extract_matches(
+        &pat.chars,
+        &text_chars,
+        &ends,
+        pat.max_dist,
+      );
       for (start, end, _) in matches {
         if !self.whole_words {
           return true;
@@ -611,8 +631,12 @@ impl FuzzySearch {
         &text_chars,
         pat.max_dist,
       );
-      let matches =
-        extract_matches(&pat.chars, &text_chars, &ends);
+      let matches = extract_matches(
+        &pat.chars,
+        &text_chars,
+        &ends,
+        pat.max_dist,
+      );
 
       for (start, end, dist) in matches {
         let orig_start = pos_map[start];
@@ -695,8 +719,12 @@ impl FuzzySearch {
         &text_chars,
         pat.max_dist,
       );
-      let matches =
-        extract_matches(&pat.chars, &text_chars, &ends);
+      let matches = extract_matches(
+        &pat.chars,
+        &text_chars,
+        &ends,
+        pat.max_dist,
+      );
 
       for (start, end, dist) in matches {
         let orig_start = pos_map[start];

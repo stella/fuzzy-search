@@ -60,6 +60,8 @@
     "lint": "oxlint .",
     "bench": "bun __bench__/speed.ts",
     "bench:speed": "bun __bench__/speed.ts",
+    "bench:correctness": "bun __bench__/correctness.ts",
+    "bench:all": "bun __bench__/speed.ts && bun __bench__/correctness.ts",
     "bench:install": "cd __bench__ && bun install",
     "bench:download": "bash __bench__/download-corpus.sh"
   },
