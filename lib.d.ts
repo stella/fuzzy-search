@@ -33,7 +33,8 @@ export type PatternEntry =
   | string
   | {
       pattern: string;
-      /** Max edit distance (1-3). @default 1 */
+      /** Max edit distance. Must be less than
+       *  pattern length. @default 1 */
       distance?: number;
       /** Optional name for the pattern. */
       name?: string;

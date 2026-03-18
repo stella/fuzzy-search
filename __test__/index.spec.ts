@@ -108,12 +108,24 @@ describe("FuzzySearch", () => {
     expect(matches[0]!.name).toBe("surname");
   });
 
-  test("rejects distance > 3", () => {
+  test("rejects distance >= pattern length", () => {
     expect(() => {
       new FuzzySearch([
         { pattern: "test", distance: 4 },
       ]);
-    }).toThrow("Distance > 3");
+    }).toThrow("Distance 4 >= pattern length 4");
+    // distance 3 on a 4-char pattern is OK
+    expect(() => {
+      new FuzzySearch([
+        { pattern: "test", distance: 3 },
+      ]);
+    }).not.toThrow();
+    // distance 5 on a 6-char pattern is OK
+    expect(() => {
+      new FuzzySearch([
+        { pattern: "abcdef", distance: 5 },
+      ]);
+    }).not.toThrow();
   });
 
   test("rejects empty pattern", () => {
@@ -436,15 +448,23 @@ describe("edge cases", () => {
     expect(matches[0]!.text).toBe("worlb");
   });
 
-  test("single character pattern", () => {
+  test("single character pattern (exact)", () => {
+    // Single char at dist 0 (dist >= len rejected)
     const fs = new FuzzySearch(
-      [{ pattern: "a", distance: 1 }],
+      [{ pattern: "a", distance: 0 }],
       { wholeWords: false },
     );
-    // Distance 1 from "a" matches: any single
-    // char (substitution), empty (deletion), or
-    // "ax"/"xa" (insertion).
     expect(fs.isMatch("a")).toBe(true);
-    expect(fs.isMatch("b")).toBe(true);
+    expect(fs.isMatch("b")).toBe(false);
+  });
+
+  test("short pattern with valid distance", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "ab", distance: 1 }],
+      { wholeWords: false },
+    );
+    expect(fs.isMatch("ab")).toBe(true);
+    expect(fs.isMatch("ac")).toBe(true);
+    expect(fs.isMatch("xz")).toBe(false);
   });
 });

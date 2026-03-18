@@ -19,8 +19,10 @@ const PARAMS = { numRuns: 500 };
 
 // ─── Generators ──────────────────────────────
 
+// Patterns must be longer than max distance.
+// Since maxDist includes 2, minLength must be 3.
 const pattern = fc.string({
-  minLength: 1,
+  minLength: 3,
   maxLength: 15,
 });
 const patterns = fc.array(pattern, {
@@ -202,9 +204,24 @@ function buildFS(
   pats: string[],
   k: number,
   wholeWords: boolean,
-) {
+): FuzzySearch {
+  // Filter out patterns too short for the
+  // distance (dist must be < pattern length).
+  const valid = pats.filter(
+    (p) => Array.from(p).length > k,
+  );
+  // If nothing valid, use a dummy pattern that
+  // won't match anything (avoids skip logic in
+  // all 30+ callers).
+  const entries =
+    valid.length > 0
+      ? valid
+      : ["\x00\x01\x02\x03"];
   return new FuzzySearch(
-    pats.map((p) => ({ pattern: p, distance: k })),
+    entries.map((p) => ({
+      pattern: p,
+      distance: k,
+    })),
     { wholeWords },
   );
 }
@@ -403,7 +420,7 @@ describe("property: oracle vs findIter", () => {
         // Use shorter inputs for oracle perf
         fc.array(
           fc.string({
-            minLength: 1,
+            minLength: 3,
             maxLength: 8,
           }),
           { minLength: 1, maxLength: 5 },
@@ -441,7 +458,7 @@ describe("property: oracle vs findIter", () => {
         // Small inputs so oracle is fast enough
         fc.array(
           fc.string({
-            minLength: 2,
+            minLength: 3,
             maxLength: 6,
           }),
           { minLength: 1, maxLength: 3 },
@@ -559,7 +576,7 @@ describe("property: exact match always found", () => {
     // Only alphanumeric patterns (word chars) so
     // wholeWords boundary checks pass.
     const wordPattern = fc.string({
-      minLength: 1,
+      minLength: 3,
       maxLength: 10,
       unit: fc.constantFrom(
         ..."abcdefghijklmnopqrstuvwxyz0123456789".split(
@@ -716,7 +733,7 @@ describe("property: single vs multi-pattern", () => {
       fc.property(
         fc.array(
           fc.string({
-            minLength: 1,
+            minLength: 3,
             maxLength: 10,
           }),
           { minLength: 2, maxLength: 5 },
@@ -868,7 +885,7 @@ describe("property: normalization idempotence", () => {
       ),
     });
     const asciiPat = fc.string({
-      minLength: 1,
+      minLength: 3,
       maxLength: 10,
       unit: fc.constantFrom(
         ..."abcdefghijklmnopqrstuvwxyz".split(""),
@@ -942,7 +959,7 @@ describe("property: diacritics normalization oracle", () => {
       unit: czChar,
     });
     const czPat = fc.string({
-      minLength: 2,
+      minLength: 3,
       maxLength: 10,
       unit: czChar,
     });
@@ -995,7 +1012,7 @@ describe("property: case insensitive oracle", () => {
       fc.property(
         fc.array(
           fc.string({
-            minLength: 2,
+            minLength: 3,
             maxLength: 10,
           }),
           { minLength: 1, maxLength: 5 },
@@ -1054,8 +1071,13 @@ describe("property: overlapping prefix patterns", () => {
         (base, hay) => {
           // Prefixes of increasing length
           const pats = Array.from(
-            { length: Math.min(base.length, 4) },
-            (_, i) => base.slice(0, i + 2),
+            {
+              length: Math.max(
+                0,
+                Math.min(base.length, 4) - 1,
+              ),
+            },
+            (_, i) => base.slice(0, i + 3),
           );
           const fs = buildFS(pats, 1, false);
           for (const m of fs.findIter(hay)) {
@@ -1119,7 +1141,7 @@ describe("property: wholeWords subset", () => {
       fc.property(
         fc.array(
           fc.string({
-            minLength: 2,
+            minLength: 3,
             maxLength: 8,
           }),
           { minLength: 1, maxLength: 5 },
@@ -1239,7 +1261,7 @@ describe("property: pattern index correctness", () => {
       fc.property(
         fc.array(
           fc.string({
-            minLength: 2,
+            minLength: 3,
             maxLength: 10,
           }),
           { minLength: 2, maxLength: 8 },
@@ -1327,7 +1349,7 @@ describe("property: supplementary plane offsets", () => {
       ),
     });
     const emojiPat = fc.string({
-      minLength: 2,
+      minLength: 3,
       maxLength: 6,
       unit: fc.constantFrom(
         ..."abcdefgh".split(""),
@@ -1384,6 +1406,13 @@ describe("property: mixed distances per pattern", () => {
           maxLength: 100,
         }),
         (entries, hay) => {
+          fc.pre(
+            entries.every(
+              (e) =>
+                e.distance <
+                Array.from(e.pattern).length,
+            ),
+          );
           const fs = new FuzzySearch(entries, {
             wholeWords: false,
           });
@@ -1494,7 +1523,7 @@ describe("property: no false negatives on exact", () => {
     fc.assert(
       fc.property(
         fc.string({
-          minLength: 2,
+          minLength: 3,
           maxLength: 10,
         }),
         fc.string({

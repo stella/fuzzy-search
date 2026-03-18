@@ -4,6 +4,7 @@ use std::panic;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use unicode_normalization::char::decompose_canonical;
+use unicode_normalization::char::is_combining_mark;
 
 /// Convert a caught panic into a napi `Error`.
 fn panic_to_napi_error(
@@ -107,38 +108,11 @@ fn is_whole_word_chars(
 // ─── Combining mark detection ────────────────
 //
 // After NFD decomposition, combining marks are
-// stripped to normalize diacritics. Covers all
-// major combining mark Unicode blocks.
-
-fn is_combining(c: char) -> bool {
-  let cp = u32::from(c);
-  // Combining Diacritical Marks
-  (0x0300..=0x036F).contains(&cp)
-  // Combining Diacritical Marks Extended
-  || (0x1AB0..=0x1AFF).contains(&cp)
-  // Combining Diacritical Marks Supplement
-  || (0x1DC0..=0x1DFF).contains(&cp)
-  // Combining Diacritical Marks for Symbols
-  || (0x20D0..=0x20FF).contains(&cp)
-  // Combining Half Marks
-  || (0xFE20..=0xFE2F).contains(&cp)
-  // Cyrillic combining marks
-  || (0x0483..=0x0489).contains(&cp)
-  // Hebrew points + marks
-  || (0x0591..=0x05BD).contains(&cp)
-  || cp == 0x05BF
-  || (0x05C1..=0x05C2).contains(&cp)
-  || (0x05C4..=0x05C5).contains(&cp)
-  || cp == 0x05C7
-  // Arabic combining marks
-  || (0x0610..=0x061A).contains(&cp)
-  || (0x064B..=0x065F).contains(&cp)
-  || cp == 0x0670
-  || (0x06D6..=0x06DC).contains(&cp)
-  || (0x06DF..=0x06E4).contains(&cp)
-  || (0x06E7..=0x06E8).contains(&cp)
-  || (0x06EA..=0x06ED).contains(&cp)
-}
+// stripped to normalize diacritics. Uses the
+// unicode-normalization crate's `is_combining_mark`
+// which checks Unicode General Category = Mark
+// (Mn, Mc, Me) — correct for ALL scripts
+// (Latin, Cyrillic, Devanagari, Thai, etc.).
 
 // ─── Text normalization ──────────────────────
 //
@@ -167,7 +141,7 @@ fn normalize_with_map(
   for (orig_idx, &ch) in orig_chars.iter().enumerate() {
     if strip_dia {
       decompose_canonical(ch, |dc| {
-        if !is_combining(dc) {
+        if !is_combining_mark(dc) {
           if case_insensitive {
             for lc in dc.to_lowercase() {
               norm.push(lc);
@@ -521,28 +495,36 @@ impl FuzzySearch {
 
     for p in patterns {
       let dist = p.distance.unwrap_or(1);
-      if dist > 3 {
-        return Err(Error::from_reason(
-          "Distance > 3 is not supported \
-           (state explosion, too many \
-           false positives)"
-            .to_string(),
-        ));
-      }
+      // Myers is O(n) regardless of distance,
+      // so no hard upper limit. But distance >=
+      // pattern length means nearly everything
+      // matches (useless noise).
       let (chars, _) = normalize_with_map(
         &p.pattern,
         normalize,
         case_insensitive,
       );
+      if chars.is_empty() {
+        return Err(Error::from_reason(
+          "Empty pattern".to_string(),
+        ));
+      }
       if chars.len() > 64 {
         return Err(Error::from_reason(
           "Pattern too long (max 64 chars)".to_string(),
         ));
       }
-      if chars.is_empty() {
-        return Err(Error::from_reason(
-          "Empty pattern".to_string(),
-        ));
+      // Myers is O(n) regardless of distance,
+      // so no hard upper limit. But distance >=
+      // pattern length means nearly everything
+      // matches (useless noise).
+      if dist as usize >= chars.len() {
+        return Err(Error::from_reason(format!(
+          "Distance {} >= pattern length {} \
+           (every substring would match)",
+          dist,
+          chars.len(),
+        )));
       }
       infos.push(PatternInfo {
         chars,
