@@ -1,0 +1,42 @@
+[package]
+name = "stella-fuzzy-search"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "3", default-features = false, features = [
+  "napi9",
+  "serde-json",
+] }
+napi-derive = "3"
+unicode-normalization = "0.1"
+
+[build-dependencies]
+napi-build = "2"
+
+[lints.clippy]
+cast_lossless = "warn"
+filter_map_next = "warn"
+flat_map_option = "warn"
+implicit_clone = "warn"
+inefficient_to_string = "warn"
+manual_let_else = "warn"
+needless_continue = "warn"
+ptr_as_ptr = "warn"
+uninlined_format_args = "warn"
+unnecessary_wraps = "warn"
+unused_self = "warn"
+needless_pass_by_ref_mut = "warn"
+
+[lints.rust]
+unsafe_code = "warn"
+
+[profile.release]
+lto = true
+strip = "symbols"
+codegen-units = 1

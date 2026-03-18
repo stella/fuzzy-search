@@ -1,0 +1,101 @@
+{
+  "name": "@stll/fuzzy-search",
+  "version": "0.1.0",
+  "description": "NAPI-RS bindings for fuzzy string matching via Myers' bit-parallel algorithm for Node.js/Bun",
+  "keywords": [
+    "fuzzy-search",
+    "levenshtein",
+    "edit-distance",
+    "approximate-matching",
+    "napi-rs",
+    "native",
+    "rust"
+  ],
+  "homepage": "https://github.com/stella/fuzzy-search#readme",
+  "bugs": {
+    "url": "https://github.com/stella/fuzzy-search/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stella/fuzzy-search"
+  },
+  "files": [
+    "lib.js",
+    "lib.mjs",
+    "lib.d.ts",
+    "lib.wasm.js",
+    "index.js",
+    "index.d.ts"
+  ],
+  "main": "lib.js",
+  "module": "lib.mjs",
+  "browser": {
+    "./lib.js": "./lib.wasm.js",
+    "./lib.mjs": "./lib.wasm.js"
+  },
+  "types": "lib.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./lib.d.ts",
+        "default": "./lib.mjs"
+      },
+      "require": {
+        "types": "./lib.d.ts",
+        "default": "./lib.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "build:wasm": "napi build --target wasm32-wasip1-threads --release",
+    "artifacts": "napi artifacts",
+    "universal": "napi universal",
+    "prepublishOnly": "napi prepublish -t npm",
+    "test": "bun test __test__/index.spec.ts",
+    "test:props": "bun test __test__/properties.spec.ts",
+    "format": "oxfmt . && rustfmt src/lib.rs",
+    "lint": "oxlint .",
+    "bench": "bun __bench__/speed.ts",
+    "bench:speed": "bun __bench__/speed.ts",
+    "bench:install": "cd __bench__ && bun install",
+    "bench:download": "bash __bench__/download-corpus.sh"
+  },
+  "devDependencies": {
+    "@emnapi/core": "^1.9.0",
+    "@emnapi/runtime": "^1.9.0",
+    "@napi-rs/cli": "^3.0.0",
+    "@napi-rs/wasm-runtime": "^1.1.1",
+    "@tybys/wasm-util": "^0.10.1",
+    "@types/node": "^25.5.0",
+    "bun-types": "^1.3.10",
+    "emnapi": "^1.9.0",
+    "fast-check": "^4.6.0",
+    "oxfmt": "^0.40.0",
+    "oxlint": "^1.55.0"
+  },
+  "optionalDependencies": {
+    "@stll/fuzzy-search-darwin-arm64": "0.1.0",
+    "@stll/fuzzy-search-darwin-x64": "0.1.0",
+    "@stll/fuzzy-search-linux-arm64-gnu": "0.1.0",
+    "@stll/fuzzy-search-linux-x64-gnu": "0.1.0",
+    "@stll/fuzzy-search-linux-x64-musl": "0.1.0",
+    "@stll/fuzzy-search-win32-x64-msvc": "0.1.0"
+  },
+  "napi": {
+    "binaryName": "fuzzy-search",
+    "targets": [
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "x86_64-pc-windows-msvc"
+    ]
+  },
+  "engines": {
+    "node": ">= 18"
+  }
+}
