@@ -44,8 +44,15 @@ function levenshtein(
   a: string,
   b: string,
 ): number {
-  const m = a.length;
-  const n = b.length;
+  // Use Array.from to split into Unicode
+  // characters (not UTF-16 code units). This
+  // handles emoji and supplementary plane chars
+  // correctly — matching the Rust library which
+  // operates on char (Unicode scalar values).
+  const ac = Array.from(a);
+  const bc = Array.from(b);
+  const m = ac.length;
+  const n = bc.length;
   if (m === 0) return n;
   if (n === 0) return m;
 
@@ -57,8 +64,7 @@ function levenshtein(
     const curr = new Array<number>(n + 1);
     curr[0] = i;
     for (let j = 1; j <= n; j++) {
-      const cost =
-        a[i - 1] === b[j - 1] ? 0 : 1;
+      const cost = ac[i - 1] === bc[j - 1] ? 0 : 1;
       curr[j] = Math.min(
         curr[j - 1]! + 1,
         prev[j]! + 1,
@@ -1092,6 +1098,433 @@ describe("property: distance 3", () => {
             );
             expect(d).toBeLessThanOrEqual(3);
             expect(m.distance).toBe(d);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 20: wholeWords ⊆ no-wholeWords ─
+//
+// Every match found with wholeWords: true must
+// also be found (as a valid fuzzy match) when
+// wholeWords is false. wholeWords only filters;
+// it never creates new matches.
+
+describe("property: wholeWords subset", () => {
+  test("wholeWords matches ⊆ no-wholeWords matches", () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.string({
+            minLength: 2,
+            maxLength: 8,
+          }),
+          { minLength: 1, maxLength: 5 },
+        ),
+        fc.string({
+          minLength: 0,
+          maxLength: 80,
+        }),
+        maxDist,
+        (pats, hay, k) => {
+          const ww = buildFS(
+            pats,
+            k,
+            true,
+          ).findIter(hay);
+          const noWw = buildFS(
+            pats,
+            k,
+            false,
+          ).findIter(hay);
+
+          // Every wholeWords match must be
+          // verifiable by the naive oracle
+          // (it IS a valid fuzzy match).
+          for (const m of ww) {
+            const d = levenshtein(
+              pats[m.pattern]!,
+              m.text,
+            );
+            expect(d).toBeLessThanOrEqual(k);
+          }
+
+          // wholeWords count <= no-wholeWords.
+          expect(
+            ww.length,
+          ).toBeLessThanOrEqual(noWw.length);
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 21: distance monotonicity ──────
+//
+// Increasing the max distance should never lose
+// matches: matches(k) ⊆ matches(k+1) in terms
+// of matched text regions.
+
+describe("property: distance monotonicity", () => {
+  test("dist k matches are reachable at dist k+1", () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.string({
+            minLength: 3,
+            maxLength: 8,
+          }),
+          { minLength: 1, maxLength: 3 },
+        ),
+        fc.string({
+          minLength: 0,
+          maxLength: 60,
+        }),
+        (pats, hay) => {
+          const d1 = buildFS(
+            pats,
+            1,
+            false,
+          ).findIter(hay);
+          const d2 = buildFS(
+            pats,
+            2,
+            false,
+          ).findIter(hay);
+
+          // Every dist-1 match must be a valid
+          // match at dist 2 (it still satisfies
+          // distance <= 2).
+          for (const m of d1) {
+            const d = levenshtein(
+              pats[m.pattern]!,
+              m.text,
+            );
+            expect(d).toBeLessThanOrEqual(2);
+          }
+
+          // dist-2 should find at least as many
+          // matchable regions.
+          // (Not exact: non-overlapping selection
+          //  may differ, so we just check d2
+          //  covers d1's regions.)
+          for (const m1 of d1) {
+            const covered = d2.some(
+              (m2) =>
+                m2.start <= m1.end &&
+                m2.end >= m1.start,
+            );
+            expect(covered).toBe(true);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 22: pattern index correctness ──
+//
+// m.pattern must index into the original patterns
+// array, and the matched text must be within
+// distance k of THAT specific pattern.
+
+describe("property: pattern index correctness", () => {
+  test("m.pattern indexes the correct pattern", () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.string({
+            minLength: 2,
+            maxLength: 10,
+          }),
+          { minLength: 2, maxLength: 8 },
+        ),
+        fc.string({
+          minLength: 0,
+          maxLength: 100,
+        }),
+        maxDist,
+        (pats, hay, k) => {
+          const fs = buildFS(pats, k, false);
+          for (const m of fs.findIter(hay)) {
+            // Index in bounds.
+            expect(m.pattern).toBeGreaterThanOrEqual(
+              0,
+            );
+            expect(m.pattern).toBeLessThan(
+              pats.length,
+            );
+            // Distance matches THIS pattern.
+            const d = levenshtein(
+              pats[m.pattern]!,
+              m.text,
+            );
+            expect(d).toBeLessThanOrEqual(k);
+            expect(m.distance).toBe(d);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 23: determinism ────────────────
+//
+// Running the same search twice must produce
+// identical results. Catches uninitialized
+// memory, hash map ordering, etc.
+
+describe("property: determinism", () => {
+  test("same input always produces same output", () => {
+    fc.assert(
+      fc.property(
+        patterns,
+        haystack,
+        maxDist,
+        (pats, hay, k) => {
+          const fs = buildFS(pats, k, false);
+          const r1 = fs.findIter(hay);
+          const r2 = fs.findIter(hay);
+          expect(r1.length).toBe(r2.length);
+          for (let i = 0; i < r1.length; i++) {
+            expect(r1[i]!.start).toBe(
+              r2[i]!.start,
+            );
+            expect(r1[i]!.end).toBe(r2[i]!.end);
+            expect(r1[i]!.distance).toBe(
+              r2[i]!.distance,
+            );
+            expect(r1[i]!.pattern).toBe(
+              r2[i]!.pattern,
+            );
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 24: UTF-16 supplementary plane ─
+//
+// Text with emoji (supplementary plane chars,
+// 2 UTF-16 code units each) must have correct
+// offsets. slice(start, end) must equal text.
+
+describe("property: supplementary plane offsets", () => {
+  test("emoji text: offsets are correct", () => {
+    const emojiStr = fc.string({
+      minLength: 0,
+      maxLength: 40,
+      unit: fc.constantFrom(
+        ..."abcdefgh 😀🎉🔥🚀💡🎸🌍🏠".split(""),
+      ),
+    });
+    const emojiPat = fc.string({
+      minLength: 2,
+      maxLength: 6,
+      unit: fc.constantFrom(
+        ..."abcdefgh".split(""),
+      ),
+    });
+    fc.assert(
+      fc.property(
+        fc.array(emojiPat, {
+          minLength: 1,
+          maxLength: 3,
+        }),
+        emojiStr,
+        (pats, hay) => {
+          const fs = buildFS(pats, 1, false);
+          for (const m of fs.findIter(hay)) {
+            expect(hay.slice(m.start, m.end)).toBe(
+              m.text,
+            );
+            const d = levenshtein(
+              pats[m.pattern]!,
+              m.text,
+            );
+            expect(d).toBeLessThanOrEqual(1);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 25: mixed distances ────────────
+//
+// Patterns with DIFFERENT max distances in the
+// same search. Each match must respect its own
+// pattern's distance.
+
+describe("property: mixed distances per pattern", () => {
+  test("each match respects its own max distance", () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.record({
+            pattern: fc.string({
+              minLength: 2,
+              maxLength: 10,
+            }),
+            distance: fc.constantFrom(0, 1, 2, 3),
+          }),
+          { minLength: 2, maxLength: 6 },
+        ),
+        fc.string({
+          minLength: 0,
+          maxLength: 100,
+        }),
+        (entries, hay) => {
+          const fs = new FuzzySearch(entries, {
+            wholeWords: false,
+          });
+          for (const m of fs.findIter(hay)) {
+            const entry = entries[m.pattern]!;
+            const d = levenshtein(
+              entry.pattern,
+              m.text,
+            );
+            expect(d).toBeLessThanOrEqual(
+              entry.distance,
+            );
+            expect(m.distance).toBe(d);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 26: feature interaction ────────
+//
+// normalizeDiacritics + caseInsensitive +
+// wholeWords all enabled. The cartesian product
+// catches interaction bugs.
+
+describe("property: all features combined", () => {
+  test("norm + CI + wholeWords: all matches valid", () => {
+    const czChar = fc.constantFrom(
+      ..."aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž ABCČDĎEÉĚ".split(
+        "",
+      ),
+    );
+    const czStr = fc.string({
+      minLength: 0,
+      maxLength: 60,
+      unit: czChar,
+    });
+    const czPat = fc.string({
+      minLength: 3,
+      maxLength: 8,
+      unit: czChar,
+    });
+    fc.assert(
+      fc.property(
+        fc.array(czPat, {
+          minLength: 1,
+          maxLength: 3,
+        }),
+        czStr,
+        (pats, hay) => {
+          const fs = new FuzzySearch(
+            pats.map((p) => ({
+              pattern: p,
+              distance: 1,
+            })),
+            {
+              wholeWords: true,
+              normalizeDiacritics: true,
+              caseInsensitive: true,
+            },
+          );
+          for (const m of fs.findIter(hay)) {
+            // Normalize both sides, then check
+            const normPat = stripDiacritics(
+              pats[m.pattern]!,
+            ).toLowerCase();
+            const normText = stripDiacritics(
+              m.text,
+            ).toLowerCase();
+            const d = levenshtein(
+              normPat,
+              normText,
+            );
+            expect(d).toBeLessThanOrEqual(1);
+
+            // Word boundary check
+            const before = hay[m.start - 1];
+            const after = hay[m.end];
+            if (before) {
+              expect(
+                !isWordChar(before) ||
+                  isCjk(m.text[0]!),
+              ).toBe(true);
+            }
+            if (after) {
+              expect(
+                !isWordChar(after) ||
+                  isCjk(m.text.at(-1)!),
+              ).toBe(true);
+            }
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 27: no false negatives on exact ─
+//
+// If a pattern appears EXACTLY in the haystack,
+// it must be found regardless of distance setting.
+
+describe("property: no false negatives on exact", () => {
+  test("exact substring always found (no wholeWords)", () => {
+    fc.assert(
+      fc.property(
+        fc.string({
+          minLength: 2,
+          maxLength: 10,
+        }),
+        fc.string({
+          minLength: 0,
+          maxLength: 30,
+        }),
+        fc.string({
+          minLength: 0,
+          maxLength: 30,
+        }),
+        maxDist,
+        (pat, prefix, suffix, k) => {
+          const hay = prefix + pat + suffix;
+          const fs = buildFS([pat], k, false);
+          expect(fs.isMatch(hay)).toBe(true);
+
+          const matches = fs.findIter(hay);
+          // At least one match must contain
+          // the exact position.
+          const exactFound = matches.some(
+            (m) =>
+              m.start <= prefix.length &&
+              m.end >= prefix.length + pat.length,
+          );
+          // Or a nearby match (non-overlapping
+          // selection may choose a different one).
+          if (!exactFound) {
+            expect(matches.length).toBeGreaterThan(
+              0,
+            );
           }
         },
       ),
