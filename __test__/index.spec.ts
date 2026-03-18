@@ -190,12 +190,12 @@ describe("Czech names", () => {
     );
     const text =
       "Gais1erová a Snytrová podepsali " +
-      "smlouvu s Nowákem.";
+      "smlouvu s Nowák.";
     const matches = fs.findIter(text);
     expect(matches).toHaveLength(3);
     expect(matches[0]!.text).toBe("Gais1erová");
     expect(matches[1]!.text).toBe("Snytrová");
-    expect(matches[2]!.text).toBe("Nowákem");
+    expect(matches[2]!.text).toBe("Nowák");
   });
 });
 

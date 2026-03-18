@@ -13,9 +13,7 @@ fn panic_to_napi_error(
     .downcast_ref::<&str>()
     .copied()
     .or_else(|| {
-      payload
-        .downcast_ref::<String>()
-        .map(|s| s.as_str())
+      payload.downcast_ref::<String>().map(|s| s.as_str())
     })
     .unwrap_or("unknown panic");
   Error::from_reason(format!("Rust panic: {msg}"))
@@ -155,8 +153,7 @@ fn normalize_with_map(
   let orig_len = orig_chars.len();
 
   if !strip_dia && !case_insensitive {
-    let mut map: Vec<usize> =
-      (0..orig_len).collect();
+    let mut map: Vec<usize> = (0..orig_len).collect();
     map.push(orig_len); // sentinel
     return (orig_chars, map);
   }
@@ -164,9 +161,7 @@ fn normalize_with_map(
   let mut norm = Vec::with_capacity(orig_len);
   let mut map = Vec::with_capacity(orig_len + 1);
 
-  for (orig_idx, &ch) in
-    orig_chars.iter().enumerate()
-  {
+  for (orig_idx, &ch) in orig_chars.iter().enumerate() {
     if strip_dia {
       decompose_canonical(ch, |dc| {
         if !is_combining(dc) {
@@ -223,11 +218,8 @@ fn myers_find_ends(
     *peq.entry(c).or_insert(0) |= 1u64 << i;
   }
 
-  let mask = if m == 64 {
-    u64::MAX
-  } else {
-    (1u64 << m) - 1
-  };
+  let mask =
+    if m == 64 { u64::MAX } else { (1u64 << m) - 1 };
   let msb = 1u64 << (m - 1);
 
   // PV = positive vertical deltas (all +1 init)
@@ -242,9 +234,7 @@ fn myers_find_ends(
     let eq = peq.get(&tc).copied().unwrap_or(0);
 
     let xv = eq | mv;
-    let xh = (((eq & pv).wrapping_add(pv)) ^ pv)
-      | eq
-      | mv;
+    let xh = (((eq & pv).wrapping_add(pv)) ^ pv) | eq | mv;
 
     let ph = mv | !(xh | pv);
     let mh = pv & xh;
@@ -262,8 +252,7 @@ fn myers_find_ends(
     let ph_shifted = ph << 1;
     let mh_shifted = mh << 1;
 
-    pv =
-      (mh_shifted | !(xv | ph_shifted)) & mask;
+    pv = (mh_shifted | !(xv | ph_shifted)) & mask;
     mv = (ph_shifted & xv) & mask;
 
     if score <= k {
@@ -294,8 +283,7 @@ fn levenshtein(a: &[char], b: &[char]) -> usize {
     let mut curr = vec![0usize; n + 1];
     curr[0] = i;
     for j in 1..=n {
-      let cost =
-        usize::from(a[i - 1] != b[j - 1]);
+      let cost = usize::from(a[i - 1] != b[j - 1]);
       curr[j] = (curr[j - 1] + 1)
         .min(prev[j] + 1)
         .min(prev[j - 1] + cost);
@@ -380,8 +368,11 @@ fn extract_matches(
 
   for i in 0..n {
     let (pos, dist) = end_positions[i];
-    let prev_dist =
-      if i > 0 { end_positions[i - 1].1 } else { u8::MAX };
+    let prev_dist = if i > 0 {
+      end_positions[i - 1].1
+    } else {
+      u8::MAX
+    };
     let next_dist = if i + 1 < n {
       end_positions[i + 1].1
     } else {
@@ -393,8 +384,7 @@ fn extract_matches(
     // (== next_dist, but next+1 is higher).
     if dist <= prev_dist && dist < next_dist {
       minima.push((pos, dist));
-    } else if dist < prev_dist && dist == next_dist
-    {
+    } else if dist < prev_dist && dist == next_dist {
       // Start of a plateau — skip, let the
       // end of the plateau be chosen.
     } else if dist <= prev_dist
@@ -404,10 +394,7 @@ fn extract_matches(
       // Mid-plateau — skip.
     } else if i == n - 1 && dist <= prev_dist {
       // Last position and it's a minimum.
-      if !minima
-        .last()
-        .is_some_and(|m| m.0 == pos)
-      {
+      if minima.last().is_none_or(|m| m.0 != pos) {
         minima.push((pos, dist));
       }
     }
@@ -438,8 +425,7 @@ fn extract_matches(
 /// mapping. Index `i` gives the UTF-16 offset of
 /// char `i`; index `len` is the total length.
 fn build_utf16_map(chars: &[char]) -> Vec<u32> {
-  let mut map =
-    Vec::with_capacity(chars.len() + 1);
+  let mut map = Vec::with_capacity(chars.len() + 1);
   let mut utf16_pos: u32 = 0;
   for &ch in chars {
     map.push(utf16_pos);
@@ -462,10 +448,12 @@ struct PatternInfo {
 /// Fuzzy string matcher. Finds approximate
 /// matches within edit distance k, immune to
 /// typos, OCR errors, and diacritics variants.
+///
+/// Pattern names are handled in the JS wrapper
+/// (not stored here).
 #[napi]
 pub struct FuzzySearch {
   patterns: Vec<PatternInfo>,
-  names: Vec<Option<String>>,
   normalize_diacritics: bool,
   case_insensitive: bool,
   whole_words: bool,
@@ -500,22 +488,15 @@ impl FuzzySearch {
     patterns: Vec<PatternEntry>,
     options: Option<Options>,
   ) -> Result<Self> {
-    let opts =
-      options.unwrap_or_else(default_options);
+    let opts = options.unwrap_or_else(default_options);
     let normalize =
       opts.normalize_diacritics.unwrap_or(false);
     let case_insensitive =
       opts.case_insensitive.unwrap_or(false);
-    let whole_words =
-      opts.whole_words.unwrap_or(true);
+    let whole_words = opts.whole_words.unwrap_or(true);
     let pattern_count = patterns.len() as u32;
 
-    let mut infos = Vec::with_capacity(
-      patterns.len(),
-    );
-    let mut names = Vec::with_capacity(
-      patterns.len(),
-    );
+    let mut infos = Vec::with_capacity(patterns.len());
 
     for p in patterns {
       let dist = p.distance.unwrap_or(1);
@@ -534,8 +515,7 @@ impl FuzzySearch {
       );
       if chars.len() > 64 {
         return Err(Error::from_reason(
-          "Pattern too long (max 64 chars)"
-            .to_string(),
+          "Pattern too long (max 64 chars)".to_string(),
         ));
       }
       if chars.is_empty() {
@@ -547,12 +527,10 @@ impl FuzzySearch {
         chars,
         max_dist: dist,
       });
-      names.push(p.name);
     }
 
     Ok(Self {
       patterns: infos,
-      names,
       normalize_diacritics: normalize,
       case_insensitive,
       whole_words,
@@ -570,14 +548,12 @@ impl FuzzySearch {
   /// within its edit distance.
   #[napi]
   pub fn is_match(&self, haystack: String) -> bool {
-    let orig_chars: Vec<char> =
-      haystack.chars().collect();
-    let (text_chars, pos_map) =
-      normalize_with_map(
-        &haystack,
-        self.normalize_diacritics,
-        self.case_insensitive,
-      );
+    let orig_chars: Vec<char> = haystack.chars().collect();
+    let (text_chars, pos_map) = normalize_with_map(
+      &haystack,
+      self.normalize_diacritics,
+      self.case_insensitive,
+    );
 
     for pat in &self.patterns {
       let ends = myers_find_ends(
@@ -585,9 +561,8 @@ impl FuzzySearch {
         &text_chars,
         pat.max_dist,
       );
-      let matches = extract_matches(
-        &pat.chars, &text_chars, &ends,
-      );
+      let matches =
+        extract_matches(&pat.chars, &text_chars, &ends);
       for (start, end, _) in matches {
         if !self.whole_words {
           return true;
@@ -595,7 +570,9 @@ impl FuzzySearch {
         let orig_start = pos_map[start];
         let orig_end = pos_map[end];
         if is_whole_word_chars(
-          &orig_chars, orig_start, orig_end,
+          &orig_chars,
+          orig_start,
+          orig_end,
         ) {
           return true;
         }
@@ -613,30 +590,24 @@ impl FuzzySearch {
     &self,
     haystack: String,
   ) -> Uint32Array {
-    let orig_chars: Vec<char> =
-      haystack.chars().collect();
+    let orig_chars: Vec<char> = haystack.chars().collect();
     let utf16_map = build_utf16_map(&orig_chars);
-    let (text_chars, pos_map) =
-      normalize_with_map(
-        &haystack,
-        self.normalize_diacritics,
-        self.case_insensitive,
-      );
+    let (text_chars, pos_map) = normalize_with_map(
+      &haystack,
+      self.normalize_diacritics,
+      self.case_insensitive,
+    );
 
-    let mut all: Vec<(u32, u32, u32, u32)> =
-      Vec::new();
+    let mut all: Vec<(u32, u32, u32, u32)> = Vec::new();
 
-    for (idx, pat) in
-      self.patterns.iter().enumerate()
-    {
+    for (idx, pat) in self.patterns.iter().enumerate() {
       let ends = myers_find_ends(
         &pat.chars,
         &text_chars,
         pat.max_dist,
       );
-      let matches = extract_matches(
-        &pat.chars, &text_chars, &ends,
-      );
+      let matches =
+        extract_matches(&pat.chars, &text_chars, &ends);
 
       for (start, end, dist) in matches {
         let orig_start = pos_map[start];
@@ -644,7 +615,9 @@ impl FuzzySearch {
 
         if self.whole_words
           && !is_whole_word_chars(
-            &orig_chars, orig_start, orig_end,
+            &orig_chars,
+            orig_start,
+            orig_end,
           )
         {
           continue;
@@ -666,8 +639,7 @@ impl FuzzySearch {
       a.1.cmp(&b.1).then(a.3.cmp(&b.3))
     });
 
-    let mut packed =
-      Vec::with_capacity(all.len() * 4);
+    let mut packed = Vec::with_capacity(all.len() * 4);
     for (pat, start, end, dist) in all {
       packed.push(pat);
       packed.push(start);
@@ -686,9 +658,7 @@ impl FuzzySearch {
     haystack: String,
     replacements: Vec<String>,
   ) -> Result<String> {
-    if replacements.len()
-      != self.pattern_count as usize
-    {
+    if replacements.len() != self.pattern_count as usize {
       return Err(Error::from_reason(format!(
         "Expected {} replacements, got {}",
         self.pattern_count,
@@ -696,30 +666,24 @@ impl FuzzySearch {
       )));
     }
 
-    let orig_chars: Vec<char> =
-      haystack.chars().collect();
-    let (text_chars, pos_map) =
-      normalize_with_map(
-        &haystack,
-        self.normalize_diacritics,
-        self.case_insensitive,
-      );
+    let orig_chars: Vec<char> = haystack.chars().collect();
+    let (text_chars, pos_map) = normalize_with_map(
+      &haystack,
+      self.normalize_diacritics,
+      self.case_insensitive,
+    );
 
     // Collect all matches across patterns.
-    let mut all: Vec<(usize, usize, u32)> =
-      Vec::new();
+    let mut all: Vec<(usize, usize, u32)> = Vec::new();
 
-    for (idx, pat) in
-      self.patterns.iter().enumerate()
-    {
+    for (idx, pat) in self.patterns.iter().enumerate() {
       let ends = myers_find_ends(
         &pat.chars,
         &text_chars,
         pat.max_dist,
       );
-      let matches = extract_matches(
-        &pat.chars, &text_chars, &ends,
-      );
+      let matches =
+        extract_matches(&pat.chars, &text_chars, &ends);
 
       for (start, end, _) in matches {
         let orig_start = pos_map[start];
@@ -727,16 +691,14 @@ impl FuzzySearch {
 
         if self.whole_words
           && !is_whole_word_chars(
-            &orig_chars, orig_start, orig_end,
+            &orig_chars,
+            orig_start,
+            orig_end,
           )
         {
           continue;
         }
-        all.push((
-          orig_start,
-          orig_end,
-          idx as u32,
-        ));
+        all.push((orig_start, orig_end, idx as u32));
       }
     }
 
@@ -747,8 +709,7 @@ impl FuzzySearch {
 
     // Build result, replacing non-overlapping
     // matches.
-    let mut result =
-      String::with_capacity(haystack.len());
+    let mut result = String::with_capacity(haystack.len());
     let mut pos: usize = 0;
 
     for (start, end, pat_idx) in &all {
@@ -758,8 +719,7 @@ impl FuzzySearch {
       for &ch in &orig_chars[pos..*start] {
         result.push(ch);
       }
-      result
-        .push_str(&replacements[*pat_idx as usize]);
+      result.push_str(&replacements[*pat_idx as usize]);
       pos = *end;
     }
     for &ch in &orig_chars[pos..] {
