@@ -690,7 +690,7 @@ describe("distance() vs js-levenshtein", () => {
     }
   });
 
-  test("emoji: js-levenshtein is WRONG on different emoji", () => {
+  test("emoji: divergence from js-levenshtein on supplementary plane", () => {
     if (!jsLev) return;
 
     // Same emoji: both agree (surrogate pairs
@@ -698,23 +698,20 @@ describe("distance() vs js-levenshtein", () => {
     expect(distance("😀x", "😀y")).toBe(1);
     expect(jsLev("😀x", "😀y")).toBe(1);
 
-    // DIFFERENT emoji: js-levenshtein counts
-    // surrogate pairs as 2 chars → wrong answer.
-    // "🎉" vs "🔥": one char substitution.
-    // Correct: 1. js-levenshtein: 2.
+    // Different emoji: js-levenshtein operates
+    // on UTF-16 code units (2 per emoji), so it
+    // reports higher distances than character-
+    // level computation.
     expect(distance("🎉", "🔥")).toBe(1);
-    expect(jsLev("🎉", "🔥")).toBe(2); // WRONG
+    expect(jsLev("🎉", "🔥")).toBe(2);
 
-    // "a🎉b" vs "a🔥b": one substitution.
-    // Correct: 1. js-levenshtein: 2.
     expect(distance("a🎉b", "a🔥b")).toBe(1);
-    expect(jsLev("a🎉b", "a🔥b")).toBe(2); // WRONG
+    expect(jsLev("a🎉b", "a🔥b")).toBe(2);
 
-    // "🎉🔥" vs "🔥🎉": swap of two emoji.
-    // Correct Levenshtein: 2, Damerau: 1.
-    // js-levenshtein: 4 (counts 4 surrogates).
+    // Swap of two emoji: 2 chars vs 4 surrogates.
     expect(distance("🎉🔥", "🔥🎉")).toBe(2);
-    expect(jsLev("🎉🔥", "🔥🎉")).toBe(4); // WRONG
+    expect(jsLev("🎉🔥", "🔥🎉")).toBe(4);
+
     expect(
       distance(
         "🎉🔥",
