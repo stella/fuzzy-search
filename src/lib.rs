@@ -80,10 +80,13 @@ pub struct FuzzyMatch {
 
 // ─── Word boundary detection ─────────────────
 //
-// Uses Unicode `char::is_alphanumeric()` which
-// covers all scripts. CJK exception: CJK
-// ideographs are treated as standalone words
-// (no inter-word spaces in CJK).
+// Two modes:
+// 1. Inline: is_alphanumeric() + CJK exception.
+//    Fast, correct for Latin/Cyrillic/Greek/etc.
+// 2. UAX#29: unicode-segmentation crate. Correct
+//    for Thai, Lao, Khmer, Myanmar (no inter-word
+//    spaces). Activated automatically when the
+//    haystack contains these scripts.
 
 fn is_cjk(ch: char) -> bool {
   matches!(u32::from(ch),
@@ -102,9 +105,8 @@ fn is_word_char(ch: char) -> bool {
   ch.is_alphanumeric() && !is_cjk(ch)
 }
 
-/// Check if a match at [start..end) in a char
-/// slice is at word boundaries.
-fn is_whole_word_chars(
+/// Inline boundary check on char slices.
+fn is_whole_word_inline(
   chars: &[char],
   start: usize,
   end: usize,
@@ -119,6 +121,129 @@ fn is_whole_word_chars(
     || !is_word_char(chars[end])
     || is_cjk(chars[end - 1]);
   start_ok && end_ok
+}
+
+// ─── UAX#29 segmenter ───────────────────────
+//
+// For scripts without inter-word spaces (Thai,
+// Lao, Khmer, Myanmar), pre-compute word
+// boundaries using the unicode-segmentation
+// crate. Stores boundaries as a bit set indexed
+// by char position for O(1) lookup.
+
+/// Does the text contain scripts that need
+/// UAX#29 segmentation?
+fn needs_segmenter(text: &str) -> bool {
+  if text.is_ascii() {
+    return false;
+  }
+  for ch in text.chars() {
+    let cp = u32::from(ch);
+    if (0x0E00..=0x0E7F).contains(&cp)    // Thai
+      || (0x0E80..=0x0EFF).contains(&cp)  // Lao
+      || (0x1000..=0x109F).contains(&cp)  // Myanmar
+      || (0x1780..=0x17FF).contains(&cp)
+    // Khmer
+    {
+      return true;
+    }
+  }
+  false
+}
+
+/// Bit set for O(1) boundary lookups by char
+/// index (not byte offset).
+struct CharBoundarySet {
+  bits: Vec<u64>,
+}
+
+impl CharBoundarySet {
+  fn new(len: usize) -> Self {
+    Self {
+      bits: vec![0u64; len.div_ceil(64)],
+    }
+  }
+
+  fn set(&mut self, pos: usize) {
+    if pos < self.bits.len() * 64 {
+      self.bits[pos / 64] |= 1u64 << (pos % 64);
+    }
+  }
+
+  fn contains(&self, pos: usize) -> bool {
+    pos < self.bits.len() * 64
+      && self.bits[pos / 64] & (1u64 << (pos % 64)) != 0
+  }
+}
+
+/// Compute UAX#29 word boundaries as char-index
+/// positions (not byte offsets).
+fn compute_char_boundaries(text: &str) -> CharBoundarySet {
+  use unicode_segmentation::UnicodeSegmentation;
+  // Build byte-offset → char-index map.
+  let mut byte_to_char: Vec<usize> =
+    Vec::with_capacity(text.len() + 1);
+  let mut char_idx = 0;
+  for ch in text.chars() {
+    for _ in 0..ch.len_utf8() {
+      byte_to_char.push(char_idx);
+    }
+    char_idx += 1;
+  }
+  byte_to_char.push(char_idx); // sentinel
+
+  let mut bs = CharBoundarySet::new(char_idx + 1);
+  bs.set(0);
+  bs.set(char_idx);
+  for (byte_off, word) in text.unicode_word_indices() {
+    let start_char = byte_to_char[byte_off];
+    let end_byte = byte_off + word.len();
+    let end_char = byte_to_char[end_byte];
+    bs.set(start_char);
+    bs.set(end_char);
+  }
+  bs
+}
+
+/// Boundary mode: inline or UAX#29 segmenter.
+enum BoundaryMode {
+  Inline,
+  Segmenter { bitset: CharBoundarySet },
+}
+
+impl BoundaryMode {
+  fn is_whole_word(
+    &self,
+    chars: &[char],
+    start: usize,
+    end: usize,
+  ) -> bool {
+    match self {
+      BoundaryMode::Inline => {
+        is_whole_word_inline(chars, start, end)
+      }
+      BoundaryMode::Segmenter { bitset } => {
+        if start >= end || end > chars.len() {
+          return false;
+        }
+        bitset.contains(start) && bitset.contains(end)
+      }
+    }
+  }
+}
+
+/// Choose boundary mode based on text content.
+fn choose_boundary_mode(
+  text: &str,
+  unicode_boundaries: bool,
+) -> BoundaryMode {
+  if unicode_boundaries && needs_segmenter(text) {
+    BoundaryMode::Segmenter {
+      bitset: compute_char_boundaries(text),
+    }
+  } else {
+    BoundaryMode::Inline
+  }
 }
 
 // ─── Combining mark detection ────────────────
@@ -565,6 +690,7 @@ pub struct FuzzySearch {
   normalize_diacritics: bool,
   case_insensitive: bool,
   whole_words: bool,
+  unicode_boundaries: bool,
   use_damerau: bool,
   pattern_count: u32,
 }
@@ -604,6 +730,8 @@ impl FuzzySearch {
     let case_insensitive =
       opts.case_insensitive.unwrap_or(false);
     let whole_words = opts.whole_words.unwrap_or(true);
+    let unicode_boundaries =
+      opts.unicode_boundaries.unwrap_or(true);
     let use_damerau = matches!(
       opts.metric,
       Some(Metric::DamerauLevenshtein)
@@ -656,6 +784,7 @@ impl FuzzySearch {
       normalize_diacritics: normalize,
       case_insensitive,
       whole_words,
+      unicode_boundaries,
       use_damerau,
       pattern_count,
     })
@@ -722,6 +851,10 @@ impl FuzzySearch {
   #[napi]
   pub fn is_match(&self, haystack: String) -> bool {
     let orig_chars: Vec<char> = haystack.chars().collect();
+    let boundary = choose_boundary_mode(
+      &haystack,
+      self.unicode_boundaries,
+    );
     let (text_chars, pos_map) = normalize_with_map(
       &haystack,
       self.normalize_diacritics,
@@ -746,7 +879,7 @@ impl FuzzySearch {
         }
         let orig_start = pos_map[start];
         let orig_end = pos_map[end];
-        if is_whole_word_chars(
+        if boundary.is_whole_word(
           &orig_chars,
           orig_start,
           orig_end,
@@ -769,6 +902,10 @@ impl FuzzySearch {
   ) -> Uint32Array {
     let orig_chars: Vec<char> = haystack.chars().collect();
     let utf16_map = build_utf16_map(&orig_chars);
+    let boundary = choose_boundary_mode(
+      &haystack,
+      self.unicode_boundaries,
+    );
     let (text_chars, pos_map) = normalize_with_map(
       &haystack,
       self.normalize_diacritics,
@@ -795,7 +932,7 @@ impl FuzzySearch {
         let orig_end = pos_map[end];
 
         if self.whole_words
-          && !is_whole_word_chars(
+          && !boundary.is_whole_word(
             &orig_chars,
             orig_start,
             orig_end,
@@ -855,6 +992,10 @@ impl FuzzySearch {
     }
 
     let orig_chars: Vec<char> = haystack.chars().collect();
+    let boundary = choose_boundary_mode(
+      &haystack,
+      self.unicode_boundaries,
+    );
     let (text_chars, pos_map) = normalize_with_map(
       &haystack,
       self.normalize_diacritics,
@@ -883,7 +1024,7 @@ impl FuzzySearch {
         let orig_end = pos_map[end];
 
         if self.whole_words
-          && !is_whole_word_chars(
+          && !boundary.is_whole_word(
             &orig_chars,
             orig_start,
             orig_end,

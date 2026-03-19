@@ -321,6 +321,7 @@ dependencies = [
  "napi-build",
  "napi-derive",
  "unicode-normalization",
+ "unicode-segmentation",
 ]
 
 [[package]]
