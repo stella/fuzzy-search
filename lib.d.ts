@@ -48,8 +48,11 @@ export type PatternEntry =
   | {
       pattern: string;
       /** Max edit distance. Must be less than
-       *  pattern length. @default 1 */
-      distance?: number;
+       *  pattern length. `"auto"` uses the
+       *  Elasticsearch convention: 1-2 chars → 0,
+       *  3-5 chars → 1, 6+ chars → 2.
+       *  @default 1 */
+      distance?: number | "auto";
       /** Optional name for the pattern. */
       name?: string;
     };

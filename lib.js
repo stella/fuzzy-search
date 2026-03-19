@@ -10,6 +10,18 @@ const NativeFuzzySearch = native.FuzzySearch;
  * Normalize a pattern entry to the shape
  * expected by the native constructor.
  */
+/**
+ * Resolve "auto" distance from pattern length.
+ * Follows the Elasticsearch AUTO convention:
+ *   1-2 chars → 0, 3-5 chars → 1, 6+ chars → 2.
+ */
+function resolveDistance(dist, patternLength) {
+  if (dist !== "auto") return dist;
+  if (patternLength <= 2) return 0;
+  if (patternLength <= 5) return 1;
+  return 2;
+}
+
 function normalizeEntry(p, i) {
   if (typeof p === "string") {
     return { pattern: p };
@@ -19,6 +31,15 @@ function normalizeEntry(p, i) {
     p !== null &&
     typeof p.pattern === "string"
   ) {
+    if (p.distance === "auto") {
+      return {
+        ...p,
+        distance: resolveDistance(
+          "auto",
+          p.pattern.length,
+        ),
+      };
+    }
     return p;
   }
   throw new TypeError(

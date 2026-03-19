@@ -7,6 +7,13 @@ const native = require("./fuzzy-search.wasi.cjs");
 const NativeFuzzySearch = native.FuzzySearch;
 const nativeDistance = native.distance;
 
+function resolveDistance(dist, patternLength) {
+  if (dist !== "auto") return dist;
+  if (patternLength <= 2) return 0;
+  if (patternLength <= 5) return 1;
+  return 2;
+}
+
 function normalizeEntry(p, i) {
   if (typeof p === "string") {
     return { pattern: p };
@@ -16,6 +23,15 @@ function normalizeEntry(p, i) {
     p !== null &&
     typeof p.pattern === "string"
   ) {
+    if (p.distance === "auto") {
+      return {
+        ...p,
+        distance: resolveDistance(
+          "auto",
+          p.pattern.length,
+        ),
+      };
+    }
     return p;
   }
   throw new TypeError(

@@ -595,6 +595,59 @@ describe("Damerau-Levenshtein", () => {
   });
 });
 
+// ─── distance: "auto" ────────────────────────
+
+describe("distance: auto", () => {
+  test("short pattern (≤2): exact only", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "ab", distance: "auto" }],
+      { wholeWords: false },
+    );
+    expect(fs.isMatch("ab")).toBe(true);
+    expect(fs.isMatch("ac")).toBe(false);
+  });
+
+  test("medium pattern (3-5): distance 1", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "hello", distance: "auto" }],
+      { wholeWords: false },
+    );
+    // distance 1: substitution
+    expect(fs.isMatch("hallo")).toBe(true);
+    // distance 2: too far for auto on 5 chars
+    const m = fs.findIter("hxxlo");
+    expect(
+      m.some((x) => x.distance > 1),
+    ).toBe(false);
+  });
+
+  test("long pattern (6+): distance 2", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "Gaislerová", distance: "auto" }],
+      { wholeWords: false },
+    );
+    // distance 1
+    expect(fs.isMatch("Gais1erová")).toBe(true);
+    // distance 2 (10 chars → auto = 2)
+    expect(fs.isMatch("Gais1erova")).toBe(true);
+  });
+
+  test("mixed auto and explicit", () => {
+    const fs = new FuzzySearch(
+      [
+        { pattern: "Novák", distance: "auto" },
+        { pattern: "Praha", distance: 0 },
+      ],
+      { wholeWords: true },
+    );
+    // Novák: 5 chars → auto = 1
+    expect(fs.isMatch("Nowák")).toBe(true);
+    // Praha: explicit 0
+    expect(fs.isMatch("Praho")).toBe(false);
+    expect(fs.isMatch("Praha")).toBe(true);
+  });
+});
+
 // ─── distance() function ─────────────────────
 
 describe("distance()", () => {
