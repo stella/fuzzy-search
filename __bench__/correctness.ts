@@ -326,6 +326,49 @@ if (bible) {
       bible,
     ),
   );
+
+  printResult(
+    "5 names dist 1, caseInsensitive",
+    verify("bible-ci", BIBLE_PATTERNS, bible, {
+      caseInsensitive: true,
+    }),
+  );
+
+  printResult(
+    "5 names dist 1, norm + CI + WW",
+    verify(
+      "bible-all",
+      BIBLE_PATTERNS,
+      bible,
+      {
+        normalizeDiacritics: true,
+        caseInsensitive: true,
+        wholeWords: true,
+      },
+    ),
+  );
+
+  printResult(
+    "5 names dist 1, no wholeWords",
+    verify(
+      "bible-no-ww",
+      BIBLE_PATTERNS,
+      bible,
+      { wholeWords: false },
+    ),
+  );
+
+  printResult(
+    "5 names dist 4, wholeWords",
+    verify(
+      "bible-d4",
+      BIBLE_PATTERNS.map((p) => ({
+        ...p,
+        distance: 4,
+      })),
+      bible,
+    ),
+  );
 } else {
   console.log(
     "\n### Canterbury bible.txt (not downloaded)\n",

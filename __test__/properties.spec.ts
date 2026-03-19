@@ -15,7 +15,7 @@ import fc from "fast-check";
 import { FuzzySearch } from "../lib";
 
 
-const PARAMS = { numRuns: 500 };
+const PARAMS = { numRuns: 1000 };
 
 // ─── Generators ──────────────────────────────
 
@@ -1554,6 +1554,362 @@ describe("property: no false negatives on exact", () => {
             expect(matches.length).toBeGreaterThan(
               0,
             );
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 28: CARTESIAN options × dist ──
+//
+// The true cartesian product of all option
+// combinations × distances. 16 combinations
+// (2^3 options × 2 distances) per input.
+// Verifies every match is valid under every
+// feature combination. This catches interaction
+// bugs invisible to per-feature tests.
+
+const ALL_OPTION_COMBOS: {
+  wholeWords: boolean;
+  normalizeDiacritics: boolean;
+  caseInsensitive: boolean;
+}[] = [];
+for (const ww of [false, true]) {
+  for (const nd of [false, true]) {
+    for (const ci of [false, true]) {
+      ALL_OPTION_COMBOS.push({
+        wholeWords: ww,
+        normalizeDiacritics: nd,
+        caseInsensitive: ci,
+      });
+    }
+  }
+}
+
+describe("property: cartesian options × distance", () => {
+  test("all 16 combos: every match is valid", () => {
+    const czChar = fc.constantFrom(
+      ..."aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž ABCČDĎEÉĚ.,!?-".split(
+        "",
+      ),
+    );
+    const czPat = fc.string({
+      minLength: 4,
+      maxLength: 8,
+      unit: czChar,
+    });
+    const czStr = fc.string({
+      minLength: 0,
+      maxLength: 60,
+      unit: czChar,
+    });
+    fc.assert(
+      fc.property(
+        fc.array(czPat, {
+          minLength: 1,
+          maxLength: 3,
+        }),
+        czStr,
+        maxDist,
+        (pats, hay, k) => {
+          for (const opts of ALL_OPTION_COMBOS) {
+            const fs = new FuzzySearch(
+              pats.map((p) => ({
+                pattern: p,
+                distance: k,
+              })),
+              opts,
+            );
+            for (const m of fs.findIter(hay)) {
+              // 1. text field correct
+              expect(
+                hay.slice(m.start, m.end),
+              ).toBe(m.text);
+
+              // 2. distance correct (normalized)
+              let oPat = pats[m.pattern]!;
+              let oText = m.text;
+              if (opts.normalizeDiacritics) {
+                oPat = stripDiacritics(oPat);
+                oText = stripDiacritics(oText);
+              }
+              if (opts.caseInsensitive) {
+                oPat = oPat.toLowerCase();
+                oText = oText.toLowerCase();
+              }
+              const d = levenshtein(oPat, oText);
+              expect(d).toBeLessThanOrEqual(k);
+
+              // 3. word boundary correct
+              if (opts.wholeWords) {
+                const before = hay[m.start - 1];
+                const after = hay[m.end];
+                if (before) {
+                  expect(
+                    !isWordChar(before) ||
+                      isCjk(m.text[0]!),
+                  ).toBe(true);
+                }
+                if (after) {
+                  expect(
+                    !isWordChar(after) ||
+                      isCjk(m.text.at(-1)!),
+                  ).toBe(true);
+                }
+              }
+
+              // 4. non-overlapping
+              // (checked globally below)
+            }
+
+            // 5. non-overlapping check
+            const matches = fs.findIter(hay);
+            for (
+              let i = 1;
+              i < matches.length;
+              i++
+            ) {
+              expect(
+                matches[i]!.start,
+              ).toBeGreaterThanOrEqual(
+                matches[i - 1]!.end,
+              );
+            }
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 29: duplicate patterns ────────
+//
+// Passing the same pattern twice must not cause
+// crashes, double-matches, or incorrect results.
+
+describe("property: duplicate patterns", () => {
+  test("duplicated patterns produce valid matches", () => {
+    fc.assert(
+      fc.property(
+        fc.string({
+          minLength: 3,
+          maxLength: 10,
+        }),
+        haystack,
+        maxDist,
+        (pat, hay, k) => {
+          const single = buildFS(
+            [pat],
+            k,
+            false,
+          );
+          const doubled = buildFS(
+            [pat, pat],
+            k,
+            false,
+          );
+          const sMatches = single.findIter(hay);
+          const dMatches = doubled.findIter(hay);
+
+          // Doubled should find the same regions
+          // (possibly attributed to pattern 0 or 1).
+          for (const dm of dMatches) {
+            const d = levenshtein(pat, dm.text);
+            expect(d).toBeLessThanOrEqual(k);
+          }
+
+          // Same number of matched regions.
+          expect(dMatches.length).toBe(
+            sMatches.length,
+          );
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 30: substring patterns ─────────
+//
+// If pattern A is a substring of pattern B, and
+// both are searched with the same distance, the
+// results must be valid. Stresses the multi-
+// pattern overlap logic differently from prefix
+// chains.
+
+describe("property: substring patterns", () => {
+  test("contained patterns produce valid matches", () => {
+    fc.assert(
+      fc.property(
+        fc.string({
+          minLength: 4,
+          maxLength: 10,
+        }),
+        fc.nat({ max: 3 }),
+        fc.nat({ max: 3 }),
+        haystack,
+        (base, trimL, trimR, hay) => {
+          const left = Math.min(
+            trimL,
+            base.length - 3,
+          );
+          const right = Math.min(
+            trimR,
+            base.length - left - 3,
+          );
+          const inner = base.slice(
+            left,
+            base.length - right,
+          );
+          if (
+            inner.length < 3 ||
+            inner === base
+          )
+            return;
+
+          const fs = new FuzzySearch(
+            [
+              { pattern: base, distance: 1 },
+              { pattern: inner, distance: 1 },
+            ],
+            { wholeWords: false },
+          );
+          for (const m of fs.findIter(hay)) {
+            const pat =
+              m.pattern === 0 ? base : inner;
+            const d = levenshtein(pat, m.text);
+            expect(d).toBeLessThanOrEqual(1);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 31: long patterns (near 64) ───
+//
+// Patterns close to the 64-char Myers limit.
+// Catches bit-overflow bugs in the u64 vectors.
+
+describe("property: long patterns", () => {
+  test("patterns 50-63 chars: matches valid", () => {
+    const longPat = fc.string({
+      minLength: 50,
+      maxLength: 63,
+      unit: fc.constantFrom(
+        ..."abcdefghijklmnopqrstuvwxyz".split(""),
+      ),
+    });
+    fc.assert(
+      fc.property(
+        longPat,
+        fc.string({
+          minLength: 0,
+          maxLength: 200,
+        }),
+        (pat, hay) => {
+          const fs = new FuzzySearch(
+            [{ pattern: pat, distance: 1 }],
+            { wholeWords: false },
+          );
+          for (const m of fs.findIter(hay)) {
+            expect(
+              hay.slice(m.start, m.end),
+            ).toBe(m.text);
+            const d = levenshtein(pat, m.text);
+            expect(d).toBeLessThanOrEqual(1);
+            expect(m.distance).toBe(d);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 32: high distance (4-5) ───────
+//
+// Now that we lifted the distance cap, test
+// distance 4-5 on realistic-length patterns.
+
+describe("property: high distance (4-5)", () => {
+  test("distance 4-5: all matches valid", () => {
+    fc.assert(
+      fc.property(
+        fc.string({
+          minLength: 8,
+          maxLength: 15,
+        }),
+        fc.string({
+          minLength: 0,
+          maxLength: 80,
+        }),
+        fc.constantFrom(4, 5),
+        (pat, hay, k) => {
+          fc.pre(
+            Array.from(pat).length > k,
+          );
+          const fs = new FuzzySearch(
+            [{ pattern: pat, distance: k }],
+            { wholeWords: false },
+          );
+          for (const m of fs.findIter(hay)) {
+            const d = levenshtein(pat, m.text);
+            expect(d).toBeLessThanOrEqual(k);
+            expect(m.distance).toBe(d);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 33: CJK text ──────────────────
+//
+// CJK characters (always word boundaries) with
+// fuzzy matching. Verifies word boundary and
+// UTF-16 offset logic for multi-byte text.
+
+describe("property: CJK text", () => {
+  test("CJK + Latin mix: matches valid", () => {
+    const cjkChar = fc.constantFrom(
+      ..."abcdefgh東京日本裁判所大阪名古屋 ".split(
+        "",
+      ),
+    );
+    const cjkPat = fc.string({
+      minLength: 3,
+      maxLength: 6,
+      unit: cjkChar,
+    });
+    const cjkStr = fc.string({
+      minLength: 0,
+      maxLength: 60,
+      unit: cjkChar,
+    });
+    fc.assert(
+      fc.property(
+        fc.array(cjkPat, {
+          minLength: 1,
+          maxLength: 3,
+        }),
+        cjkStr,
+        (pats, hay) => {
+          const fs = buildFS(pats, 1, true);
+          for (const m of fs.findIter(hay)) {
+            expect(
+              hay.slice(m.start, m.end),
+            ).toBe(m.text);
+            const d = levenshtein(
+              pats[m.pattern]!,
+              m.text,
+            );
+            expect(d).toBeLessThanOrEqual(1);
           }
         },
       ),
