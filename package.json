@@ -26,7 +26,12 @@
     "lib.d.ts",
     "lib.wasm.js",
     "index.js",
-    "index.d.ts"
+    "index.d.ts",
+    "fuzzy-search.wasi.cjs",
+    "fuzzy-search.wasi-browser.js",
+    "browser.js",
+    "wasi-worker.mjs",
+    "wasi-worker-browser.mjs"
   ],
   "main": "lib.js",
   "module": "lib.mjs",
