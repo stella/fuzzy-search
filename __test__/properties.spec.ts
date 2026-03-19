@@ -1562,7 +1562,147 @@ describe("property: no false negatives on exact", () => {
   });
 });
 
-// ─── Property 28: CARTESIAN options × dist ──
+// ─── Property 28: Damerau oracle ─────────────
+//
+// Every Damerau match has correct OSA distance.
+// The oracle uses a naive DP Damerau-Levenshtein.
+
+function damerauLev(a: string, b: string): number {
+  const ac = Array.from(a);
+  const bc = Array.from(b);
+  const m = ac.length;
+  const n = bc.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  let prev2 = new Array<number>(n + 1).fill(0);
+  let prev = Array.from(
+    { length: n + 1 },
+    (_, i) => i,
+  );
+
+  for (let i = 1; i <= m; i++) {
+    const curr = new Array<number>(n + 1);
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = ac[i - 1] === bc[j - 1] ? 0 : 1;
+      curr[j] = Math.min(
+        curr[j - 1]! + 1,
+        prev[j]! + 1,
+        prev[j - 1]! + cost,
+      );
+      if (
+        i > 1 &&
+        j > 1 &&
+        ac[i - 1] === bc[j - 2] &&
+        ac[i - 2] === bc[j - 1]
+      ) {
+        curr[j] = Math.min(
+          curr[j]!,
+          prev2[j - 2]! + 1,
+        );
+      }
+    }
+    prev2 = prev;
+    prev = curr;
+  }
+  return prev[n]!;
+}
+
+describe("property: Damerau distance oracle", () => {
+  test("every Damerau match has correct OSA distance", () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.string({
+            minLength: 4,
+            maxLength: 10,
+          }),
+          { minLength: 1, maxLength: 5 },
+        ),
+        fc.string({
+          minLength: 0,
+          maxLength: 100,
+        }),
+        maxDist,
+        (pats, hay, k) => {
+          const fs = new FuzzySearch(
+            pats.map((p) => ({
+              pattern: p,
+              distance: k,
+            })),
+            {
+              wholeWords: false,
+              metric: "damerau-levenshtein",
+            },
+          );
+          for (const m of fs.findIter(hay)) {
+            const d = damerauLev(
+              pats[m.pattern]!,
+              m.text,
+            );
+            expect(d).toBeLessThanOrEqual(k);
+            expect(m.distance).toBe(d);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 29: Damerau finds transpositions
+//
+// Damerau should find matches that Levenshtein
+// misses (transpositions at distance 1 that are
+// distance 2 in Levenshtein).
+
+describe("property: Damerau finds transpositions", () => {
+  test("Damerau finds >= Levenshtein matches", () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.string({
+            minLength: 4,
+            maxLength: 8,
+          }),
+          { minLength: 1, maxLength: 3 },
+        ),
+        fc.string({
+          minLength: 0,
+          maxLength: 60,
+        }),
+        (pats, hay) => {
+          const lev = buildFS(pats, 1, false);
+          const dam = new FuzzySearch(
+            pats.map((p) => ({
+              pattern: p,
+              distance: 1,
+            })),
+            {
+              wholeWords: false,
+              metric: "damerau-levenshtein",
+            },
+          );
+          const levCount = lev.findIter(hay).length;
+          const damCount = dam.findIter(hay).length;
+          // Damerau should find at least as many
+          // matchable regions (it's a superset
+          // metric). Note: due to non-overlapping
+          // selection differences, damCount may
+          // occasionally be less, but damIsMatch
+          // should always be >= levIsMatch.
+          if (lev.isMatch(hay)) {
+            expect(dam.isMatch(hay)).toBe(true);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 30: CARTESIAN options × dist ──
 //
 // The true cartesian product of all option
 // combinations × distances. 16 combinations

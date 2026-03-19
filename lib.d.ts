@@ -1,5 +1,19 @@
+/** Distance metric for fuzzy matching. */
+export type Metric =
+  | "levenshtein"
+  | "damerau-levenshtein";
+
 /** Options for constructing a `FuzzySearch`. */
 export type Options = {
+  /**
+   * Distance metric.
+   * - `"levenshtein"`: insertions, deletions,
+   *   substitutions (default).
+   * - `"damerau-levenshtein"`: + transpositions
+   *   of adjacent characters (ab → ba = 1 edit).
+   * @default "levenshtein"
+   */
+  metric?: Metric;
   /**
    * Strip diacritics before matching (NFD
    * decompose + remove combining marks).

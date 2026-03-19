@@ -468,3 +468,129 @@ describe("edge cases", () => {
     expect(fs.isMatch("xz")).toBe(false);
   });
 });
+
+// ─── Damerau-Levenshtein ─────────────────────
+
+describe("Damerau-Levenshtein", () => {
+  test("transposition costs 1 (not 2)", () => {
+    // Standard Levenshtein: "abcd" → "abdc" = 2
+    //   (sub c→d + sub d→c)
+    // Damerau: "abcd" → "abdc" = 1 (transpose)
+    const lev = new FuzzySearch(
+      [{ pattern: "abcd", distance: 1 }],
+      {
+        wholeWords: false,
+        metric: "levenshtein",
+      },
+    );
+    const dam = new FuzzySearch(
+      [{ pattern: "abcd", distance: 1 }],
+      {
+        wholeWords: false,
+        metric: "damerau-levenshtein",
+      },
+    );
+    // Levenshtein can't find "abdc" at dist 1
+    const levM = lev.findIter("xxabdcxx");
+    expect(
+      levM.some((m) => m.text === "abdc"),
+    ).toBe(false);
+    // Damerau finds it
+    const damM = dam.findIter("xxabdcxx");
+    expect(
+      damM.some(
+        (m) => m.text === "abdc" && m.distance === 1,
+      ),
+    ).toBe(true);
+  });
+
+  test("transposition in real name", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "Novák", distance: 1 }],
+      {
+        wholeWords: true,
+        metric: "damerau-levenshtein",
+      },
+    );
+    // "Nvoák" = transposition of o and v
+    expect(fs.isMatch("Nvoák podepsal")).toBe(
+      true,
+    );
+    // Standard Levenshtein would need dist 2
+    const lev = new FuzzySearch(
+      [{ pattern: "Novák", distance: 1 }],
+      { wholeWords: true, metric: "levenshtein" },
+    );
+    expect(lev.isMatch("Nvoák podepsal")).toBe(
+      false,
+    );
+  });
+
+  test("non-transposition edits unchanged", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "hello", distance: 1 }],
+      {
+        wholeWords: false,
+        metric: "damerau-levenshtein",
+      },
+    );
+    // Substitution: still dist 1
+    const m1 = fs.findIter("hallo");
+    expect(m1).toHaveLength(1);
+    expect(m1[0]!.distance).toBe(1);
+
+    // Deletion: still dist 1
+    const m2 = fs.findIter("helo");
+    expect(m2).toHaveLength(1);
+    expect(m2[0]!.distance).toBe(1);
+
+    // Exact: still dist 0
+    const m3 = fs.findIter("hello");
+    expect(m3).toHaveLength(1);
+    expect(m3[0]!.distance).toBe(0);
+  });
+
+  test("distance field reflects Damerau metric", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "abcd", distance: 1 }],
+      {
+        wholeWords: false,
+        metric: "damerau-levenshtein",
+      },
+    );
+    const matches = fs.findIter("abdc");
+    expect(matches).toHaveLength(1);
+    // "abdc" is a transposition of "abcd" → dist 1
+    expect(matches[0]!.distance).toBe(1);
+    expect(matches[0]!.text).toBe("abdc");
+  });
+
+  test("default metric is levenshtein", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "abcd", distance: 1 }],
+      { wholeWords: false },
+    );
+    // "abdc" is dist 2 in standard Levenshtein
+    // (two substitutions), not findable at dist 1.
+    const m = fs.findIter("xxabdcxx");
+    expect(
+      m.some((x) => x.text === "abdc"),
+    ).toBe(false);
+  });
+
+  test("replaceAll with Damerau", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "test", distance: 1 }],
+      {
+        wholeWords: true,
+        metric: "damerau-levenshtein",
+      },
+    );
+    // "tset" = transposition → dist 1 in Damerau
+    const result = fs.replaceAll(
+      "the tset passed",
+      ["[OK]"],
+    );
+    expect(result).toBe("the [OK] passed");
+  });
+});

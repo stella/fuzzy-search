@@ -47,8 +47,25 @@ export interface FuzzyMatch {
   distance: number
 }
 
+/** Distance metric for fuzzy matching. */
+export declare const enum Metric {
+  /**
+   * Standard Levenshtein: insertions, deletions,
+   * substitutions.
+   */
+  Levenshtein = 'levenshtein',
+  /**
+   * Damerau-Levenshtein: insertions, deletions,
+   * substitutions, and transpositions of
+   * adjacent characters.
+   */
+  DamerauLevenshtein = 'damerau-levenshtein'
+}
+
 /** Options for constructing a `FuzzySearch`. */
 export interface Options {
+  /** Distance metric. Default: `"levenshtein"`. */
+  metric?: Metric
   /**
    * Strip diacritics before matching (NFD
    * decompose + remove combining marks).

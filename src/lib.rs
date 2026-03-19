@@ -33,9 +33,25 @@ pub struct PatternEntry {
   pub name: Option<String>,
 }
 
+/// Distance metric for fuzzy matching.
+#[napi(string_enum)]
+pub enum Metric {
+  /// Standard Levenshtein: insertions, deletions,
+  /// substitutions.
+  #[napi(value = "levenshtein")]
+  Levenshtein,
+  /// Damerau-Levenshtein: insertions, deletions,
+  /// substitutions, and transpositions of
+  /// adjacent characters.
+  #[napi(value = "damerau-levenshtein")]
+  DamerauLevenshtein,
+}
+
 /// Options for constructing a `FuzzySearch`.
 #[napi(object)]
 pub struct Options {
+  /// Distance metric. Default: `"levenshtein"`.
+  pub metric: Option<Metric>,
   /// Strip diacritics before matching (NFD
   /// decompose + remove combining marks).
   /// Default: `false`.
@@ -240,7 +256,7 @@ fn myers_find_ends(
   results
 }
 
-// ─── Levenshtein distance ────────────────────
+// ─── Distance functions ─────────────────────
 
 /// Standard Levenshtein edit distance on char
 /// slices. O(m × n) time, O(n) space.
@@ -270,6 +286,60 @@ fn levenshtein(a: &[char], b: &[char]) -> usize {
   prev[n]
 }
 
+/// Optimal String Alignment (restricted Damerau-
+/// Levenshtein) on char slices. Counts adjacent
+/// transpositions as a single edit.
+fn damerau_levenshtein(a: &[char], b: &[char]) -> usize {
+  let m = a.len();
+  let n = b.len();
+  if m == 0 {
+    return n;
+  }
+  if n == 0 {
+    return m;
+  }
+
+  // Need two previous rows for transposition.
+  let mut prev2: Vec<usize> = vec![0; n + 1];
+  let mut prev: Vec<usize> = (0..=n).collect();
+
+  for i in 1..=m {
+    let mut curr = vec![0usize; n + 1];
+    curr[0] = i;
+    for j in 1..=n {
+      let cost = usize::from(a[i - 1] != b[j - 1]);
+      curr[j] = (curr[j - 1] + 1)
+        .min(prev[j] + 1)
+        .min(prev[j - 1] + cost);
+      // Transposition: if a[i-1]==b[j-2] and
+      // a[i-2]==b[j-1], swapping is 1 edit.
+      if i > 1
+        && j > 1
+        && a[i - 1] == b[j - 2]
+        && a[i - 2] == b[j - 1]
+      {
+        curr[j] = curr[j].min(prev2[j - 2] + 1);
+      }
+    }
+    prev2 = prev;
+    prev = curr;
+  }
+  prev[n]
+}
+
+/// Dispatch to the correct distance function.
+fn edit_distance(
+  a: &[char],
+  b: &[char],
+  use_damerau: bool,
+) -> usize {
+  if use_damerau {
+    damerau_levenshtein(a, b)
+  } else {
+    levenshtein(a, b)
+  }
+}
+
 // ─── Start position finder ───────────────────
 //
 // Given an end position from Myers, find the
@@ -282,9 +352,15 @@ fn find_start(
   text: &[char],
   end: usize,
   dist: u8,
+  actual_max: u8,
+  use_damerau: bool,
 ) -> Option<(usize, u8)> {
   let m = pattern.len();
+  // `dist` determines the window range (from
+  // Myers prefilter). `actual_max` is the real
+  // distance threshold for the chosen metric.
   let k = dist as usize;
+  let max_k = actual_max as usize;
 
   // Enforce min_len >= 1 to avoid zero-length
   // matches (e.g. pattern "ab" dist 2 matching "").
@@ -294,8 +370,12 @@ fn find_start(
   // Try exact pattern length first (most common).
   if end >= m {
     let start = end - m;
-    let d = levenshtein(pattern, &text[start..end]);
-    if d <= k {
+    let d = edit_distance(
+      pattern,
+      &text[start..end],
+      use_damerau,
+    );
+    if d <= max_k {
       return Some((start, d as u8));
     }
   }
@@ -310,8 +390,12 @@ fn find_start(
       continue;
     }
     let start = end - len;
-    let d = levenshtein(pattern, &text[start..end]);
-    if d <= k {
+    let d = edit_distance(
+      pattern,
+      &text[start..end],
+      use_damerau,
+    );
+    if d <= max_k {
       match best {
         None => best = Some((start, d as u8)),
         Some((_, bd)) if (d as u8) < bd => {
@@ -335,7 +419,9 @@ fn extract_matches(
   pattern: &[char],
   text: &[char],
   end_positions: &[(usize, u8)],
-  max_dist: u8,
+  window_dist: u8,
+  actual_max: u8,
+  use_damerau: bool,
 ) -> Vec<(usize, usize, u8)> {
   if end_positions.is_empty() {
     return vec![];
@@ -358,7 +444,7 @@ fn extract_matches(
     // Window extends end + 2m + k to ensure we
     // catch better matches further ahead (e.g.,
     // an exact match preceded by noisy text).
-    let k = max_dist as usize;
+    let k = window_dist as usize;
     let window_bound = end + 2 * m + k;
     let mut best: Option<(usize, usize, u8)> = None;
     let mut best_end_idx = i;
@@ -369,9 +455,14 @@ fn extract_matches(
         || end_positions[j].0 == end_positions[j - 1].0 + 1)
     {
       let (je, jd) = end_positions[j];
-      if let Some((start, actual_dist)) =
-        find_start(pattern, text, je, jd)
-      {
+      if let Some((start, actual_dist)) = find_start(
+        pattern,
+        text,
+        je,
+        jd,
+        actual_max,
+        use_damerau,
+      ) {
         if start >= last_match_end {
           let len = je - start;
           let len_diff = len.abs_diff(m);
@@ -452,11 +543,13 @@ pub struct FuzzySearch {
   normalize_diacritics: bool,
   case_insensitive: bool,
   whole_words: bool,
+  use_damerau: bool,
   pattern_count: u32,
 }
 
 fn default_options() -> Options {
   Options {
+    metric: None,
     normalize_diacritics: None,
     unicode_boundaries: None,
     whole_words: None,
@@ -489,6 +582,10 @@ impl FuzzySearch {
     let case_insensitive =
       opts.case_insensitive.unwrap_or(false);
     let whole_words = opts.whole_words.unwrap_or(true);
+    let use_damerau = matches!(
+      opts.metric,
+      Some(Metric::DamerauLevenshtein)
+    );
     let pattern_count = patterns.len() as u32;
 
     let mut infos = Vec::with_capacity(patterns.len());
@@ -537,6 +634,7 @@ impl FuzzySearch {
       normalize_diacritics: normalize,
       case_insensitive,
       whole_words,
+      use_damerau,
       pattern_count,
     })
   }
@@ -545,6 +643,56 @@ impl FuzzySearch {
   #[napi(getter)]
   pub fn pattern_count(&self) -> u32 {
     self.pattern_count
+  }
+
+  /// Find end positions. For Damerau, run Myers
+  /// with expanded distance (2k) as a prefilter
+  /// since Levenshtein(a,b) <= 2 * Damerau(a,b).
+  /// The actual Damerau distance is computed in
+  /// find_start during verification.
+  fn find_ends(
+    &self,
+    pattern: &[char],
+    text: &[char],
+    max_dist: u8,
+  ) -> Vec<(usize, u8)> {
+    if self.use_damerau {
+      // Conservative prefilter: any Damerau-k
+      // match has Levenshtein distance <= 2k.
+      let prefilter_dist = (max_dist as usize * 2)
+        .min(pattern.len().saturating_sub(1))
+        as u8;
+      myers_find_ends(pattern, text, prefilter_dist)
+    } else {
+      myers_find_ends(pattern, text, max_dist)
+    }
+  }
+
+  /// Dispatch extract_matches with metric.
+  fn extract(
+    &self,
+    pattern: &[char],
+    text: &[char],
+    ends: &[(usize, u8)],
+    max_dist: u8,
+  ) -> Vec<(usize, usize, u8)> {
+    // For Damerau: use expanded window for
+    // candidate search, but filter by actual
+    // max_dist via the distance function.
+    let window_dist = if self.use_damerau {
+      (max_dist as usize * 2)
+        .min(pattern.len().saturating_sub(1)) as u8
+    } else {
+      max_dist
+    };
+    extract_matches(
+      pattern,
+      text,
+      ends,
+      window_dist,
+      max_dist,
+      self.use_damerau,
+    )
   }
 
   /// Returns `true` if any pattern matches
@@ -559,12 +707,12 @@ impl FuzzySearch {
     );
 
     for pat in &self.patterns {
-      let ends = myers_find_ends(
+      let ends = self.find_ends(
         &pat.chars,
         &text_chars,
         pat.max_dist,
       );
-      let matches = extract_matches(
+      let matches = self.extract(
         &pat.chars,
         &text_chars,
         &ends,
@@ -608,12 +756,12 @@ impl FuzzySearch {
     let mut all: Vec<(u32, u32, u32, u32)> = Vec::new();
 
     for (idx, pat) in self.patterns.iter().enumerate() {
-      let ends = myers_find_ends(
+      let ends = self.find_ends(
         &pat.chars,
         &text_chars,
         pat.max_dist,
       );
-      let matches = extract_matches(
+      let matches = self.extract(
         &pat.chars,
         &text_chars,
         &ends,
@@ -696,12 +844,12 @@ impl FuzzySearch {
     let mut all: Vec<(usize, usize, u32, u8)> = Vec::new();
 
     for (idx, pat) in self.patterns.iter().enumerate() {
-      let ends = myers_find_ends(
+      let ends = self.find_ends(
         &pat.chars,
         &text_chars,
         pat.max_dist,
       );
-      let matches = extract_matches(
+      let matches = self.extract(
         &pat.chars,
         &text_chars,
         &ends,
