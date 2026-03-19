@@ -84,4 +84,10 @@ class FuzzySearch {
   }
 }
 
-export { FuzzySearch };
+const nativeDistance = native.distance;
+
+function distance(a, b, metric) {
+  return nativeDistance(a, b, metric ?? null);
+}
+
+export { FuzzySearch, distance };

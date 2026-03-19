@@ -577,4 +577,5 @@ if (!nativeBinding) {
 
 module.exports = nativeBinding
 module.exports.FuzzySearch = nativeBinding.FuzzySearch
+module.exports.distance = nativeBinding.distance
 module.exports.Metric = nativeBinding.Metric

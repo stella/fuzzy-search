@@ -88,4 +88,16 @@ class FuzzySearch {
   }
 }
 
+const nativeDistance = native.distance;
+
+/**
+ * Compute edit distance between two strings.
+ * Uses Unicode characters (not UTF-16 code
+ * units), so emoji are handled correctly.
+ */
+function distance(a, b, metric) {
+  return nativeDistance(a, b, metric ?? null);
+}
+
 module.exports.FuzzySearch = FuzzySearch;
+module.exports.distance = distance;

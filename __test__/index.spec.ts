@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { FuzzySearch } from "../lib";
+import { FuzzySearch, distance } from "../lib";
 
 // ─── Core functionality ───────────────────────
 
@@ -592,5 +592,135 @@ describe("Damerau-Levenshtein", () => {
       ["[OK]"],
     );
     expect(result).toBe("the [OK] passed");
+  });
+});
+
+// ─── distance() function ─────────────────────
+
+describe("distance()", () => {
+  test("basic Levenshtein", () => {
+    expect(distance("", "")).toBe(0);
+    expect(distance("abc", "abc")).toBe(0);
+    expect(distance("abc", "axc")).toBe(1);
+    expect(distance("abc", "ab")).toBe(1);
+    expect(distance("abc", "abcd")).toBe(1);
+    expect(distance("kitten", "sitting")).toBe(3);
+  });
+
+  test("Damerau-Levenshtein", () => {
+    // Transposition = 1
+    expect(
+      distance("abcd", "abdc", "damerau-levenshtein"),
+    ).toBe(1);
+    expect(
+      distance("test", "tset", "damerau-levenshtein"),
+    ).toBe(1);
+    // Standard Levenshtein = 2
+    expect(distance("abcd", "abdc")).toBe(2);
+    expect(distance("test", "tset")).toBe(2);
+  });
+
+  test("Unicode characters (not UTF-16)", () => {
+    // Emoji are single characters
+    expect(distance("😀", "😀")).toBe(0);
+    expect(distance("😀x", "😀y")).toBe(1);
+    expect(distance("😀🎉", "🎉😀")).toBe(2);
+    expect(
+      distance(
+        "😀🎉",
+        "🎉😀",
+        "damerau-levenshtein",
+      ),
+    ).toBe(1);
+  });
+
+  test("Czech diacritics", () => {
+    expect(distance("Novák", "Nowák")).toBe(1);
+    expect(distance("Příbram", "Pribram")).toBe(2);
+    expect(distance("č", "c")).toBe(1);
+  });
+
+  test("empty strings", () => {
+    expect(distance("", "abc")).toBe(3);
+    expect(distance("abc", "")).toBe(3);
+    expect(distance("", "")).toBe(0);
+  });
+
+  test("symmetric", () => {
+    expect(distance("abc", "xyz")).toBe(
+      distance("xyz", "abc"),
+    );
+    expect(
+      distance("hello", "world"),
+    ).toBe(distance("world", "hello"));
+  });
+});
+
+// ─── distance() vs js-levenshtein (oracle) ───
+//
+// Proves js-levenshtein is buggy on emoji
+// (counts UTF-16 surrogate pairs as two chars).
+
+describe("distance() vs js-levenshtein", () => {
+  // We need the npm package for this test.
+  // Skip gracefully if not installed.
+  let jsLev: ((a: string, b: string) => number) | null =
+    null;
+  try {
+    jsLev = require(
+      "../__bench__/node_modules/js-levenshtein",
+    );
+  } catch {
+    // bench deps not installed
+  }
+
+  test("ASCII: identical to js-levenshtein", () => {
+    if (!jsLev) return;
+    const pairs = [
+      ["", ""],
+      ["abc", "abc"],
+      ["kitten", "sitting"],
+      ["saturday", "sunday"],
+      ["Novak", "Nowak"],
+      ["hello", "hallo"],
+      ["test", ""],
+    ];
+    for (const [a, b] of pairs) {
+      expect(distance(a!, b!)).toBe(jsLev(a!, b!));
+    }
+  });
+
+  test("emoji: js-levenshtein is WRONG on different emoji", () => {
+    if (!jsLev) return;
+
+    // Same emoji: both agree (surrogate pairs
+    // happen to match char-by-char).
+    expect(distance("😀x", "😀y")).toBe(1);
+    expect(jsLev("😀x", "😀y")).toBe(1);
+
+    // DIFFERENT emoji: js-levenshtein counts
+    // surrogate pairs as 2 chars → wrong answer.
+    // "🎉" vs "🔥": one char substitution.
+    // Correct: 1. js-levenshtein: 2.
+    expect(distance("🎉", "🔥")).toBe(1);
+    expect(jsLev("🎉", "🔥")).toBe(2); // WRONG
+
+    // "a🎉b" vs "a🔥b": one substitution.
+    // Correct: 1. js-levenshtein: 2.
+    expect(distance("a🎉b", "a🔥b")).toBe(1);
+    expect(jsLev("a🎉b", "a🔥b")).toBe(2); // WRONG
+
+    // "🎉🔥" vs "🔥🎉": swap of two emoji.
+    // Correct Levenshtein: 2, Damerau: 1.
+    // js-levenshtein: 4 (counts 4 surrogates).
+    expect(distance("🎉🔥", "🔥🎉")).toBe(2);
+    expect(jsLev("🎉🔥", "🔥🎉")).toBe(4); // WRONG
+    expect(
+      distance(
+        "🎉🔥",
+        "🔥🎉",
+        "damerau-levenshtein",
+      ),
+    ).toBe(1);
   });
 });

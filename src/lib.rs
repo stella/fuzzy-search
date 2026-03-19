@@ -505,6 +505,28 @@ fn extract_matches(
   matches
 }
 
+// ─── Standalone distance function ────────────
+
+/// Compute edit distance between two strings.
+/// Uses Unicode characters (not UTF-16 code
+/// units), so emoji and supplementary plane
+/// characters are handled correctly.
+///
+/// `metric`: `"levenshtein"` (default) or
+/// `"damerau-levenshtein"` (transpositions).
+#[napi(js_name = "distance")]
+pub fn napi_distance(
+  a: String,
+  b: String,
+  metric: Option<Metric>,
+) -> u32 {
+  let ac: Vec<char> = a.chars().collect();
+  let bc: Vec<char> = b.chars().collect();
+  let use_damerau =
+    matches!(metric, Some(Metric::DamerauLevenshtein));
+  edit_distance(&ac, &bc, use_damerau) as u32
+}
+
 // ─── UTF-16 offset mapping ──────────────────
 
 /// Build a char-index → UTF-16 code unit offset

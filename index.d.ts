@@ -35,6 +35,17 @@ export declare class FuzzySearch {
   replaceAll(haystack: string, replacements: Array<string>): string
 }
 
+/**
+ * Compute edit distance between two strings.
+ * Uses Unicode characters (not UTF-16 code
+ * units), so emoji and supplementary plane
+ * characters are handled correctly.
+ *
+ * `metric`: `"levenshtein"` (default) or
+ * `"damerau-levenshtein"` (transpositions).
+ */
+export declare function distance(a: string, b: string, metric?: Metric | undefined | null): number
+
 /** A single fuzzy match (packed representation). */
 export interface FuzzyMatch {
   /** Index into the patterns array. */

@@ -102,6 +102,29 @@ export type FuzzyMatch = {
  * // ]
  * ```
  */
+/**
+ * Compute edit distance between two strings.
+ *
+ * Uses Unicode characters (not UTF-16 code units),
+ * so emoji and supplementary plane characters are
+ * handled correctly — unlike `js-levenshtein` which
+ * counts surrogate pairs as two characters.
+ *
+ * @example
+ * ```ts
+ * distance("Novák", "Nowák");       // 1
+ * distance("abcd", "abdc");         // 2
+ * distance("abcd", "abdc",
+ *   "damerau-levenshtein");          // 1
+ * distance("😀x", "😀y");           // 1
+ * ```
+ */
+export declare function distance(
+  a: string,
+  b: string,
+  metric?: Metric,
+): number;
+
 export declare class FuzzySearch {
   constructor(
     patterns: PatternEntry[],
