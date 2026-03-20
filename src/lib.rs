@@ -6,6 +6,19 @@ use napi_derive::napi;
 use unicode_normalization::char::decompose_canonical;
 use unicode_normalization::char::is_combining_mark;
 
+/// Unicode Simple Case Fold (CaseFolding.txt S/C)
+/// plus Turkic İ→i. Always 1:1 character mapping.
+/// See `@stll/aho-corasick` for detailed rationale.
+#[inline]
+fn simple_case_fold(ch: char) -> char {
+  match ch {
+    '\u{0130}' => 'i', // İ → i (Turkic, not in S/C)
+    _ => unicode_case_mapping::case_folded(ch)
+      .and_then(|n| char::from_u32(n.get()))
+      .unwrap_or(ch),
+  }
+}
+
 /// Convert a caught panic into a napi `Error`.
 fn panic_to_napi_error(
   payload: Box<dyn std::any::Any + Send>,
@@ -284,10 +297,8 @@ fn normalize_with_map(
       decompose_canonical(ch, |dc| {
         if !is_combining_mark(dc) {
           if case_insensitive {
-            for lc in dc.to_lowercase() {
-              norm.push(lc);
-              map.push(orig_idx);
-            }
+            norm.push(simple_case_fold(dc));
+            map.push(orig_idx);
           } else {
             norm.push(dc);
             map.push(orig_idx);
@@ -296,10 +307,8 @@ fn normalize_with_map(
       });
     } else {
       // case_insensitive only
-      for lc in ch.to_lowercase() {
-        norm.push(lc);
-        map.push(orig_idx);
-      }
+      norm.push(simple_case_fold(ch));
+      map.push(orig_idx);
     }
   }
 
