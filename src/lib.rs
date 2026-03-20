@@ -14,7 +14,14 @@ fn simple_case_fold(ch: char) -> char {
   match ch {
     '\u{0130}' => 'i', // İ → i (Turkic, not in S/C)
     _ => unicode_case_mapping::case_folded(ch)
-      .and_then(|n| char::from_u32(n.get()))
+      .and_then(|n| {
+        let c = char::from_u32(n.get());
+        debug_assert!(
+          c.is_some(),
+          "case_folded returned invalid code point"
+        );
+        c
+      })
       .unwrap_or(ch),
   }
 }
