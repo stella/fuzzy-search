@@ -19,6 +19,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ── Path filter (skip native builds for non-Rust changes)
+  check-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      rust-changed: ${{ steps.filter.outputs.rust }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            rust:
+              - 'src/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - '.github/workflows/ci.yml'
+
   # ── Trust gate (PRs only) ─────────────────────
   trust-check:
     if: github.event_name == 'pull_request'
@@ -64,9 +83,10 @@ jobs:
     name: Rust checks
     if: >-
       always()
+      && needs.check-changes.outputs.rust-changed == 'true'
       && (github.event_name != 'pull_request'
           || needs.trust-check.outputs.trusted == 'true')
-    needs: [trust-check]
+    needs: [trust-check, check-changes]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -98,7 +118,11 @@ jobs:
   # ── Build (push to main + tags only) ──────────
   build:
     name: Build - ${{ matrix.settings.target }}
-    if: github.event_name != 'pull_request'
+    needs: [check-changes]
+    if: >-
+      github.event_name != 'pull_request'
+      && (startsWith(github.ref, 'refs/tags/v')
+          || needs.check-changes.outputs.rust-changed == 'true')
     runs-on: ${{ matrix.settings.os }}
     strategy:
       fail-fast: false

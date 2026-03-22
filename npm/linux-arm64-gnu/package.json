@@ -1,0 +1,39 @@
+{
+  "name": "@stll/fuzzy-search-linux-arm64-gnu",
+  "version": "0.1.0",
+  "cpu": [
+    "arm64"
+  ],
+  "main": "fuzzy-search.linux-arm64-gnu.node",
+  "files": [
+    "fuzzy-search.linux-arm64-gnu.node"
+  ],
+  "description": "NAPI-RS bindings for fuzzy string matching via Myers' bit-parallel algorithm for Node.js/Bun",
+  "keywords": [
+    "fuzzy-search",
+    "levenshtein",
+    "edit-distance",
+    "approximate-matching",
+    "napi-rs",
+    "native",
+    "rust"
+  ],
+  "homepage": "https://github.com/stella/fuzzy-search#readme",
+  "license": "MIT",
+  "engines": {
+    "node": ">= 18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stella/fuzzy-search"
+  },
+  "bugs": {
+    "url": "https://github.com/stella/fuzzy-search/issues"
+  },
+  "os": [
+    "linux"
+  ],
+  "libc": [
+    "glibc"
+  ]
+}
