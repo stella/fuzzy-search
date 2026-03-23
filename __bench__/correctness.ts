@@ -75,7 +75,7 @@ type VerifyResult = {
 };
 
 function verify(
-  label: string,
+  _label: string,
   patterns: { pattern: string; distance: number }[],
   text: string,
   opts: {

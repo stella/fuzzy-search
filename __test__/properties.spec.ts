@@ -1684,8 +1684,8 @@ describe("property: Damerau finds transpositions", () => {
               metric: "damerau-levenshtein",
             },
           );
-          const levCount = lev.findIter(hay).length;
-          const damCount = dam.findIter(hay).length;
+          lev.findIter(hay);
+          dam.findIter(hay);
           // Damerau should find at least as many
           // matchable regions (it's a superset
           // metric). Note: due to non-overlapping
