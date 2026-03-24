@@ -33,13 +33,12 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "browser": {
+        "types": "./dist/wasm.d.ts",
+        "import": "./dist/wasm.js"
+      },
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./browser": {
-      "types": "./dist/wasm.d.ts",
-      "import": "./dist/wasm.js",
-      "default": "./dist/wasm.js"
     }
   },
   "scripts": {
