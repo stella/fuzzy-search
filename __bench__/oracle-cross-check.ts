@@ -20,7 +20,7 @@ import damNpm from "damerau-levenshtein";
 // @ts-expect-error — no type declarations
 import jsLev from "js-levenshtein";
 
-import { FuzzySearch } from "../src/lib";
+import { FuzzySearch } from "../src/index";
 
 // ─── Reference distance functions ────────────
 

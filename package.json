@@ -22,32 +22,24 @@
   },
   "files": [
     "dist",
-    "lib.wasm.js",
     "index.js",
     "index.d.ts",
     "fuzzy-search.wasi.cjs",
     "fuzzy-search.wasi-browser.js",
-    "browser.js",
     "wasi-worker.mjs",
     "wasi-worker-browser.mjs"
   ],
-  "main": "dist/lib.js",
-  "module": "dist/lib.mjs",
-  "browser": {
-    "./dist/lib.js": "./lib.wasm.js",
-    "./dist/lib.mjs": "./lib.wasm.js"
-  },
-  "types": "dist/lib.d.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/lib.d.mts",
-        "default": "./dist/lib.mjs"
-      },
-      "require": {
-        "types": "./dist/lib.d.ts",
-        "default": "./dist/lib.js"
-      }
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/wasm.d.ts",
+      "import": "./dist/wasm.js",
+      "default": "./dist/wasm.js"
     }
   },
   "scripts": {

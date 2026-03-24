@@ -11,7 +11,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { FuzzySearch } from "../src/lib";
+import { FuzzySearch } from "../src/index";
 
 // ─── Levenshtein oracle ──────────────────────
 
