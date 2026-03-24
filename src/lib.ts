@@ -1,6 +1,8 @@
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
+// SAFETY: NAPI-RS auto-generated loader returns the native binding
+// object; its shape is validated by usage below.
 const native = require("../index.js") as NativeBinding;
 
 // -- Native binding types ----------------------------
