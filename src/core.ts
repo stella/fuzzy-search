@@ -1,13 +1,6 @@
-import { createRequire } from "node:module";
-
-const require = createRequire(import.meta.url);
-// SAFETY: NAPI-RS auto-generated loader returns the native binding
-// object; its shape is validated by usage below.
-const native = require("../index.js") as NativeBinding;
-
 // -- Native binding types ----------------------------
 
-type NativeBinding = {
+export type NativeBinding = {
   FuzzySearch: new (
     entries: NormalizedEntry[],
     options?: Options,
@@ -116,8 +109,6 @@ export type FuzzyMatch = {
 
 // -- Internal helpers --------------------------------
 
-const NativeFuzzySearchCtor = native.FuzzySearch;
-
 /**
  * Resolve "auto" distance from pattern length.
  * Follows the Elasticsearch AUTO convention:
@@ -194,113 +185,123 @@ const unpack = (
   return matches;
 };
 
-// -- Public API --------------------------------------
+// -- Factory -----------------------------------------
 
 /**
- * Fuzzy string matcher. Finds approximate
- * matches within edit distance k, immune to
- * typos, OCR errors, and diacritics variants.
- *
- * Uses Myers' bit-parallel algorithm for O(n)
- * scanning per pattern (patterns up to 64 chars).
- *
- * @throws {Error} If a pattern is empty, too
- *   long (> 64 chars), or distance > 3.
- *
- * @example
- * ```ts
- * const fs = new FuzzySearch([
- *   { pattern: "Gaislerova", distance: 1 },
- *   { pattern: "Novak", distance: 1 },
- * ], {
- *   normalizeDiacritics: true,
- *   wholeWords: true,
- * });
- *
- * fs.findIter("Gais1erova a Nowak");
- * // [
- * //   { pattern: 0, start: 0, end: 10,
- * //     text: "Gais1erova", distance: 1 },
- * //   { pattern: 1, start: 13, end: 18,
- * //     text: "Nowak", distance: 1 },
- * // ]
- * ```
+ * Create the public API from a native binding.
+ * This allows both native and WASM entry points
+ * to share all logic.
  */
-export class FuzzySearch {
-  private _names: (string | undefined)[];
-  private _inner: NativeFuzzySearch;
-
-  constructor(
-    patterns: PatternEntry[],
-    options?: Options,
-  ) {
-    const entries = patterns.map(normalizeEntry);
-    this._names = entries.map((e) => e.name);
-    this._inner = new NativeFuzzySearchCtor(
-      entries,
-      options,
-    );
-  }
-
-  /** Number of patterns in the matcher. */
-  get patternCount(): number {
-    return this._inner.patternCount;
-  }
+export const createApi = (native: NativeBinding) => {
+  const NativeFuzzySearchCtor = native.FuzzySearch;
+  const nativeDistance = native.distance;
 
   /**
-   * Returns `true` if any pattern matches
-   * within its edit distance.
-   */
-  isMatch(haystack: string): boolean {
-    return this._inner.isMatch(haystack);
-  }
-
-  /** Find all non-overlapping fuzzy matches. */
-  findIter(haystack: string): FuzzyMatch[] {
-    return unpack(
-      this._inner._findIterPacked(haystack),
-      haystack,
-      this._names,
-    );
-  }
-
-  /**
-   * Replace all fuzzy matches.
-   * `replacements[i]` replaces pattern `i`.
+   * Fuzzy string matcher. Finds approximate
+   * matches within edit distance k, immune to
+   * typos, OCR errors, and diacritics variants.
    *
-   * @throws {Error} If `replacements.length`
-   *   does not equal `patternCount`.
+   * Uses Myers' bit-parallel algorithm for O(n)
+   * scanning per pattern (patterns up to 64 chars).
+   *
+   * @throws {Error} If a pattern is empty, too
+   *   long (> 64 chars), or distance > 3.
+   *
+   * @example
+   * ```ts
+   * const fs = new FuzzySearch([
+   *   { pattern: "Gaislerova", distance: 1 },
+   *   { pattern: "Novak", distance: 1 },
+   * ], {
+   *   normalizeDiacritics: true,
+   *   wholeWords: true,
+   * });
+   *
+   * fs.findIter("Gais1erova a Nowak");
+   * // [
+   * //   { pattern: 0, start: 0, end: 10,
+   * //     text: "Gais1erova", distance: 1 },
+   * //   { pattern: 1, start: 13, end: 18,
+   * //     text: "Nowak", distance: 1 },
+   * // ]
+   * ```
    */
-  replaceAll(
-    haystack: string,
-    replacements: string[],
-  ): string {
-    return this._inner.replaceAll(
-      haystack,
-      replacements,
-    );
+  class FuzzySearch {
+    private _names: (string | undefined)[];
+    private _inner: NativeFuzzySearch;
+
+    constructor(
+      patterns: PatternEntry[],
+      options?: Options,
+    ) {
+      const entries = patterns.map(normalizeEntry);
+      this._names = entries.map((e) => e.name);
+      this._inner = new NativeFuzzySearchCtor(
+        entries,
+        options,
+      );
+    }
+
+    /** Number of patterns in the matcher. */
+    get patternCount(): number {
+      return this._inner.patternCount;
+    }
+
+    /**
+     * Returns `true` if any pattern matches
+     * within its edit distance.
+     */
+    isMatch(haystack: string): boolean {
+      return this._inner.isMatch(haystack);
+    }
+
+    /** Find all non-overlapping fuzzy matches. */
+    findIter(haystack: string): FuzzyMatch[] {
+      return unpack(
+        this._inner._findIterPacked(haystack),
+        haystack,
+        this._names,
+      );
+    }
+
+    /**
+     * Replace all fuzzy matches.
+     * `replacements[i]` replaces pattern `i`.
+     *
+     * @throws {Error} If `replacements.length`
+     *   does not equal `patternCount`.
+     */
+    replaceAll(
+      haystack: string,
+      replacements: string[],
+    ): string {
+      return this._inner.replaceAll(
+        haystack,
+        replacements,
+      );
+    }
   }
-}
 
-const nativeDistance = native.distance;
+  /**
+   * Compute edit distance between two strings.
+   *
+   * Uses Unicode characters (not UTF-16 code units),
+   * so emoji and supplementary plane characters are
+   * handled correctly.
+   *
+   * @example
+   * ```ts
+   * distance("Novak", "Nowak");       // 1
+   * distance("abcd", "abdc");         // 2
+   * distance("abcd", "abdc",
+   *   "damerau-levenshtein");          // 1
+   * ```
+   */
+  const distance = (
+    a: string,
+    b: string,
+    metric?: Metric,
+  ): number => nativeDistance(a, b, metric ?? null);
 
-/**
- * Compute edit distance between two strings.
- *
- * Uses Unicode characters (not UTF-16 code units),
- * so emoji and supplementary plane characters are
- * handled correctly.
- *
- * @example
- * ```ts
- * distance("Novak", "Nowak");       // 1
- * distance("abcd", "abdc");         // 2
- * distance("abcd", "abdc",
- *   "damerau-levenshtein");          // 1
- * ```
- */
-export const distance = (
-  a: string,
-  b: string,
-  metric?: Metric,
-): number => nativeDistance(a, b, metric ?? null);
+  return { FuzzySearch, distance };
+};
