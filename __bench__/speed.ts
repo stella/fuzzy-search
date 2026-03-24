@@ -21,16 +21,12 @@ import {
   libs,
   printSpeedups,
 } from "./helpers";
-
 import type { PatternDef } from "./helpers";
 
 const CORPUS = join(__dirname, "corpus");
 const load = (name: string): string => {
   try {
-    return readFileSync(
-      join(CORPUS, name),
-      "utf-8",
-    );
+    return readFileSync(join(CORPUS, name), "utf-8");
   } catch {
     return "";
   }
@@ -38,18 +34,39 @@ const load = (name: string): string => {
 
 // ─── Corpus generation ───────────────────────
 
-function generateLegalText(
-  sizeKB: number,
-): string {
+function generateLegalText(sizeKB: number): string {
   const words = [
-    "smlouva", "podepsal", "nájemní", "byt",
-    "město", "okres", "pan", "paní", "dne",
-    "roku", "příloha", "dodatek", "částka",
-    "korun", "českých", "smluvní", "strana",
-    "pronajímatel", "nájemce", "předmět",
-    "nájmu", "doba", "určitá", "neurčitá",
-    "výpovědní", "lhůta", "měsíce", "zákon",
-    "občanský", "zákoník", "ustanovení",
+    "smlouva",
+    "podepsal",
+    "nájemní",
+    "byt",
+    "město",
+    "okres",
+    "pan",
+    "paní",
+    "dne",
+    "roku",
+    "příloha",
+    "dodatek",
+    "částka",
+    "korun",
+    "českých",
+    "smluvní",
+    "strana",
+    "pronajímatel",
+    "nájemce",
+    "předmět",
+    "nájmu",
+    "doba",
+    "určitá",
+    "neurčitá",
+    "výpovědní",
+    "lhůta",
+    "měsíce",
+    "zákon",
+    "občanský",
+    "zákoník",
+    "ustanovení",
   ];
   const parts: string[] = [];
   let size = 0;
@@ -71,18 +88,36 @@ function generateLegalText(
   return parts.join(" ");
 }
 
-function generateEnglishText(
-  sizeKB: number,
-): string {
+function generateEnglishText(sizeKB: number): string {
   const words = [
-    "agreement", "between", "party", "first",
-    "second", "hereinafter", "referred", "shall",
-    "pursuant", "section", "whereas", "covenant",
-    "liability", "breach", "warranty", "damages",
-    "termination", "binding", "jurisdiction",
-    "arbitration", "indemnify", "executed",
-    "consideration", "amendment", "provision",
-    "obligation", "representation", "dispute",
+    "agreement",
+    "between",
+    "party",
+    "first",
+    "second",
+    "hereinafter",
+    "referred",
+    "shall",
+    "pursuant",
+    "section",
+    "whereas",
+    "covenant",
+    "liability",
+    "breach",
+    "warranty",
+    "damages",
+    "termination",
+    "binding",
+    "jurisdiction",
+    "arbitration",
+    "indemnify",
+    "executed",
+    "consideration",
+    "amendment",
+    "provision",
+    "obligation",
+    "representation",
+    "dispute",
   ];
   const parts: string[] = [];
   let size = 0;
@@ -110,9 +145,7 @@ const N = 5;
 
 console.log("=".repeat(62));
 console.log(" FUZZY SEARCH BENCHMARKS");
-console.log(
-  " @stll/fuzzy-search vs JS ecosystem",
-);
+console.log(" @stll/fuzzy-search vs JS ecosystem");
 console.log("=".repeat(62));
 
 const czech64 = generateLegalText(64);
@@ -138,9 +171,7 @@ const scenarios = [
   },
   {
     label: `Czech legal (${(czech64.length / 1024).toFixed(0)}KB) × 1 name, dist 1`,
-    patterns: [
-      { pattern: "Gaislerová", distance: 1 },
-    ],
+    patterns: [{ pattern: "Gaislerová", distance: 1 }],
     haystack: czech64,
   },
 ];
@@ -172,9 +203,7 @@ for (const s of scenarios) {
       ),
     );
   }
-  printSpeedups(
-    times.filter((t) => !Number.isNaN(t)),
-  );
+  printSpeedups(times.filter((t) => !Number.isNaN(t)));
 }
 
 // ─── Real corpus benchmarks ──────────────────
@@ -236,12 +265,8 @@ if (deuNews) {
 }
 
 if (corpusScenarios.length > 0) {
-  console.log(
-    "\n" + "─".repeat(62),
-  );
-  console.log(
-    " Real corpus benchmarks (academic)",
-  );
+  console.log("\n" + "─".repeat(62));
+  console.log(" Real corpus benchmarks (academic)");
   console.log("─".repeat(62));
 
   for (const s of corpusScenarios) {
@@ -267,14 +292,11 @@ if (corpusScenarios.length > 0) {
         ),
       );
     }
-    printSpeedups(
-      times.filter((t) => !Number.isNaN(t)),
-    );
+    printSpeedups(times.filter((t) => !Number.isNaN(t)));
   }
 } else {
   console.log(
-    "\nNo corpora found. " +
-      "Run: bun run bench:download",
+    "\nNo corpora found. " + "Run: bun run bench:download",
   );
 }
 

@@ -45,9 +45,7 @@ export const initBinding = (b: NativeBinding) => {
 // -- Public types ------------------------------------
 
 /** Distance metric for fuzzy matching. */
-export type Metric =
-  | "levenshtein"
-  | "damerau-levenshtein";
+export type Metric = "levenshtein" | "damerau-levenshtein";
 
 /** Options for constructing a `FuzzySearch`. */
 export type Options = {
@@ -148,10 +146,7 @@ const normalizeEntry = (
     if (p.distance === "auto") {
       return {
         ...p,
-        distance: resolveDistance(
-          "auto",
-          p.pattern.length,
-        ),
+        distance: resolveDistance("auto", p.pattern.length),
       };
     }
     // SAFETY: The "auto" case was already handled above,
@@ -230,16 +225,10 @@ export class FuzzySearch {
   private _names: (string | undefined)[];
   private _inner: NativeFuzzySearch;
 
-  constructor(
-    patterns: PatternEntry[],
-    options?: Options,
-  ) {
+  constructor(patterns: PatternEntry[], options?: Options) {
     const entries = patterns.map(normalizeEntry);
     this._names = entries.map((e) => e.name);
-    this._inner = new binding.FuzzySearch(
-      entries,
-      options,
-    );
+    this._inner = new binding.FuzzySearch(entries, options);
   }
 
   /** Number of patterns in the matcher. */
@@ -275,10 +264,7 @@ export class FuzzySearch {
     haystack: string,
     replacements: string[],
   ): string {
-    return this._inner.replaceAll(
-      haystack,
-      replacements,
-    );
+    return this._inner.replaceAll(haystack, replacements);
   }
 }
 

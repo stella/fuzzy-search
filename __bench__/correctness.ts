@@ -15,24 +15,17 @@ import { FuzzySearch } from "../src/index";
 
 // ─── Levenshtein oracle ──────────────────────
 
-function levenshtein(
-  a: string,
-  b: string,
-): number {
+function levenshtein(a: string, b: string): number {
   const m = a.length;
   const n = b.length;
   if (m === 0) return n;
   if (n === 0) return m;
-  let prev = Array.from(
-    { length: n + 1 },
-    (_, i) => i,
-  );
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
   for (let i = 1; i <= m; i++) {
     const curr = new Array<number>(n + 1);
     curr[0] = i;
     for (let j = 1; j <= n; j++) {
-      const cost =
-        a[i - 1] === b[j - 1] ? 0 : 1;
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
       curr[j] = Math.min(
         curr[j - 1]! + 1,
         prev[j]! + 1,
@@ -49,10 +42,7 @@ function levenshtein(
 const CORPUS = join(__dirname, "corpus");
 const load = (name: string): string => {
   try {
-    return readFileSync(
-      join(CORPUS, name),
-      "utf-8",
-    );
+    return readFileSync(join(CORPUS, name), "utf-8");
   } catch {
     return "";
   }
@@ -93,8 +83,7 @@ function verify(
       wholeWords: opts.wholeWords ?? true,
       normalizeDiacritics:
         opts.normalizeDiacritics ?? false,
-      caseInsensitive:
-        opts.caseInsensitive ?? false,
+      caseInsensitive: opts.caseInsensitive ?? false,
     },
   );
 
@@ -139,10 +128,7 @@ function verify(
       matchedText = matchedText.toLowerCase();
     }
     const maxDist = patterns[m.pattern]!.distance;
-    const actualDist = levenshtein(
-      pat,
-      matchedText,
-    );
+    const actualDist = levenshtein(pat, matchedText);
 
     if (actualDist !== m.distance) {
       failures.push({
@@ -180,10 +166,7 @@ function verify(
   };
 }
 
-function printResult(
-  label: string,
-  result: VerifyResult,
-) {
+function printResult(label: string, result: VerifyResult) {
   const status =
     result.failures.length === 0
       ? "\x1b[32m✓ PASS\x1b[0m"
@@ -219,35 +202,51 @@ console.log("=".repeat(62));
 
 // ── 1. Synthetic Czech legal text ────────────
 
-console.log(
-  "\n### Synthetic Czech legal text (64KB)\n",
-);
+console.log("\n### Synthetic Czech legal text (64KB)\n");
 
 function generateCzechText(): string {
   const words = [
-    "smlouva", "podepsal", "nájemní", "byt",
-    "město", "okres", "pan", "paní", "dne",
-    "roku", "příloha", "dodatek", "částka",
-    "korun", "českých", "smluvní", "strana",
-    "pronajímatel", "nájemce", "předmět",
-    "nájmu", "doba", "určitá", "neurčitá",
-    "výpovědní", "lhůta", "měsíce", "zákon",
-    "občanský", "zákoník", "ustanovení",
+    "smlouva",
+    "podepsal",
+    "nájemní",
+    "byt",
+    "město",
+    "okres",
+    "pan",
+    "paní",
+    "dne",
+    "roku",
+    "příloha",
+    "dodatek",
+    "částka",
+    "korun",
+    "českých",
+    "smluvní",
+    "strana",
+    "pronajímatel",
+    "nájemce",
+    "předmět",
+    "nájmu",
+    "doba",
+    "určitá",
+    "neurčitá",
+    "výpovědní",
+    "lhůta",
+    "měsíce",
+    "zákon",
+    "občanský",
+    "zákoník",
+    "ustanovení",
   ];
   const parts: string[] = [];
   let size = 0;
   let i = 0;
   while (size < 64 * 1024) {
-    if (i % 200 === 50)
-      parts.push("Gais1erová");
-    else if (i % 200 === 100)
-      parts.push("Nowák");
-    else if (i % 200 === 150)
-      parts.push("Pribram");
-    else if (i % 500 === 250)
-      parts.push("Dvorak");
-    else if (i % 500 === 350)
-      parts.push("Snytrova");
+    if (i % 200 === 50) parts.push("Gais1erová");
+    else if (i % 200 === 100) parts.push("Nowák");
+    else if (i % 200 === 150) parts.push("Pribram");
+    else if (i % 500 === 250) parts.push("Dvorak");
+    else if (i % 500 === 350) parts.push("Snytrova");
     else parts.push(words[i % words.length]!);
     size += parts.at(-1)!.length + 1;
     i++;
@@ -286,12 +285,9 @@ printResult(
 
 printResult(
   "dist 1-2, caseInsensitive",
-  verify(
-    "czech-ci",
-    CZECH_PATTERNS,
-    czText.toUpperCase(),
-    { caseInsensitive: true },
-  ),
+  verify("czech-ci", CZECH_PATTERNS, czText.toUpperCase(), {
+    caseInsensitive: true,
+  }),
 );
 
 // ── 2. Canterbury bible.txt ──────────────────
@@ -336,26 +332,18 @@ if (bible) {
 
   printResult(
     "5 names dist 1, norm + CI + WW",
-    verify(
-      "bible-all",
-      BIBLE_PATTERNS,
-      bible,
-      {
-        normalizeDiacritics: true,
-        caseInsensitive: true,
-        wholeWords: true,
-      },
-    ),
+    verify("bible-all", BIBLE_PATTERNS, bible, {
+      normalizeDiacritics: true,
+      caseInsensitive: true,
+      wholeWords: true,
+    }),
   );
 
   printResult(
     "5 names dist 1, no wholeWords",
-    verify(
-      "bible-no-ww",
-      BIBLE_PATTERNS,
-      bible,
-      { wholeWords: false },
-    ),
+    verify("bible-no-ww", BIBLE_PATTERNS, bible, {
+      wholeWords: false,
+    }),
   );
 
   printResult(
@@ -373,9 +361,7 @@ if (bible) {
   console.log(
     "\n### Canterbury bible.txt (not downloaded)\n",
   );
-  console.log(
-    "  Run: bun run bench:download",
-  );
+  console.log("  Run: bun run bench:download");
 }
 
 // ── 3. Leipzig Czech news ────────────────────
@@ -396,39 +382,27 @@ if (cesNews) {
 
   printResult(
     "5 CZ news names dist 1",
-    verify(
-      "ces-news",
-      CZ_NEWS_PATTERNS,
-      cesNews,
-    ),
+    verify("ces-news", CZ_NEWS_PATTERNS, cesNews),
   );
 
   printResult(
     "5 CZ names, normalizeDiacritics",
-    verify(
-      "ces-norm",
-      CZ_NEWS_PATTERNS,
-      cesNews,
-      { normalizeDiacritics: true },
-    ),
+    verify("ces-norm", CZ_NEWS_PATTERNS, cesNews, {
+      normalizeDiacritics: true,
+    }),
   );
 
   printResult(
     "5 CZ names, caseInsensitive",
-    verify(
-      "ces-ci",
-      CZ_NEWS_PATTERNS,
-      cesNews,
-      { caseInsensitive: true },
-    ),
+    verify("ces-ci", CZ_NEWS_PATTERNS, cesNews, {
+      caseInsensitive: true,
+    }),
   );
 } else {
   console.log(
     "\n### Leipzig Czech news (not downloaded)\n",
   );
-  console.log(
-    "  Run: bun run bench:download",
-  );
+  console.log("  Run: bun run bench:download");
 }
 
 // ── 4. Leipzig German news ───────────────────
@@ -462,9 +436,7 @@ if (deuNews) {
   console.log(
     "\n### Leipzig German news (not downloaded)\n",
   );
-  console.log(
-    "  Run: bun run bench:download",
-  );
+  console.log("  Run: bun run bench:download");
 }
 
 // ── Summary ──────────────────────────────────
