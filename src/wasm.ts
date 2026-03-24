@@ -4,18 +4,20 @@
 
 // SAFETY: NAPI-RS auto-generated browser WASM loader
 // exports the native module; cast to NativeBinding
-// for the createApi factory.
+// for initBinding.
 import native from "../fuzzy-search.wasi-browser.js";
 
 import {
-  createApi,
+  initBinding,
   type NativeBinding,
 } from "./core";
 
-const { FuzzySearch, distance } =
-  createApi(native as unknown as NativeBinding);
+initBinding(native as unknown as NativeBinding);
 
-export { FuzzySearch, distance };
+export {
+  FuzzySearch,
+  distance,
+} from "./core";
 
 export type {
   FuzzyMatch,

@@ -1,19 +1,31 @@
+/* Main entry point — loads the native NAPI-RS
+ * binding and re-exports the public API. */
+
 import { createRequire } from "node:module";
 
-import { createApi } from "./core";
-import type { NativeBinding } from "./core";
+import {
+  initBinding,
+  type NativeBinding,
+} from "./core";
 
 const require = createRequire(import.meta.url);
-// SAFETY: NAPI-RS auto-generated loader returns the native binding
-// object; its shape is validated by usage below.
-const native = require("../index.js") as NativeBinding;
+// SAFETY: NAPI-RS auto-generated loader returns the
+// native binding object; its shape is validated by
+// usage in the core classes.
+const native =
+  require("../index.js") as NativeBinding;
 
-const { FuzzySearch, distance } = createApi(native);
+initBinding(native);
 
-export { FuzzySearch, distance };
+export {
+  FuzzySearch,
+  distance,
+} from "./core";
+
 export type {
+  FuzzyMatch,
   Metric,
+  NativeBinding,
   Options,
   PatternEntry,
-  FuzzyMatch,
 } from "./core";
