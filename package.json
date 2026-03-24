@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "NAPI-RS bindings for fuzzy string matching via Myers' bit-parallel algorithm for Node.js/Bun",
   "keywords": [
     "fuzzy-search",
@@ -75,10 +75,10 @@
     "tsdown": "^0.12.4"
   },
   "optionalDependencies": {
-    "@stll/fuzzy-search-darwin-arm64": "0.1.0",
-    "@stll/fuzzy-search-darwin-x64": "0.1.0",
-    "@stll/fuzzy-search-linux-arm64-gnu": "0.1.0",
-    "@stll/fuzzy-search-linux-x64-gnu": "0.1.0"
+    "@stll/fuzzy-search-darwin-arm64": "0.2.0",
+    "@stll/fuzzy-search-darwin-x64": "0.2.0",
+    "@stll/fuzzy-search-linux-arm64-gnu": "0.2.0",
+    "@stll/fuzzy-search-linux-x64-gnu": "0.2.0"
   },
   "napi": {
     "binaryName": "fuzzy-search",
