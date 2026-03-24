@@ -1,8 +1,7 @@
 // @ts-nocheck
 /* WASM-only wrapper. Loads the WASI module instead
- * of the native .node binary. Same API as lib.js. */
-
-const native = require("./fuzzy-search.wasi.cjs");
+ * of the native .node binary. Same API as lib.mjs. */
+import native from "./fuzzy-search.wasi-browser.js";
 
 const NativeFuzzySearch = native.FuzzySearch;
 const nativeDistance = native.distance;
@@ -26,10 +25,7 @@ function normalizeEntry(p, i) {
     if (p.distance === "auto") {
       return {
         ...p,
-        distance: resolveDistance(
-          "auto",
-          p.pattern.length,
-        ),
+        distance: resolveDistance("auto", p.pattern.length),
       };
     }
     return p;
@@ -67,10 +63,7 @@ class FuzzySearch {
   constructor(patterns, options) {
     const entries = patterns.map(normalizeEntry);
     this._names = entries.map((e) => e.name);
-    this._inner = new NativeFuzzySearch(
-      entries,
-      options,
-    );
+    this._inner = new NativeFuzzySearch(entries, options);
   }
 
   get patternCount() {
@@ -90,10 +83,7 @@ class FuzzySearch {
   }
 
   replaceAll(haystack, replacements) {
-    return this._inner.replaceAll(
-      haystack,
-      replacements,
-    );
+    return this._inner.replaceAll(haystack, replacements);
   }
 }
 
@@ -101,5 +91,4 @@ function distance(a, b, metric) {
   return nativeDistance(a, b, metric ?? null);
 }
 
-module.exports.FuzzySearch = FuzzySearch;
-module.exports.distance = distance;
+export { FuzzySearch, distance };

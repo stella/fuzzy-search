@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "description": "NAPI-RS bindings for fuzzy string matching via Myers' bit-parallel algorithm for Node.js/Bun",
   "keywords": [
+    "approximate-matching",
+    "edit-distance",
     "fuzzy-search",
     "levenshtein",
-    "edit-distance",
-    "approximate-matching",
     "napi-rs",
     "native",
     "rust"
@@ -42,6 +42,10 @@
   "types": "lib.d.ts",
   "exports": {
     ".": {
+      "browser": {
+        "types": "./lib.d.ts",
+        "default": "./lib.wasm.js"
+      },
       "import": {
         "types": "./lib.d.ts",
         "default": "./lib.mjs"

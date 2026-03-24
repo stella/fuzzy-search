@@ -1,5 +1,5 @@
-import Fuse from "fuse.js";
 import { distance as fastLev } from "fastest-levenshtein";
+import Fuse from "fuse.js";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const fuzzball = require("fuzzball");
 
@@ -20,24 +20,17 @@ export type Lib = {
 
 // ─── Naive Levenshtein (reference) ────────────
 
-function naiveLevenshtein(
-  a: string,
-  b: string,
-): number {
+function naiveLevenshtein(a: string, b: string): number {
   const m = a.length;
   const n = b.length;
   if (m === 0) return n;
   if (n === 0) return m;
-  let prev = Array.from(
-    { length: n + 1 },
-    (_, i) => i,
-  );
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
   for (let i = 1; i <= m; i++) {
     const curr = new Array<number>(n + 1);
     curr[0] = i;
     for (let j = 1; j <= n; j++) {
-      const cost =
-        a[i - 1] === b[j - 1] ? 0 : 1;
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
       curr[j] = Math.min(
         curr[j - 1]! + 1,
         prev[j]! + 1,
@@ -63,12 +56,13 @@ export function naiveSlidingWindow(
     let lastEnd = 0;
     for (let i = 0; i <= text.length - minLen; i++) {
       if (i < lastEnd) continue;
-      for (let len = minLen; len <= maxLen && i + len <= text.length; len++) {
+      for (
+        let len = minLen;
+        len <= maxLen && i + len <= text.length;
+        len++
+      ) {
         const window = text.slice(i, i + len);
-        if (
-          naiveLevenshtein(pattern, window) <=
-          distance
-        ) {
+        if (naiveLevenshtein(pattern, window) <= distance) {
           count++;
           lastEnd = i + len;
           break;
@@ -92,7 +86,11 @@ export function fastLevSlidingWindow(
     let lastEnd = 0;
     for (let i = 0; i <= text.length - minLen; i++) {
       if (i < lastEnd) continue;
-      for (let len = minLen; len <= maxLen && i + len <= text.length; len++) {
+      for (
+        let len = minLen;
+        len <= maxLen && i + len <= text.length;
+        len++
+      ) {
         const window = text.slice(i, i + len);
         if (fastLev(pattern, window) <= distance) {
           count++;
@@ -125,10 +123,7 @@ export const libs: Lib[] = [
     name: "fastest-levenshtein + window",
     build: (p) => p,
     search: (p, h) =>
-      fastLevSlidingWindow(
-        p as PatternDef[],
-        h,
-      ),
+      fastLevSlidingWindow(p as PatternDef[], h),
   },
   {
     name: "naive JS (sliding window)",
@@ -149,12 +144,12 @@ export const libs: Lib[] = [
       };
       // Split text into words, search each
       // pattern in the word list.
-      const words = h.split(/\s+/).map(
-        (w: string, i: number) => ({
+      const words = h
+        .split(/\s+/)
+        .map((w: string, i: number) => ({
           word: w,
           idx: i,
-        }),
-      );
+        }));
       const fuse = new Fuse(words, {
         keys: ["word"],
         threshold: 0.4,
@@ -208,9 +203,7 @@ export const bench = (
   return ms;
 };
 
-export const printSpeedups = (
-  times: number[],
-) => {
+export const printSpeedups = (times: number[]) => {
   const stellaMs = times[0]!;
   console.log();
   for (let i = 1; i < times.length; i++) {

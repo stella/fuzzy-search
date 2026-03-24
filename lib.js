@@ -34,10 +34,7 @@ function normalizeEntry(p, i) {
     if (p.distance === "auto") {
       return {
         ...p,
-        distance: resolveDistance(
-          "auto",
-          p.pattern.length,
-        ),
+        distance: resolveDistance("auto", p.pattern.length),
       };
     }
     return p;
@@ -79,10 +76,7 @@ class FuzzySearch {
   constructor(patterns, options) {
     const entries = patterns.map(normalizeEntry);
     this._names = entries.map((e) => e.name);
-    this._inner = new NativeFuzzySearch(
-      entries,
-      options,
-    );
+    this._inner = new NativeFuzzySearch(entries, options);
   }
 
   get patternCount() {
@@ -102,10 +96,7 @@ class FuzzySearch {
   }
 
   replaceAll(haystack, replacements) {
-    return this._inner.replaceAll(
-      haystack,
-      replacements,
-    );
+    return this._inner.replaceAll(haystack, replacements);
   }
 }
 

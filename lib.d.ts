@@ -1,7 +1,5 @@
 /** Distance metric for fuzzy matching. */
-export type Metric =
-  | "levenshtein"
-  | "damerau-levenshtein";
+export type Metric = "levenshtein" | "damerau-levenshtein";
 
 /** Options for constructing a `FuzzySearch`. */
 export type Options = {
@@ -129,10 +127,7 @@ export declare function distance(
 ): number;
 
 export declare class FuzzySearch {
-  constructor(
-    patterns: PatternEntry[],
-    options?: Options,
-  );
+  constructor(patterns: PatternEntry[], options?: Options);
 
   /** Number of patterns in the matcher. */
   get patternCount(): number;
