@@ -7,8 +7,5 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   hash: false,
-  external: [
-    /index\.js/,
-    /fuzzy-search\.wasi/,
-  ],
+  external: [/index\.js/, /fuzzy-search\.wasi/],
 });

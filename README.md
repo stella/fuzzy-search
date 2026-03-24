@@ -31,14 +31,17 @@ Prebuilt binaries are available for:
 ```typescript
 import { FuzzySearch } from "@stll/fuzzy-search";
 
-const fs = new FuzzySearch([
-  { pattern: "Gaislerová", distance: 1 },
-  { pattern: "Novák", distance: 1 },
-  { pattern: "Příbram", distance: 2 },
-], {
-  normalizeDiacritics: true,
-  wholeWords: true,
-});
+const fs = new FuzzySearch(
+  [
+    { pattern: "Gaislerová", distance: 1 },
+    { pattern: "Novák", distance: 1 },
+    { pattern: "Příbram", distance: 2 },
+  ],
+  {
+    normalizeDiacritics: true,
+    wholeWords: true,
+  },
+);
 
 fs.findIter("Smlouva s Gais1erová v Pribram");
 // [
@@ -56,9 +59,9 @@ objects with explicit distance and optional name:
 
 ```typescript
 const fs = new FuzzySearch([
-  "simple",                              // distance 1
-  { pattern: "named", name: "entity" },  // distance 1
-  { pattern: "precise", distance: 2 },   // distance 2
+  "simple", // distance 1
+  { pattern: "named", name: "entity" }, // distance 1
+  { pattern: "precise", distance: 2 }, // distance 2
 ]);
 ```
 
@@ -71,30 +74,31 @@ const fs = new FuzzySearch(patterns, {
   // Strip diacritics before matching (NFD + remove
   // combining marks). "Příbram" matches "Pribram"
   // at distance 0.
-  normalizeDiacritics: true,  // default: false
+  normalizeDiacritics: true, // default: false
 
   // Only match whole words. Uses Unicode
   // is_alphanumeric() for boundary detection.
   // CJK characters always pass (no inter-word
   // spaces in CJK).
-  wholeWords: true,           // default: true
+  wholeWords: true, // default: true
 
   // Case-insensitive matching (Unicode-aware).
-  caseInsensitive: true,      // default: false
+  caseInsensitive: true, // default: false
 
   // Unicode word boundaries (reserved for future
   // UAX#29 segmentation support).
-  unicodeBoundaries: true,    // default: true
+  unicodeBoundaries: true, // default: true
 });
 ```
 
 ### Replace
 
 ```typescript
-fs.replaceAll(
-  "Smlouva s Gais1erová",
-  ["[REDACTED]", "[REDACTED]", "[REDACTED]"],
-);
+fs.replaceAll("Smlouva s Gais1erová", [
+  "[REDACTED]",
+  "[REDACTED]",
+  "[REDACTED]",
+]);
 // "Smlouva s [REDACTED]"
 ```
 
@@ -107,27 +111,27 @@ Bun 1.3.10. Search-only times, automaton pre-built.
 
 ### Synthetic legal text (64KB, 5 patterns, dist 1-2)
 
-| Library                        | Time       | Speedup |
-| ------------------------------ | ---------- | ------- |
-| **@stll/fuzzy-search**         | **2.3 ms** | —       |
-| fuzzball.extract               | 9.2 ms     | 3.9x    |
-| fuse.js (word-split)           | 57 ms      | 25x     |
-| fastest-levenshtein + window   | 82 ms      | 35x     |
-| naive JS (sliding window)      | 511 ms     | 219x    |
+| Library                      | Time       | Speedup |
+| ---------------------------- | ---------- | ------- |
+| **@stll/fuzzy-search**       | **2.3 ms** | —       |
+| fuzzball.extract             | 9.2 ms     | 3.9x    |
+| fuse.js (word-split)         | 57 ms      | 25x     |
+| fastest-levenshtein + window | 82 ms      | 35x     |
+| naive JS (sliding window)    | 511 ms     | 219x    |
 
 ### Real corpus (Canterbury bible.txt, 4.0 MB)
 
-| Library                        | Time        | Speedup |
-| ------------------------------ | ----------- | ------- |
-| **@stll/fuzzy-search**         | **258 ms**  | —       |
-| fastest-levenshtein + window   | 4,249 ms    | 16.5x   |
+| Library                      | Time       | Speedup |
+| ---------------------------- | ---------- | ------- |
+| **@stll/fuzzy-search**       | **258 ms** | —       |
+| fastest-levenshtein + window | 4,249 ms   | 16.5x   |
 
 ### Real corpus (Leipzig Czech news, 4.8 MB)
 
-| Library                        | Time        | Speedup |
-| ------------------------------ | ----------- | ------- |
-| **@stll/fuzzy-search**         | **249 ms**  | —       |
-| fastest-levenshtein + window   | 4,147 ms    | 16.6x   |
+| Library                      | Time       | Speedup |
+| ---------------------------- | ---------- | ------- |
+| **@stll/fuzzy-search**       | **249 ms** | —       |
+| fastest-levenshtein + window | 4,147 ms   | 16.6x   |
 
 Run locally:
 `bun run bench:install && bun run bench:download && bun run bench:speed`
@@ -163,13 +167,13 @@ UTF-16 supplementary plane, CJK text, long patterns
 
 ## API
 
-| Method                                | Returns       | Description                |
-| ------------------------------------- | ------------- | -------------------------- |
-| `new FuzzySearch(patterns, options?)`  | instance      | Build matcher              |
-| `.findIter(haystack)`                 | `FuzzyMatch[]`| Non-overlapping matches    |
-| `.isMatch(haystack)`                  | `boolean`     | Any pattern matches?       |
-| `.replaceAll(haystack, replacements)` | `string`      | Replace matched patterns   |
-| `.patternCount`                       | `number`      | Number of patterns         |
+| Method                                | Returns        | Description              |
+| ------------------------------------- | -------------- | ------------------------ |
+| `new FuzzySearch(patterns, options?)` | instance       | Build matcher            |
+| `.findIter(haystack)`                 | `FuzzyMatch[]` | Non-overlapping matches  |
+| `.isMatch(haystack)`                  | `boolean`      | Any pattern matches?     |
+| `.replaceAll(haystack, replacements)` | `string`       | Replace matched patterns |
+| `.patternCount`                       | `number`       | Number of patterns       |
 
 ### Types
 
@@ -180,18 +184,18 @@ type PatternEntry =
 
 type Options = {
   normalizeDiacritics?: boolean; // default: false
-  wholeWords?: boolean;          // default: true
-  caseInsensitive?: boolean;     // default: false
-  unicodeBoundaries?: boolean;   // default: true
+  wholeWords?: boolean; // default: true
+  caseInsensitive?: boolean; // default: false
+  unicodeBoundaries?: boolean; // default: true
 };
 
 type FuzzyMatch = {
-  pattern: number;   // index into patterns array
-  start: number;     // UTF-16 code unit offset
-  end: number;       // exclusive
-  text: string;      // matched substring
-  distance: number;  // actual Levenshtein distance
-  name?: string;     // pattern name (if provided)
+  pattern: number; // index into patterns array
+  start: number; // UTF-16 code unit offset
+  end: number; // exclusive
+  text: string; // matched substring
+  distance: number; // actual Levenshtein distance
+  name?: string; // pattern name (if provided)
 };
 ```
 

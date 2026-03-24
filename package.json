@@ -1,13 +1,12 @@
 {
   "name": "@stll/fuzzy-search",
   "version": "0.2.1",
-  "type": "module",
   "description": "NAPI-RS bindings for fuzzy string matching via Myers' bit-parallel algorithm for Node.js/Bun",
   "keywords": [
+    "approximate-matching",
+    "edit-distance",
     "fuzzy-search",
     "levenshtein",
-    "edit-distance",
-    "approximate-matching",
     "napi-rs",
     "native",
     "rust"
@@ -30,6 +29,7 @@
     "wasi-worker.mjs",
     "wasi-worker-browser.mjs"
   ],
+  "type": "module",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {

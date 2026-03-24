@@ -1,3 +1,7 @@
+// @ts-expect-error — no type declarations
+import damNpm from "damerau-levenshtein";
+// @ts-expect-error — no type declarations
+import jsLev from "js-levenshtein";
 /**
  * Cross-check: verify our distance computations
  * against independent npm implementations.
@@ -15,26 +19,15 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-// @ts-expect-error — no type declarations
-import damNpm from "damerau-levenshtein";
-// @ts-expect-error — no type declarations
-import jsLev from "js-levenshtein";
-
 import { FuzzySearch } from "../src/index";
 
 // ─── Reference distance functions ────────────
 
-function refLevenshtein(
-  a: string,
-  b: string,
-): number {
+function refLevenshtein(a: string, b: string): number {
   return jsLev(a, b) as number;
 }
 
-function refDamerau(
-  a: string,
-  b: string,
-): number {
+function refDamerau(a: string, b: string): number {
   const r = damNpm(a, b) as { steps: number };
   return r.steps;
 }
@@ -81,8 +74,7 @@ function crossCheck(
       wholeWords: opts.wholeWords ?? true,
       normalizeDiacritics:
         opts.normalizeDiacritics ?? false,
-      caseInsensitive:
-        opts.caseInsensitive ?? false,
+      caseInsensitive: opts.caseInsensitive ?? false,
       metric,
     },
   );
@@ -103,10 +95,7 @@ function crossCheck(
 
     // Cross-check against js-levenshtein
     const refLev = refLevenshtein(pat, matched);
-    if (
-      metric === "levenshtein" &&
-      m.distance === refLev
-    ) {
+    if (metric === "levenshtein" && m.distance === refLev) {
       result.levOk++;
     } else if (metric === "levenshtein") {
       result.levFail.push({
@@ -160,12 +149,9 @@ function printResult(r: Result) {
     r.damFail.length + r.damOk > 0
       ? "damerau"
       : "levenshtein";
-  const ok =
-    metric === "damerau" ? r.damOk : r.levOk;
+  const ok = metric === "damerau" ? r.damOk : r.levOk;
   const fails =
-    metric === "damerau"
-      ? r.damFail
-      : r.levFail;
+    metric === "damerau" ? r.damFail : r.levFail;
 
   const status =
     fails.length === 0
@@ -190,9 +176,7 @@ function printResult(r: Result) {
     );
   }
   if (fails.length > 5) {
-    console.log(
-      `    ... and ${fails.length - 5} more`,
-    );
+    console.log(`    ... and ${fails.length - 5} more`);
   }
 }
 
@@ -200,9 +184,7 @@ function printResult(r: Result) {
 
 console.log("=".repeat(62));
 console.log(" CROSS-CHECK: our distances vs npm");
-console.log(
-  " js-levenshtein + damerau-levenshtein",
-);
+console.log(" js-levenshtein + damerau-levenshtein");
 console.log("=".repeat(62));
 
 // ── 1. Synthetic text ────────────────────────
@@ -211,9 +193,17 @@ console.log("\n### Synthetic Czech (64KB)\n");
 
 function genText(): string {
   const words = [
-    "smlouva", "podepsal", "nájemní",
-    "město", "okres", "pan", "paní",
-    "rok", "příloha", "dodatek", "částka",
+    "smlouva",
+    "podepsal",
+    "nájemní",
+    "město",
+    "okres",
+    "pan",
+    "paní",
+    "rok",
+    "příloha",
+    "dodatek",
+    "částka",
   ];
   const parts: string[] = [];
   let size = 0;
@@ -241,11 +231,7 @@ const CZ = [
 ];
 
 printResult(
-  crossCheck(
-    "Levenshtein, wholeWords",
-    CZ,
-    czText,
-  ),
+  crossCheck("Levenshtein, wholeWords", CZ, czText),
 );
 
 printResult(
@@ -258,24 +244,16 @@ printResult(
 );
 
 printResult(
-  crossCheck(
-    "Levenshtein, no wholeWords",
-    CZ,
-    czText,
-    { wholeWords: false },
-  ),
+  crossCheck("Levenshtein, no wholeWords", CZ, czText, {
+    wholeWords: false,
+  }),
 );
 
 printResult(
-  crossCheck(
-    "Damerau, no wholeWords",
-    CZ,
-    czText,
-    {
-      metric: "damerau-levenshtein",
-      wholeWords: false,
-    },
-  ),
+  crossCheck("Damerau, no wholeWords", CZ, czText, {
+    metric: "damerau-levenshtein",
+    wholeWords: false,
+  }),
 );
 
 // ── 2. Canterbury bible.txt ──────────────────
@@ -283,10 +261,7 @@ printResult(
 const CORPUS = join(__dirname, "corpus");
 const load = (name: string): string => {
   try {
-    return readFileSync(
-      join(CORPUS, name),
-      "utf-8",
-    );
+    return readFileSync(join(CORPUS, name), "utf-8");
   } catch {
     return "";
   }
@@ -307,11 +282,7 @@ if (bible) {
   ];
 
   printResult(
-    crossCheck(
-      "Levenshtein dist 1",
-      BIBLE,
-      bible,
-    ),
+    crossCheck("Levenshtein dist 1", BIBLE, bible),
   );
   printResult(
     crossCheck(
@@ -321,12 +292,9 @@ if (bible) {
     ),
   );
   printResult(
-    crossCheck(
-      "Damerau dist 1",
-      BIBLE,
-      bible,
-      { metric: "damerau-levenshtein" },
-    ),
+    crossCheck("Damerau dist 1", BIBLE, bible, {
+      metric: "damerau-levenshtein",
+    }),
   );
   printResult(
     crossCheck(
@@ -355,19 +323,12 @@ if (cesNews) {
   ];
 
   printResult(
-    crossCheck(
-      "Levenshtein dist 1",
-      CZ_NEWS,
-      cesNews,
-    ),
+    crossCheck("Levenshtein dist 1", CZ_NEWS, cesNews),
   );
   printResult(
-    crossCheck(
-      "Damerau dist 1",
-      CZ_NEWS,
-      cesNews,
-      { metric: "damerau-levenshtein" },
-    ),
+    crossCheck("Damerau dist 1", CZ_NEWS, cesNews, {
+      metric: "damerau-levenshtein",
+    }),
   );
 }
 
@@ -377,13 +338,10 @@ console.log("\n### Random pairs (10,000 × 2)\n");
 
 function randomStr(len: number): string {
   const chars =
-    "abcdefghijklmnopqrstuvwxyz" +
-    "áčďéěíňóřšťúůýž";
+    "abcdefghijklmnopqrstuvwxyz" + "áčďéěíňóřšťúůýž";
   let s = "";
   for (let i = 0; i < len; i++) {
-    s += chars[Math.floor(
-      Math.random() * chars.length,
-    )];
+    s += chars[Math.floor(Math.random() * chars.length)];
   }
   return s;
 }

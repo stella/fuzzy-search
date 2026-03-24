@@ -11,9 +11,7 @@ describe("FuzzySearch", () => {
       { wholeWords: false },
     );
     expect(fs.patternCount).toBe(1);
-    expect(fs.isMatch("say hello world")).toBe(
-      true,
-    );
+    expect(fs.isMatch("say hello world")).toBe(true);
     expect(fs.isMatch("helo world")).toBe(false);
   });
 
@@ -33,9 +31,7 @@ describe("FuzzySearch", () => {
       [{ pattern: "hello", distance: 1 }],
       { wholeWords: false },
     );
-    const matches = fs.findIter(
-      "qqq helxo qqq",
-    );
+    const matches = fs.findIter("qqq helxo qqq");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.text).toBe("helxo");
     expect(matches[0]!.distance).toBe(1);
@@ -110,29 +106,21 @@ describe("FuzzySearch", () => {
 
   test("rejects distance >= pattern length", () => {
     expect(() => {
-      new FuzzySearch([
-        { pattern: "test", distance: 4 },
-      ]);
+      new FuzzySearch([{ pattern: "test", distance: 4 }]);
     }).toThrow("Distance 4 >= pattern length 4");
     // distance 3 on a 4-char pattern is OK
     expect(() => {
-      new FuzzySearch([
-        { pattern: "test", distance: 3 },
-      ]);
+      new FuzzySearch([{ pattern: "test", distance: 3 }]);
     }).not.toThrow();
     // distance 5 on a 6-char pattern is OK
     expect(() => {
-      new FuzzySearch([
-        { pattern: "abcdef", distance: 5 },
-      ]);
+      new FuzzySearch([{ pattern: "abcdef", distance: 5 }]);
     }).not.toThrow();
   });
 
   test("rejects empty pattern", () => {
     expect(() => {
-      new FuzzySearch([
-        { pattern: "", distance: 1 },
-      ]);
+      new FuzzySearch([{ pattern: "", distance: 1 }]);
     }).toThrow("Empty pattern");
   });
 });
@@ -161,9 +149,7 @@ describe("Czech names", () => {
         wholeWords: true,
       },
     );
-    const matches = fs.findIter(
-      "Podpis: Gaislerova",
-    );
+    const matches = fs.findIter("Podpis: Gaislerova");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.text).toBe("Gaislerova");
     expect(matches[0]!.distance).toBe(0);
@@ -322,13 +308,9 @@ describe("Unicode", () => {
       [{ pattern: "Иванов", distance: 1 }],
       { wholeWords: true },
     );
-    expect(fs.isMatch("Иванов подписал")).toBe(
-      true,
-    );
+    expect(fs.isMatch("Иванов подписал")).toBe(true);
     // Substitution: о→а
-    expect(fs.isMatch("Иванав подписал")).toBe(
-      true,
-    );
+    expect(fs.isMatch("Иванав подписал")).toBe(true);
   });
 });
 
@@ -340,13 +322,10 @@ describe("replaceAll", () => {
       [{ pattern: "Novák", distance: 1 }],
       { wholeWords: true },
     );
-    const result = fs.replaceAll(
-      "Pan Nowák podepsal.",
-      ["[REDACTED]"],
-    );
-    expect(result).toBe(
-      "Pan [REDACTED] podepsal.",
-    );
+    const result = fs.replaceAll("Pan Nowák podepsal.", [
+      "[REDACTED]",
+    ]);
+    expect(result).toBe("Pan [REDACTED] podepsal.");
   });
 
   test("multiple pattern replacement", () => {
@@ -357,10 +336,10 @@ describe("replaceAll", () => {
       ],
       { wholeWords: true },
     );
-    const result = fs.replaceAll(
-      "Alice met Bob today.",
-      ["[A]", "[B]"],
-    );
+    const result = fs.replaceAll("Alice met Bob today.", [
+      "[A]",
+      "[B]",
+    ]);
     expect(result).toBe("[A] met [B] today.");
   });
 
@@ -386,13 +365,10 @@ describe("UTF-16 offsets", () => {
       ],
       { wholeWords: true },
     );
-    const hay =
-      "Město Pribram a Nowák podepsali.";
+    const hay = "Město Pribram a Nowák podepsali.";
     const matches = fs.findIter(hay);
     for (const m of matches) {
-      expect(hay.slice(m.start, m.end)).toBe(
-        m.text,
-      );
+      expect(hay.slice(m.start, m.end)).toBe(m.text);
     }
   });
 });
@@ -492,9 +468,7 @@ describe("Damerau-Levenshtein", () => {
     );
     // Levenshtein can't find "abdc" at dist 1
     const levM = lev.findIter("xxabdcxx");
-    expect(
-      levM.some((m) => m.text === "abdc"),
-    ).toBe(false);
+    expect(levM.some((m) => m.text === "abdc")).toBe(false);
     // Damerau finds it
     const damM = dam.findIter("xxabdcxx");
     expect(
@@ -513,17 +487,13 @@ describe("Damerau-Levenshtein", () => {
       },
     );
     // "Nvoák" = transposition of o and v
-    expect(fs.isMatch("Nvoák podepsal")).toBe(
-      true,
-    );
+    expect(fs.isMatch("Nvoák podepsal")).toBe(true);
     // Standard Levenshtein would need dist 2
     const lev = new FuzzySearch(
       [{ pattern: "Novák", distance: 1 }],
       { wholeWords: true, metric: "levenshtein" },
     );
-    expect(lev.isMatch("Nvoák podepsal")).toBe(
-      false,
-    );
+    expect(lev.isMatch("Nvoák podepsal")).toBe(false);
   });
 
   test("non-transposition edits unchanged", () => {
@@ -573,9 +543,7 @@ describe("Damerau-Levenshtein", () => {
     // "abdc" is dist 2 in standard Levenshtein
     // (two substitutions), not findable at dist 1.
     const m = fs.findIter("xxabdcxx");
-    expect(
-      m.some((x) => x.text === "abdc"),
-    ).toBe(false);
+    expect(m.some((x) => x.text === "abdc")).toBe(false);
   });
 
   test("replaceAll with Damerau", () => {
@@ -587,10 +555,9 @@ describe("Damerau-Levenshtein", () => {
       },
     );
     // "tset" = transposition → dist 1 in Damerau
-    const result = fs.replaceAll(
-      "the tset passed",
-      ["[OK]"],
-    );
+    const result = fs.replaceAll("the tset passed", [
+      "[OK]",
+    ]);
     expect(result).toBe("the [OK] passed");
   });
 });
@@ -616,9 +583,7 @@ describe("distance: auto", () => {
     expect(fs.isMatch("hallo")).toBe(true);
     // distance 2: too far for auto on 5 chars
     const m = fs.findIter("hxxlo");
-    expect(
-      m.some((x) => x.distance > 1),
-    ).toBe(false);
+    expect(m.some((x) => x.distance > 1)).toBe(false);
   });
 
   test("long pattern (6+): distance 2", () => {
@@ -679,11 +644,7 @@ describe("distance()", () => {
     expect(distance("😀x", "😀y")).toBe(1);
     expect(distance("😀🎉", "🎉😀")).toBe(2);
     expect(
-      distance(
-        "😀🎉",
-        "🎉😀",
-        "damerau-levenshtein",
-      ),
+      distance("😀🎉", "🎉😀", "damerau-levenshtein"),
     ).toBe(1);
   });
 
@@ -703,9 +664,9 @@ describe("distance()", () => {
     expect(distance("abc", "xyz")).toBe(
       distance("xyz", "abc"),
     );
-    expect(
-      distance("hello", "world"),
-    ).toBe(distance("world", "hello"));
+    expect(distance("hello", "world")).toBe(
+      distance("world", "hello"),
+    );
   });
 });
 
@@ -720,9 +681,7 @@ describe("distance() vs js-levenshtein", () => {
   let jsLev: ((a: string, b: string) => number) | null =
     null;
   try {
-    jsLev = require(
-      "../__bench__/node_modules/js-levenshtein",
-    );
+    jsLev = require("../__bench__/node_modules/js-levenshtein");
   } catch {
     // bench deps not installed
   }
@@ -766,11 +725,7 @@ describe("distance() vs js-levenshtein", () => {
     expect(jsLev("🎉🔥", "🔥🎉")).toBe(4);
 
     expect(
-      distance(
-        "🎉🔥",
-        "🔥🎉",
-        "damerau-levenshtein",
-      ),
+      distance("🎉🔥", "🔥🎉", "damerau-levenshtein"),
     ).toBe(1);
   });
 });
