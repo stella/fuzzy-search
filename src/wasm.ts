@@ -1,21 +1,26 @@
-import { createRequire } from "node:module";
+/* Browser/WASM entry point — loads the NAPI-RS
+ * browser WASM binding and re-exports the
+ * public API through the shared core. */
 
-import { createApi } from "./core";
-import type { NativeBinding } from "./core";
+// SAFETY: NAPI-RS auto-generated browser WASM loader
+// exports the native module; cast to NativeBinding
+// for the createApi factory.
+import native from "../fuzzy-search.wasi-browser.js";
 
-const require = createRequire(import.meta.url);
-// SAFETY: NAPI-RS WASI loader returns the same native binding
-// shape as the native loader.
-const native = require(
-  "../fuzzy-search.wasi.cjs",
-) as NativeBinding;
+import {
+  createApi,
+  type NativeBinding,
+} from "./core";
 
-const { FuzzySearch, distance } = createApi(native);
+const { FuzzySearch, distance } =
+  createApi(native as unknown as NativeBinding);
 
 export { FuzzySearch, distance };
+
 export type {
+  FuzzyMatch,
   Metric,
+  NativeBinding,
   Options,
   PatternEntry,
-  FuzzyMatch,
 } from "./core";
