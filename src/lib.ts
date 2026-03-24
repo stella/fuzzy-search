@@ -152,6 +152,9 @@ const normalizeEntry = (
         ),
       };
     }
+    // SAFETY: The "auto" case was already handled above,
+    // so p.distance is number | undefined — matching
+    // NormalizedEntry.
     return p as NormalizedEntry;
   }
   throw new TypeError(
@@ -165,6 +168,8 @@ const unpack = (
   haystack: string,
   names: (string | undefined)[],
 ): FuzzyMatch[] => {
+  // SAFETY: Loop increments by 4 and terminates at packed.length.
+  // Indices i through i+3 are always in bounds.
   const len = packed.length;
   // eslint-disable-next-line unicorn/no-new-array
   const matches = new Array<FuzzyMatch>(len / 4);

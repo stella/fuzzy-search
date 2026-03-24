@@ -34,8 +34,8 @@
   "main": "dist/lib.js",
   "module": "dist/lib.mjs",
   "browser": {
-    "./lib.js": "./lib.wasm.js",
-    "./lib.mjs": "./lib.wasm.js"
+    "./dist/lib.js": "./lib.wasm.js",
+    "./dist/lib.mjs": "./lib.wasm.js"
   },
   "types": "dist/lib.d.ts",
   "exports": {
