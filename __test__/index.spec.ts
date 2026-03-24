@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { FuzzySearch, distance } from "../lib";
+import { FuzzySearch, distance } from "..";
 
 // ─── Core functionality ───────────────────────
 

@@ -21,9 +21,7 @@
     "url": "https://github.com/stella/fuzzy-search"
   },
   "files": [
-    "lib.js",
-    "lib.mjs",
-    "lib.d.ts",
+    "dist",
     "lib.wasm.js",
     "index.js",
     "index.d.ts",
@@ -33,22 +31,22 @@
     "wasi-worker.mjs",
     "wasi-worker-browser.mjs"
   ],
-  "main": "lib.js",
-  "module": "lib.mjs",
+  "main": "dist/lib.js",
+  "module": "dist/lib.mjs",
   "browser": {
     "./lib.js": "./lib.wasm.js",
     "./lib.mjs": "./lib.wasm.js"
   },
-  "types": "lib.d.ts",
+  "types": "dist/lib.d.ts",
   "exports": {
     ".": {
       "import": {
-        "types": "./lib.d.ts",
-        "default": "./lib.mjs"
+        "types": "./dist/lib.d.mts",
+        "default": "./dist/lib.mjs"
       },
       "require": {
-        "types": "./lib.d.ts",
-        "default": "./lib.js"
+        "types": "./dist/lib.d.ts",
+        "default": "./dist/lib.js"
       }
     }
   },
@@ -58,7 +56,8 @@
     "build:wasm": "napi build --target wasm32-wasip1-threads --release",
     "artifacts": "napi artifacts",
     "universal": "napi universal",
-    "prepublishOnly": "napi prepublish -t npm",
+    "build:js": "tsdown",
+    "prepublishOnly": "napi prepublish -t npm && tsdown",
     "test": "bun test __test__/index.spec.ts",
     "test:props": "bun test __test__/properties.spec.ts",
     "format": "oxfmt . && rustfmt src/lib.rs",
@@ -81,7 +80,8 @@
     "emnapi": "^1.9.0",
     "fast-check": "^4.6.0",
     "oxfmt": "^0.40.0",
-    "oxlint": "^1.55.0"
+    "oxlint": "^1.55.0",
+    "tsdown": "^0.12.4"
   },
   "optionalDependencies": {
     "@stll/fuzzy-search-darwin-arm64": "0.1.0",

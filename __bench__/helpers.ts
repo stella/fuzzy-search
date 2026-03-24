@@ -3,7 +3,7 @@ import { distance as fastLev } from "fastest-levenshtein";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const fuzzball = require("fuzzball");
 
-import { FuzzySearch } from "../lib";
+import { FuzzySearch } from "..";
 
 // ─── Adapter type ─────────────────────────────
 
