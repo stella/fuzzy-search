@@ -21,6 +21,32 @@ bun run lint        # oxlint
 bun run format      # oxfmt + rustfmt
 ```
 
+## Architecture
+
+The package ships native binaries for each platform as
+optional npm sub-packages (`npm/<target>/`). On install,
+npm/bun only downloads the binary matching the host platform.
+
+For browser/WASM support, the `npm/wasm32-wasi/` sub-package
+contains the WASM binary and WASI runtime glue. The umbrella
+package's `browser` export condition points to `dist/wasm.js`,
+which imports from `@stll/fuzzy-search-wasm32-wasi`.
+
+### Building WASM locally
+
+```bash
+# Requires: wasm32-wasip1-threads Rust target
+rustup target add wasm32-wasip1-threads
+bun run build:wasm
+# Copy artifacts into the sub-package
+cp fuzzy-search.wasm \
+  npm/wasm32-wasi/fuzzy-search.wasm32-wasi.wasm
+cp fuzzy-search.wasi.cjs npm/wasm32-wasi/
+cp fuzzy-search.wasi-browser.js npm/wasm32-wasi/
+cp wasi-worker.mjs npm/wasm32-wasi/
+cp wasi-worker-browser.mjs npm/wasm32-wasi/
+```
+
 ## Pull requests
 
 - One logical change per PR.

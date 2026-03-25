@@ -148,6 +148,8 @@ jobs:
             use-cross: true
           - target: x86_64-pc-windows-msvc
             os: windows-latest
+          - target: wasm32-wasip1-threads
+            os: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
@@ -167,8 +169,14 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
+      - name: Build (wasm)
+        if: matrix.settings.target == 'wasm32-wasip1-threads'
+        run: bun run build:wasm
+
       - name: Build (native)
-        if: ${{ !matrix.settings.use-cross }}
+        if: >-
+          matrix.settings.target != 'wasm32-wasip1-threads'
+          && !matrix.settings.use-cross
         run: >
           bun run build
           --target ${{ matrix.settings.target }}
@@ -180,10 +188,26 @@ jobs:
           --target ${{ matrix.settings.target }}
           --use-napi-cross
 
-      - uses: actions/upload-artifact@v7
+      - name: Upload native bindings
+        if: >-
+          matrix.settings.target != 'wasm32-wasip1-threads'
+        uses: actions/upload-artifact@v7
         with:
           name: bindings-${{ matrix.settings.target }}
           path: "*.node"
+          if-no-files-found: error
+
+      - name: Upload wasm bindings
+        if: >-
+          matrix.settings.target == 'wasm32-wasip1-threads'
+        uses: actions/upload-artifact@v7
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: |
+            *.wasm
+            *.cjs
+            *.js
+            wasi-worker*.mjs
           if-no-files-found: error
 
   # ── Test (after build, push only) ─────────────
@@ -210,6 +234,10 @@ jobs:
           ls -R artifacts/
           for dir in artifacts/bindings-*; do
             cp "$dir"/*.node . 2>/dev/null || true
+            cp "$dir"/*.wasm . 2>/dev/null || true
+            cp "$dir"/*.cjs . 2>/dev/null || true
+            cp "$dir"/*.js . 2>/dev/null || true
+            cp "$dir"/wasi-worker*.mjs . 2>/dev/null || true
           done
           ls -la *.node 2>/dev/null || echo "No .node files"
 
@@ -245,6 +273,20 @@ jobs:
 
       - name: Prepare npm packages
         run: bun x @napi-rs/cli artifacts
+
+      - name: Copy wasm artifacts to sub-package
+        run: |
+          cp fuzzy-search.wasm \
+            npm/wasm32-wasi/fuzzy-search.wasm32-wasi.wasm \
+            2>/dev/null || true
+          cp fuzzy-search.wasi.cjs npm/wasm32-wasi/ \
+            2>/dev/null || true
+          cp fuzzy-search.wasi-browser.js npm/wasm32-wasi/ \
+            2>/dev/null || true
+          cp wasi-worker.mjs npm/wasm32-wasi/ \
+            2>/dev/null || true
+          cp wasi-worker-browser.mjs npm/wasm32-wasi/ \
+            2>/dev/null || true
 
       - name: Publish to npm
         run: |

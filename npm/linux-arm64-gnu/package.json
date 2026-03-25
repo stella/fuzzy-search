@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search-linux-arm64-gnu",
-  "version": "0.2.0",
+  "version": "0.2.4",
   "cpu": [
     "arm64"
   ],
@@ -10,10 +10,10 @@
   ],
   "description": "NAPI-RS bindings for fuzzy string matching via Myers' bit-parallel algorithm for Node.js/Bun",
   "keywords": [
+    "approximate-matching",
+    "edit-distance",
     "fuzzy-search",
     "levenshtein",
-    "edit-distance",
-    "approximate-matching",
     "napi-rs",
     "native",
     "rust"
