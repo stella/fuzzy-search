@@ -3,7 +3,7 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
   entry: ["src/index.ts", "src/wasm.ts"],
   format: ["esm"],
-  dts: true,
+  dts: { resolve: true, autoAddExts: true },
   clean: true,
   sourcemap: true,
   hash: false,
