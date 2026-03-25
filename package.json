@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "NAPI-RS bindings for fuzzy string matching via Myers' bit-parallel algorithm for Node.js/Bun",
   "keywords": [
     "approximate-matching",
@@ -61,11 +61,13 @@
     "bench:install": "cd __bench__ && bun install",
     "bench:download": "bash __bench__/download-corpus.sh"
   },
+  "dependencies": {
+    "@napi-rs/wasm-runtime": "^1.1.1"
+  },
   "devDependencies": {
     "@emnapi/core": "^1.9.0",
     "@emnapi/runtime": "^1.9.0",
     "@napi-rs/cli": "^3.0.0",
-    "@napi-rs/wasm-runtime": "^1.1.1",
     "@tybys/wasm-util": "^0.10.1",
     "@types/node": "^25.5.0",
     "bun-types": "^1.3.10",
