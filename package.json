@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "NAPI-RS bindings for fuzzy string matching via Myers' bit-parallel algorithm for Node.js/Bun",
   "keywords": [
     "approximate-matching",
@@ -23,11 +23,7 @@
   "files": [
     "dist",
     "index.js",
-    "index.d.ts",
-    "fuzzy-search.wasi.cjs",
-    "fuzzy-search.wasi-browser.js",
-    "wasi-worker.mjs",
-    "wasi-worker-browser.mjs"
+    "index.d.ts"
   ],
   "type": "module",
   "types": "dist/index.d.ts",
@@ -45,7 +41,7 @@
   "scripts": {
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "build:wasm": "napi build --target wasm32-wasip1-threads --release",
+    "build:wasm": "napi build --platform --target wasm32-wasip1-threads --release",
     "artifacts": "napi artifacts",
     "universal": "napi universal",
     "build:js": "tsdown",
@@ -61,9 +57,6 @@
     "bench:install": "cd __bench__ && bun install",
     "bench:download": "bash __bench__/download-corpus.sh"
   },
-  "dependencies": {
-    "@napi-rs/wasm-runtime": "^1.1.1"
-  },
   "devDependencies": {
     "@emnapi/core": "^1.9.0",
     "@emnapi/runtime": "^1.9.0",
@@ -78,10 +71,11 @@
     "tsdown": "^0.12.4"
   },
   "optionalDependencies": {
-    "@stll/fuzzy-search-darwin-arm64": "0.2.0",
-    "@stll/fuzzy-search-darwin-x64": "0.2.0",
-    "@stll/fuzzy-search-linux-arm64-gnu": "0.2.0",
-    "@stll/fuzzy-search-linux-x64-gnu": "0.2.0"
+    "@stll/fuzzy-search-darwin-arm64": "0.2.4",
+    "@stll/fuzzy-search-darwin-x64": "0.2.4",
+    "@stll/fuzzy-search-linux-arm64-gnu": "0.2.4",
+    "@stll/fuzzy-search-linux-x64-gnu": "0.2.4",
+    "@stll/fuzzy-search-wasm32-wasi": "0.2.4"
   },
   "napi": {
     "binaryName": "fuzzy-search",
