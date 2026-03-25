@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search-linux-x64-gnu",
-  "version": "0.2.4",
+  "version": "0.0.1",
   "cpu": [
     "x64"
   ],
@@ -29,6 +29,9 @@
   },
   "bugs": {
     "url": "https://github.com/stella/fuzzy-search/issues"
+  },
+  "publishConfig": {
+    "access": "restricted"
   },
   "os": [
     "linux"
