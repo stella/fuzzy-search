@@ -205,6 +205,7 @@ jobs:
           name: bindings-${{ matrix.settings.target }}
           path: |
             *.wasm
+            !*.debug.wasm
             *.cjs
             *.js
             wasi-worker*.mjs
@@ -273,20 +274,6 @@ jobs:
 
       - name: Prepare npm packages
         run: bun x @napi-rs/cli artifacts
-
-      - name: Copy wasm artifacts to sub-package
-        run: |
-          cp fuzzy-search.wasm \
-            npm/wasm32-wasi/fuzzy-search.wasm32-wasi.wasm \
-            2>/dev/null || true
-          cp fuzzy-search.wasi.cjs npm/wasm32-wasi/ \
-            2>/dev/null || true
-          cp fuzzy-search.wasi-browser.js npm/wasm32-wasi/ \
-            2>/dev/null || true
-          cp wasi-worker.mjs npm/wasm32-wasi/ \
-            2>/dev/null || true
-          cp wasi-worker-browser.mjs npm/wasm32-wasi/ \
-            2>/dev/null || true
 
       - name: Publish to npm
         run: |

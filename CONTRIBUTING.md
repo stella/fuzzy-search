@@ -38,14 +38,14 @@ which imports from `@stll/fuzzy-search-wasm32-wasi`.
 # Requires: wasm32-wasip1-threads Rust target
 rustup target add wasm32-wasip1-threads
 bun run build:wasm
-# Copy artifacts into the sub-package
-cp fuzzy-search.wasm \
-  npm/wasm32-wasi/fuzzy-search.wasm32-wasi.wasm
-cp fuzzy-search.wasi.cjs npm/wasm32-wasi/
-cp fuzzy-search.wasi-browser.js npm/wasm32-wasi/
-cp wasi-worker.mjs npm/wasm32-wasi/
-cp wasi-worker-browser.mjs npm/wasm32-wasi/
+# Place artifacts into sub-packages
+bun x @napi-rs/cli artifacts
 ```
+
+The `build:wasm` script uses `--platform` so the output is named
+`fuzzy-search.wasm32-wasi.wasm` (matching the napi target
+convention). `napi artifacts` then moves all generated files
+into the correct `npm/` sub-packages automatically.
 
 ## Pull requests
 
