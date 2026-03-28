@@ -9,7 +9,7 @@ export default defineConfig([
     clean: true,
     sourcemap: true,
     hash: false,
-    external: [/index\.js/],
+    deps: { neverBundle: [/index\.js/] },
   },
   {
     entry: ["src/wasm.ts"],
@@ -19,6 +19,6 @@ export default defineConfig([
     clean: true,
     sourcemap: true,
     hash: false,
-    external: [/fuzzy-search\.wasi/],
+    deps: { neverBundle: [/fuzzy-search\.wasi/] },
   },
 ]);
