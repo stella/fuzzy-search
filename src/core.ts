@@ -165,26 +165,34 @@ const unpack = (
   haystack: string,
   names: (string | undefined)[],
 ): FuzzyMatch[] => {
-  // SAFETY: Loop increments by 4 and terminates at packed.length.
-  // Indices i through i+3 are always in bounds.
   const len = packed.length;
-  // eslint-disable-next-line unicorn/no-new-array
-  const matches = new Array<FuzzyMatch>(len / 4);
-  for (let i = 0, j = 0; i < len; i += 4, j++) {
-    const idx = packed[i]!;
-    const start = packed[i + 1]!;
-    const end = packed[i + 2]!;
+  const matches: FuzzyMatch[] = [];
+  for (let i = 0; i < len; i += 4) {
+    const idx = packed[i];
+    const start = packed[i + 1];
+    const end = packed[i + 2];
+    const distance = packed[i + 3];
+    if (
+      idx === undefined ||
+      start === undefined ||
+      end === undefined ||
+      distance === undefined
+    ) {
+      throw new Error(
+        `Malformed packed array at offset ${String(i)}`,
+      );
+    }
     const m: FuzzyMatch = {
       pattern: idx,
       start,
       end,
       text: haystack.slice(start, end),
-      distance: packed[i + 3]!,
+      distance,
     };
     if (names[idx] !== undefined) {
       m.name = names[idx];
     }
-    matches[j] = m;
+    matches.push(m);
   }
   return matches;
 };

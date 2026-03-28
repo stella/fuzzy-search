@@ -56,7 +56,7 @@ function levenshtein(a: string, b: string): number {
 
   let prev = Array.from({ length: n + 1 }, (_, i) => i);
   for (let i = 1; i <= m; i++) {
-    const curr = new Array<number>(n + 1);
+    const curr: number[] = Array.from({ length: n + 1 });
     curr[0] = i;
     for (let j = 1; j <= n; j++) {
       const cost = ac[i - 1] === bc[j - 1] ? 0 : 1;
@@ -1416,11 +1416,14 @@ function damerauLev(a: string, b: string): number {
   if (m === 0) return n;
   if (n === 0) return m;
 
-  let prev2 = new Array<number>(n + 1).fill(0);
+  let prev2: number[] = Array.from(
+    { length: n + 1 },
+    () => 0,
+  );
   let prev = Array.from({ length: n + 1 }, (_, i) => i);
 
   for (let i = 1; i <= m; i++) {
-    const curr = new Array<number>(n + 1);
+    const curr: number[] = Array.from({ length: n + 1 });
     curr[0] = i;
     for (let j = 1; j <= n; j++) {
       const cost = ac[i - 1] === bc[j - 1] ? 0 : 1;
