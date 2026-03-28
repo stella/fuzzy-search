@@ -27,10 +27,12 @@ The package ships native binaries for each platform as
 optional npm sub-packages (`npm/<target>/`). On install,
 npm/bun only downloads the binary matching the host platform.
 
-For browser/WASM support, the `npm/wasm32-wasi/` sub-package
-contains the WASM binary and WASI runtime glue. The umbrella
-package's `browser` export condition points to `dist/wasm.js`,
-which imports from `@stll/fuzzy-search-wasm32-wasi`.
+Browser/WASM support is published as a separate package,
+`@stll/fuzzy-search-wasm` (source in `wasm/package.json`).
+Its entry point is `wasm/dist/wasm.mjs`, which imports from
+`@stll/fuzzy-search-wasm32-wasi`. The root `tsdown` config
+builds both the main package (to `dist/`) and the WASM
+package (to `wasm/dist/`).
 
 ### Building WASM locally
 
