@@ -270,6 +270,9 @@ jobs:
       - name: Prepare npm packages
         run: bun x @napi-rs/cli artifacts
 
+      - name: Build JS/TS entrypoints
+        run: bun run build:js
+
       - name: Publish to npm
         run: |
           npm publish --access restricted
@@ -278,5 +281,7 @@ jobs:
             npm publish --access restricted
             cd ../..
           done
+          cd wasm
+          npm publish --access restricted
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
