@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publishConfig": {
     "access": "restricted"
   },
@@ -32,10 +32,6 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "browser": {
-        "types": "./dist/wasm.d.ts",
-        "import": "./dist/wasm.js"
-      },
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
@@ -73,11 +69,11 @@
     "tsdown": "^0.12.4"
   },
   "optionalDependencies": {
-    "@stll/fuzzy-search-darwin-arm64": "0.0.1",
-    "@stll/fuzzy-search-darwin-x64": "0.0.1",
-    "@stll/fuzzy-search-linux-arm64-gnu": "0.0.1",
-    "@stll/fuzzy-search-linux-x64-gnu": "0.0.1",
-    "@stll/fuzzy-search-wasm32-wasi": "0.0.1"
+    "@stll/fuzzy-search-darwin-x64": "0.0.2",
+    "@stll/fuzzy-search-darwin-arm64": "0.0.2",
+    "@stll/fuzzy-search-linux-x64-gnu": "0.0.2",
+    "@stll/fuzzy-search-linux-arm64-gnu": "0.0.2",
+    "@stll/fuzzy-search-wasm32-wasi": "0.0.2"
   },
   "napi": {
     "binaryName": "fuzzy-search",

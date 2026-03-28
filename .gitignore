@@ -38,6 +38,9 @@ __bench__/bun.lock
 .DS_Store
 *.pem
 
+# WASM sub-package build output
+wasm/dist/
+
 # Turbo / cache
 .turbo
 .cache

@@ -1,0 +1,41 @@
+{
+  "name": "@stll/fuzzy-search-wasm",
+  "version": "0.0.1",
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "description": "Fuzzy string matching for browsers via WebAssembly. Same API as @stll/fuzzy-search.",
+  "keywords": [
+    "approximate-matching",
+    "edit-distance",
+    "fuzzy-search",
+    "levenshtein",
+    "napi-rs",
+    "rust",
+    "wasm"
+  ],
+  "homepage": "https://github.com/stella/fuzzy-search#readme",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stella/fuzzy-search"
+  },
+  "bugs": {
+    "url": "https://github.com/stella/fuzzy-search/issues"
+  },
+  "type": "module",
+  "main": "dist/wasm.js",
+  "types": "dist/wasm.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/wasm.d.ts",
+      "import": "./dist/wasm.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@stll/fuzzy-search-wasm32-wasi": "0.0.2"
+  }
+}
