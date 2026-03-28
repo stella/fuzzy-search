@@ -22,7 +22,7 @@ function levenshtein(a: string, b: string): number {
   if (n === 0) return m;
   let prev = Array.from({ length: n + 1 }, (_, i) => i);
   for (let i = 1; i <= m; i++) {
-    const curr = new Array<number>(n + 1);
+    const curr: number[] = Array.from({ length: n + 1 });
     curr[0] = i;
     for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
