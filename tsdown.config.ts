@@ -19,6 +19,22 @@ export default defineConfig([
     clean: true,
     sourcemap: true,
     hash: false,
-    deps: { neverBundle: [/fuzzy-search\.wasi/] },
+    deps: { neverBundle: [/^@napi-rs\/wasm-runtime$/] },
+    copy: [
+      {
+        from: "fuzzy-search.wasm32-wasi.wasm",
+        to: "wasm/dist",
+      },
+    ],
+  },
+  {
+    entry: ["wasi-worker-browser.mjs"],
+    outDir: "wasm/dist",
+    format: ["esm"],
+    dts: false,
+    clean: false,
+    sourcemap: true,
+    hash: false,
+    deps: { neverBundle: [/^@napi-rs\/wasm-runtime$/] },
   },
 ]);

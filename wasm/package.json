@@ -24,7 +24,7 @@
     "dist"
   ],
   "type": "module",
-  "main": "dist/wasm.mjs",
+  "module": "dist/wasm.mjs",
   "types": "dist/wasm.d.mts",
   "exports": {
     ".": {
@@ -40,6 +40,6 @@
     "prepublishOnly": "cd .. && bun run build:js"
   },
   "dependencies": {
-    "@stll/fuzzy-search-wasm32-wasi": "0.0.2"
+    "@napi-rs/wasm-runtime": "^1.1.1"
   }
 }
