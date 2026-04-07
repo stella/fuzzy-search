@@ -122,6 +122,32 @@ jobs:
         env:
           RUSTDOCFLAGS: -Dwarnings
 
+  # ── PR verification (trusted PRs) ────────────
+  pr-verify:
+    name: PR verify
+    if: >-
+      github.event_name == 'pull_request'
+      && needs.trust-check.outputs.trusted == 'true'
+    needs: [trust-check]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: pr-verify
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bun run build:js
+      - run: bun run check:metadata
+      - run: bun run pack:check
+      - run: bun run test:node
+      - run: bun test
+
   # ── Build (push to main + tags only) ──────────
   build:
     name: Build - ${{ matrix.settings.target }}
