@@ -55,9 +55,11 @@ into the correct `npm/` sub-packages automatically.
 
 - One logical change per PR.
 - Include tests for bug fixes and new features.
-- Run `bun run build:js && bun test && bun run test:node
-&& bun run lint && bun run format`
-  before submitting.
+- Run the full pre-submit pipeline before submitting:
+
+```bash
+bun run build:js && bun test && bun run test:node && bun run lint && bun run format
+```
 - Use [Conventional Commits](https://www.conventionalcommits.org/):
   `feat:`, `fix:`, `chore:`, `docs:`.
 - Squash merge is enforced; keep the PR title clean.
