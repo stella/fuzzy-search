@@ -142,6 +142,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run build
+      - run: bun run build:wasm
       - run: bun run build:js
       - run: bun run check:metadata
       - run: bun run pack:check

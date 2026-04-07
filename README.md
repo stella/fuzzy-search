@@ -265,6 +265,7 @@ compatible with `String.prototype.slice()`.
 ```bash
 bun install
 bun run build           # native module (requires Rust)
+bun run build:wasm      # wasm artifact for wasm/dist
 bun run build:js        # package ESM bundles
 bun test                # Bun unit + property tests
 bun run test:node       # Node ESM package smoke test

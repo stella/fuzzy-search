@@ -16,6 +16,7 @@ a pull request.
 # Prerequisites: Rust toolchain, Bun
 bun install
 bun run build       # native module
+bun run build:wasm  # wasm artifact for wasm/dist
 bun run build:js    # package ESM bundles
 bun test            # run tests
 bun run test:node   # Node ESM smoke test
@@ -58,7 +59,7 @@ into the correct `npm/` sub-packages automatically.
 - Run the full pre-submit pipeline before submitting:
 
 ```bash
-bun run build:js && bun test && bun run test:node && bun run lint && bun run format
+bun run build:wasm && bun run build:js && bun test && bun run test:node && bun run lint && bun run format
 ```
 - Use [Conventional Commits](https://www.conventionalcommits.org/):
   `feat:`, `fix:`, `chore:`, `docs:`.
