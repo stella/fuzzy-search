@@ -70,7 +70,8 @@
     "fast-check": "^4.6.0",
     "oxfmt": "^0.42.0",
     "oxlint": "^1.57.0",
-    "tsdown": "^0.21.6"
+    "tsdown": "^0.21.6",
+    "typescript": "^5.9.3"
   },
   "optionalDependencies": {
     "@stll/fuzzy-search-darwin-arm64": "0.1.2",

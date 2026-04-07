@@ -48,7 +48,15 @@ for (const [name, depVersion] of Object.entries(
   );
 }
 
-for (const dir of readdirSync(path.join(rootDir, "npm"))) {
+for (const dirent of readdirSync(
+  path.join(rootDir, "npm"),
+  { withFileTypes: true },
+)) {
+  if (!dirent.isDirectory()) {
+    continue;
+  }
+
+  const dir = dirent.name;
   const pkg = JSON.parse(
     readFileSync(
       path.join(rootDir, "npm", dir, "package.json"),
