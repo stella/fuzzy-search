@@ -208,7 +208,8 @@ const unpack = (
  * scanning per pattern (patterns up to 64 chars).
  *
  * @throws {Error} If a pattern is empty, too
- *   long (> 64 chars), or distance > 3.
+ *   long (> 64 chars), or has distance >=
+ *   pattern length.
  *
  * @example
  * ```ts

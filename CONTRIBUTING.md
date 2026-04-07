@@ -16,7 +16,9 @@ a pull request.
 # Prerequisites: Rust toolchain, Bun
 bun install
 bun run build       # native module
+bun run build:js    # package ESM bundles
 bun test            # run tests
+bun run test:node   # Node ESM smoke test
 bun run lint        # oxlint
 bun run format      # oxfmt + rustfmt
 ```
@@ -53,11 +55,21 @@ into the correct `npm/` sub-packages automatically.
 
 - One logical change per PR.
 - Include tests for bug fixes and new features.
-- Run `bun test && bun run lint && bun run format`
+- Run `bun run build:js && bun test && bun run test:node
+&& bun run lint && bun run format`
   before submitting.
 - Use [Conventional Commits](https://www.conventionalcommits.org/):
   `feat:`, `fix:`, `chore:`, `docs:`.
 - Squash merge is enforced; keep the PR title clean.
+
+If you change `package.json` version, also update the
+generated metadata before opening a PR:
+
+```bash
+bun run sync:versions
+bun run build
+bun run check:metadata
+```
 
 ## Benchmarks
 

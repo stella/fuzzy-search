@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "NAPI-RS bindings for fuzzy string matching via Myers' bit-parallel algorithm for Node.js/Bun",
   "keywords": [
     "approximate-matching",
@@ -37,15 +37,19 @@
     "access": "restricted"
   },
   "scripts": {
-    "build": "napi build --platform --release",
-    "build:debug": "napi build --platform",
+    "build": "napi build --platform --release --esm",
+    "build:debug": "napi build --platform --esm",
     "build:wasm": "napi build --platform --target wasm32-wasip1-threads --release",
     "artifacts": "napi artifacts",
     "universal": "napi universal",
+    "sync:versions": "napi prepublish -t npm --skip-optional-publish",
     "build:js": "tsdown",
     "prepublishOnly": "napi prepublish -t npm && tsdown",
     "test": "bun test __test__/index.spec.ts",
+    "test:node": "node ./scripts/smoke-node.mjs",
     "test:props": "bun test __test__/properties.spec.ts",
+    "check:metadata": "node ./scripts/check-metadata.mjs",
+    "pack:check": "npm pack --dry-run && (cd wasm && npm pack --dry-run)",
     "format": "oxfmt . && rustfmt src/lib.rs",
     "lint": "oxlint .",
     "bench": "bun __bench__/speed.ts",
@@ -69,11 +73,11 @@
     "tsdown": "^0.21.6"
   },
   "optionalDependencies": {
-    "@stll/fuzzy-search-darwin-arm64": "0.0.2",
-    "@stll/fuzzy-search-darwin-x64": "0.0.2",
-    "@stll/fuzzy-search-linux-arm64-gnu": "0.0.2",
-    "@stll/fuzzy-search-linux-x64-gnu": "0.0.2",
-    "@stll/fuzzy-search-wasm32-wasi": "0.0.2"
+    "@stll/fuzzy-search-darwin-arm64": "0.1.2",
+    "@stll/fuzzy-search-darwin-x64": "0.1.2",
+    "@stll/fuzzy-search-linux-arm64-gnu": "0.1.2",
+    "@stll/fuzzy-search-linux-x64-gnu": "0.1.2",
+    "@stll/fuzzy-search-wasm32-wasi": "0.1.2"
   },
   "napi": {
     "binaryName": "fuzzy-search",

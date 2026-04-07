@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Node ESM package entry now loads correctly
+- Package and sub-package versions are kept aligned
+- Docs and AI-facing metadata now reflect the real API
+
 ## 0.1.0 (2026-03-22)
 
 ### Features

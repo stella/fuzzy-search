@@ -1,23 +1,37 @@
 # @stll/fuzzy-search
 
-NAPI-RS bindings for fuzzy string matching via Myers'
-bit-parallel algorithm. Provides Levenshtein distance,
-fuzzy search with max distance, and batch matching.
+Native fuzzy substring matching for Node.js and Bun,
+implemented in Rust via NAPI-RS.
 
 ## API
 
 ```typescript
-import { levenshtein, fuzzySearch } from '@stll/fuzzy-search'
+import { FuzzySearch, distance } from "@stll/fuzzy-search";
 
-// Levenshtein distance
-levenshtein("kitten", "sitting") // 3
+const fs = new FuzzySearch(
+  [
+    { pattern: "Novák", distance: 1, name: "surname" },
+    { pattern: "Příbram", distance: "auto" },
+  ],
+  {
+    normalizeDiacritics: true,
+    wholeWords: true,
+  },
+);
 
-// Fuzzy search with max distance
-fuzzySearch("hello", "helo", 2) // { found: true, distance: 1 }
+fs.findIter("Nowák v Pribram");
+// [
+//   { pattern: 0, start: 0, end: 5, text: "Nowák", distance: 1, name: "surname" },
+//   { pattern: 1, start: 8, end: 15, text: "Pribram", distance: 0 },
+// ]
+
+distance("kitten", "sitting"); // 3
+distance("abcd", "abdc", "damerau-levenshtein"); // 1
 ```
 
-## Performance
+## Notes
 
-Native Rust implementation via NAPI-RS. Typically
-10-100x faster than pure JavaScript implementations
-for long strings.
+- Match offsets are UTF-16 code unit indices,
+  compatible with `String.prototype.slice()`.
+- Browser/WASM support is published separately as
+  `@stll/fuzzy-search-wasm`.

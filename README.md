@@ -27,8 +27,9 @@ Prebuilt binaries are available for:
 | ------------- | ------------ |
 | macOS         | x64, arm64   |
 | Linux (glibc) | x64, arm64   |
-| Linux (musl)  | x64          |
-| Windows       | x64          |
+
+Browser/WASM is published separately as
+`@stll/fuzzy-search-wasm`.
 
 ## Usage
 
@@ -66,6 +67,7 @@ const fs = new FuzzySearch([
   "simple", // distance 1
   { pattern: "named", name: "entity" }, // distance 1
   { pattern: "precise", distance: 2 }, // distance 2
+  { pattern: "adaptive", distance: "auto" }, // 0/1/2 by length
 ]);
 ```
 
@@ -89,8 +91,9 @@ const fs = new FuzzySearch(patterns, {
   // Case-insensitive matching (Unicode-aware).
   caseInsensitive: true, // default: false
 
-  // Unicode word boundaries (reserved for future
-  // UAX#29 segmentation support).
+  // Unicode-aware word boundaries. For Thai/Lao/
+  // Khmer/Myanmar, this switches to UAX#29
+  // segmentation automatically.
   unicodeBoundaries: true, // default: true
 });
 ```
@@ -155,9 +158,11 @@ Run locally:
 Every match is verified against a naive Levenshtein
 oracle:
 
-- **36 property tests** × 1,000 random inputs =
-  36,000 test cases (~9,000 assertions).
-- **25,528 matches** oracle-verified on real corpora
+- Property-based tests generate thousands of random
+  inputs and cross-check every reported match
+  against a naive oracle.
+- Tens of thousands of corpus matches are
+  oracle-verified on real corpora
   (Canterbury bible.txt, Leipzig Czech news) across
   all option combinations.
 - **9 bugs found and fixed** by property tests.
@@ -184,9 +189,14 @@ UTF-16 supplementary plane, CJK text, long patterns
 ```typescript
 type PatternEntry =
   | string
-  | { pattern: string; distance?: number; name?: string };
+  | {
+      pattern: string;
+      distance?: number | "auto";
+      name?: string;
+    };
 
 type Options = {
+  metric?: "levenshtein" | "damerau-levenshtein";
   normalizeDiacritics?: boolean; // default: false
   wholeWords?: boolean; // default: true
   caseInsensitive?: boolean; // default: false
@@ -255,8 +265,9 @@ compatible with `String.prototype.slice()`.
 ```bash
 bun install
 bun run build           # native module (requires Rust)
-bun test                # 36 unit tests
-bun run test:props      # 36 property tests × 1000 runs
+bun run build:js        # package ESM bundles
+bun test                # Bun unit + property tests
+bun run test:node       # Node ESM package smoke test
 
 bun run bench:install   # benchmark dependencies
 bun run bench:download  # download corpora
@@ -265,6 +276,7 @@ bun run bench:correctness  # oracle verification
 
 bun run lint            # oxlint
 bun run format          # oxfmt + rustfmt
+bun run check:metadata  # version / packaging consistency
 ```
 
 ## License
