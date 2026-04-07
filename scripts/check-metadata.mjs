@@ -76,8 +76,13 @@ const loader = readFileSync(
 );
 assert.match(
   loader,
-  /import \{ createRequire \} from 'node:module'/,
+  /import\s*\{\s*createRequire\s*\}\s*from\s*["']node:module["']/,
   "index.js must be generated in ESM mode",
+);
+assert.match(
+  loader,
+  /createRequire\(import\.meta\.url\)/,
+  "index.js must use createRequire(import.meta.url)",
 );
 
 const expectedVersions = [

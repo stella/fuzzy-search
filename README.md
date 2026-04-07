@@ -31,6 +31,9 @@ Prebuilt binaries are available for:
 Browser/WASM is published separately as
 `@stll/fuzzy-search-wasm`.
 
+This package is ESM-only. Use `import` in Node.js
+and Bun, not `require()`.
+
 ## Usage
 
 ```typescript

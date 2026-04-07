@@ -136,6 +136,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1-threads
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: pr-verify
