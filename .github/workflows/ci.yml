@@ -106,10 +106,13 @@ jobs:
           shared-key: rust-checks
 
       - name: Clippy
-        run: cargo clippy --all-targets -- -Dwarnings
+        run: cargo clippy --all-targets --all-features -- -Dwarnings
 
       - name: Format
-        run: cargo fmt -- --check
+        run: cargo fmt --all -- --check
+
+      - name: Test
+        run: cargo test --all-targets --all-features
 
       - name: License audit
         run: |
