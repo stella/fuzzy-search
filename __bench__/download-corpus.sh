@@ -46,8 +46,24 @@ for name in "${CORPORA[@]}"; do
   curl -sLO "${BASE}/${name}.tar.gz"
   tar xzf "${name}.tar.gz" \
     "${name}/${name}-sentences.txt"
-  cut -f2 "${name}/${name}-sentences.txt" \
-    | head -50000 > "${name}.txt"
+  NAME="${name}" python3 - <<'PY'
+import os
+from pathlib import Path
+
+name = os.environ["NAME"]
+source = Path(name) / f"{name}-sentences.txt"
+target = Path(f"{name}.txt")
+
+with source.open("r", encoding="utf-8", errors="ignore") as src, target.open(
+    "w", encoding="utf-8"
+) as dst:
+    for index, line in enumerate(src):
+        parts = line.rstrip("\n").split("\t", 1)
+        if len(parts) == 2:
+            dst.write(parts[1] + "\n")
+        if index + 1 >= 50000:
+            break
+PY
   rm -rf "${name}" "${name}.tar.gz"
   SIZE=$(wc -c < "${name}.txt" | tr -d ' ')
   echo "  ${name}.txt: ${SIZE} bytes"

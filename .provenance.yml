@@ -3,6 +3,14 @@ output_dir: provenance
 notice:
   internal_scopes:
     - "@stll"
+sbom:
+  exclude_regexes:
+    - '(^|/)dist(/.*)?$'
+    - '(^|/)wasm/dist(/.*)?$'
+    - '(^|/)[^/]+\.wasi(?:-browser)?\.js$'
+    - '(^|/)browser\.js$'
+    - '(^|/)[^/]+\.node$'
+    - '(^|/)[^/]+\.wasm$'
 projects:
   - id: root
     path: .

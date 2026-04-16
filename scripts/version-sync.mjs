@@ -182,6 +182,9 @@ function mismatches(expectedVersion) {
 
   if (fileExists(meta.indexCjsPath)) {
     const indexCjs = readText(meta.indexCjsPath);
+    if (!indexCjs.includes(`bindingPackageVersion !== '${expectedVersion}'`)) {
+      results.push(`${meta.indexCjsPath}: native binding guard not updated to ${expectedVersion}`);
+    }
     if (!indexCjs.includes(`expected ${expectedVersion} but got`)) {
       results.push(`${meta.indexCjsPath}: expected version string ${expectedVersion}`);
     }

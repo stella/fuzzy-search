@@ -25,13 +25,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/stella/fuzzy-search"
+    "url": "git+https://github.com/stella/fuzzy-search.git"
   },
   "bugs": {
     "url": "https://github.com/stella/fuzzy-search/issues"
   },
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
   "os": [
     "darwin"

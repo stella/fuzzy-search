@@ -5,10 +5,11 @@ bit-parallel algorithm. Exposes multi-pattern fuzzy
 search and a standalone edit-distance helper for
 Node.js and Bun.
 
-## Package status
+Install:
 
-Public npm publishing is not enabled yet. The planned
-package name is `@stll/fuzzy-search`.
+  npm install @stll/fuzzy-search
+  # or
+  bun add @stll/fuzzy-search
 
 ## API
 
@@ -23,3 +24,6 @@ const search = new FuzzySearch(
 search.isMatch("helo world"); // true
 distance("kitten", "sitting"); // 3
 ```
+
+For browser usage, use the separate
+`@stll/fuzzy-search-wasm` package.
