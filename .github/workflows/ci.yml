@@ -97,7 +97,7 @@ jobs:
     uses: stella/.github/.github/workflows/rust-napi-ci.yml@9ac6ab48ea0da4805dbe0b04631bffd39e5651b8
     with:
       node-version: "22"
-      trusted: ${{ github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true' }}
+      trusted: ${{ (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') && 'true' || 'false' }}
       rust-changed: ${{ needs.check-changes.outputs.rust-changed }}
       build-changed: ${{ needs.check-changes.outputs.build-changed }}
       provenance-changed: ${{ needs.check-changes.outputs.provenance-changed }}
