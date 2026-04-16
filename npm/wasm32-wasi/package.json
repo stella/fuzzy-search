@@ -29,16 +29,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/stella/fuzzy-search"
+    "url": "git+https://github.com/stella/fuzzy-search.git"
   },
   "bugs": {
     "url": "https://github.com/stella/fuzzy-search/issues"
   },
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
   "browser": "fuzzy-search.wasi-browser.js",
   "dependencies": {
-    "@napi-rs/wasm-runtime": "^1.1.1"
+    "@napi-rs/wasm-runtime": "^1.1.3"
   }
 }

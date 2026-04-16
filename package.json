@@ -1,7 +1,7 @@
 {
   "name": "@stll/fuzzy-search",
   "version": "0.1.1",
-  "description": "NAPI-RS bindings for fuzzy string matching via Myers' bit-parallel algorithm for Node.js/Bun",
+  "description": "Fuzzy substring search for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
   "keywords": [
     "approximate-matching",
     "edit-distance",
@@ -18,7 +18,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/stella/fuzzy-search"
+    "url": "git+https://github.com/stella/fuzzy-search.git"
   },
   "files": [
     "dist",
@@ -34,7 +34,7 @@
     }
   },
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
   "scripts": {
     "fix:loader": "node scripts/fix-napi-loader.mjs",
@@ -43,8 +43,8 @@
     "build:wasm": "node scripts/build-native.mjs --platform --target wasm32-wasip1-threads --release",
     "artifacts": "napi artifacts",
     "universal": "napi universal",
-    "build:js": "node scripts/ensure-wasm-artifact.mjs && tsdown",
-    "prepublishOnly": "napi prepublish -t npm && node scripts/fix-napi-loader.mjs && tsdown",
+    "build:js": "node scripts/ensure-wasm-artifact.mjs && tsdown && node scripts/fix-napi-loader.mjs",
+    "prepublishOnly": "napi prepublish -t npm && tsdown && node scripts/fix-napi-loader.mjs",
     "test": "bun test __test__/index.spec.ts",
     "test:props": "bun test __test__/properties.spec.ts",
     "test:runtime:bun": "bun scripts/runtime-smoke.mjs",

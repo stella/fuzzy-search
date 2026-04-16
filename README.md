@@ -15,8 +15,25 @@ JavaScript via [NAPI-RS](https://github.com/napi-rs/napi-rs).
 
 ## Install
 
-Public npm publishing is not enabled yet. The planned
-package name is `@stll/fuzzy-search`.
+```bash
+npm install @stll/fuzzy-search
+# or
+bun add @stll/fuzzy-search
+```
+
+The companion `@stll/fuzzy-search-wasm` package is
+available for browser builds.
+
+GitHub releases include npm tarballs, an SBOM, and
+third-party notices.
+
+Prebuilts are available for:
+
+| Platform      | Architecture |
+| ------------- | ------------ |
+| macOS         | x64, arm64   |
+| Linux (glibc) | x64, arm64   |
+| WASM          | browser      |
 
 ## Usage
 
@@ -96,16 +113,53 @@ fs.replaceAll("Smlouva s Gais1erová", [
 
 `replacements[i]` replaces pattern `i`.
 
+### Distance helper
+
+```typescript
+import { distance } from "@stll/fuzzy-search";
+
+distance("kitten", "sitting"); // 3
+distance("abcd", "abdc", "damerau-levenshtein"); // 1
+```
+
 ## Benchmarks
 
 The repository includes a checked-in benchmark harness
-for synthetic and corpus-based searches. Run it locally:
+for synthetic and corpus-based searches. The inputs
+are public and the scripts are reproducible from the
+repo. Run them locally:
 
 ```bash
 bun run bench:install
 bun run bench:download
 bun run bench:speed
+bun run bench:correctness
 ```
+
+The speed harness compares practical JS ecosystem
+alternatives, but not every comparator implements the
+same exact semantics. `@stll/fuzzy-search` is solving
+approximate substring search with offsets and
+replacement-friendly match ranges; tools like
+`fuse.js` and `fuzzball` are included as reference
+points, not as exact drop-in equivalents. The
+headline comparisons in this repo are the
+substring-mode rows against sliding-window
+Levenshtein baselines.
+
+Representative baseline from the checked-in public
+harness on this machine:
+
+| Scenario                         | `@stll/fuzzy-search` | Sliding-window JS baseline | Relative |
+| -------------------------------- | -------------------- | -------------------------- | -------- |
+| Czech legal, `64 KB`, `5` names  | `6.63 ms`            | `322.14 ms`                | `48.6x`  |
+| Bible, `4.0 MB`, `5` names       | `625.93 ms`          | `13838.85 ms`              | `22.1x`  |
+| Czech news, `4.8 MB`, `5` names  | `1835.48 ms`         | `17793.23 ms`              | `9.7x`   |
+| German news, `5.5 MB`, `5` names | `1706.15 ms`         | `23522.77 ms`              | `13.8x`  |
+
+These rows are substring mode (`wholeWords: false`)
+with edit distance `1-2`, which is the core workload
+this package is designed for.
 
 <details>
 <summary>Alternatives tested</summary>
@@ -200,7 +254,7 @@ compatible with `String.prototype.slice()`.
 - **No streaming API.** The full haystack must be in
   memory. For chunked processing, use
   `@stll/aho-corasick`'s `StreamMatcher` for exact
-  matches and fuzzy-search on flagged regions.
+  prefiltering and fuzzy-search on flagged regions.
 - **WASM requires `SharedArrayBuffer`.** Browser
   builds need `Cross-Origin-Opener-Policy: same-origin`
   and `Cross-Origin-Embedder-Policy: require-corp`

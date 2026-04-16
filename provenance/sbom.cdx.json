@@ -2479,7 +2479,7 @@
           "version": "0.1.1"
         }
       ],
-      "description": "NAPI-RS bindings for fuzzy string matching via Myers' bit-parallel algorithm for Node.js/Bun",
+      "description": "Fuzzy substring search for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
       "externalReferences": [
         {
           "type": "vcs",
@@ -2487,7 +2487,7 @@
         },
         {
           "type": "vcs",
-          "url": "https://github.com/stella/fuzzy-search"
+          "url": "git+https://github.com/stella/fuzzy-search.git"
         }
       ],
       "group": "@stll",
