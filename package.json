@@ -43,7 +43,7 @@
     "build:wasm": "node scripts/build-native.mjs --platform --target wasm32-wasip1-threads --release",
     "artifacts": "napi artifacts",
     "universal": "napi universal",
-    "build:js": "tsdown",
+    "build:js": "node scripts/ensure-wasm-artifact.mjs && tsdown",
     "prepublishOnly": "napi prepublish -t npm && node scripts/fix-napi-loader.mjs && tsdown",
     "test": "bun test __test__/index.spec.ts",
     "test:props": "bun test __test__/properties.spec.ts",

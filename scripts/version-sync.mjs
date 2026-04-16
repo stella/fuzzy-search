@@ -30,11 +30,69 @@ function fileExists(filePath) {
   return fs.existsSync(filePath);
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function replaceRequired(content, matcher, replacement, filePath) {
   if (!matcher.test(content)) {
     throw new Error(`Expected to match ${matcher} in ${filePath}`);
   }
   return content.replace(matcher, replacement);
+}
+
+function replaceIfPresent(content, matcher, replacement) {
+  return matcher.test(content) ? content.replace(matcher, replacement) : content;
+}
+
+function encodedScopedPackageName(name) {
+  if (!name.startsWith("@")) {
+    return name;
+  }
+
+  const [scope, packageName] = name.slice(1).split("/");
+  return `%40${scope}/${packageName}`;
+}
+
+function npmPurlCandidates(name, version) {
+  return [`pkg:npm/${name}@${version}`, `pkg:npm/${encodedScopedPackageName(name)}@${version}`];
+}
+
+function npmPurlPrefixes(name) {
+  return [`pkg:npm/${name}@`, `pkg:npm/${encodedScopedPackageName(name)}@`];
+}
+
+function readBunLockVersion(bunLock, packageName) {
+  const escaped = escapeRegex(packageName);
+  const patterns = [
+    new RegExp(`"${escaped}": "([^"]+)"`),
+    new RegExp(`"${escaped}": \\["${escaped}@([^"]+)"`),
+  ];
+
+  for (const pattern of patterns) {
+    const match = bunLock.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  return null;
+}
+
+function replaceBunLockVersion(bunLock, packageName, nextVersion, filePath) {
+  const escaped = escapeRegex(packageName);
+  let updated = replaceRequired(
+    bunLock,
+    new RegExp(`("${escaped}": ")([^"]+)(")`),
+    `$1${nextVersion}$3`,
+    filePath,
+  );
+  updated = replaceIfPresent(
+    updated,
+    new RegExp(`("${escaped}": \\["${escaped}@)([^"]+)`),
+    `$1${nextVersion}`,
+  );
+  return updated;
 }
 
 function packageMeta() {
@@ -73,6 +131,10 @@ function mismatches(expectedVersion) {
     results.push(`${meta.packageJsonPath}: version=${meta.root.version}`);
   }
 
+  const optionalPackages = Object.keys(meta.root.optionalDependencies ?? {}).filter((name) =>
+    name.startsWith(meta.optionalPrefix),
+  );
+
   for (const [name, version] of Object.entries(meta.root.optionalDependencies ?? {})) {
     if (name.startsWith(meta.optionalPrefix) && version !== expectedVersion) {
       results.push(`${meta.packageJsonPath}: optionalDependencies.${name}=${version}`);
@@ -110,13 +172,10 @@ function mismatches(expectedVersion) {
   }
 
   const bunLock = readText(meta.bunLockPath);
-  for (const pkg of Object.keys(meta.root.optionalDependencies ?? {}).filter((name) =>
-    name.startsWith(meta.optionalPrefix),
-  )) {
-    const escaped = pkg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const match = bunLock.match(new RegExp(`"${escaped}": "([^"]+)"`));
-    if (!match || match[1] !== expectedVersion) {
-      results.push(`${meta.bunLockPath}: ${pkg}=${match?.[1] ?? "<missing>"}`);
+  for (const packageName of optionalPackages) {
+    const version = readBunLockVersion(bunLock, packageName);
+    if (version !== expectedVersion) {
+      results.push(`${meta.bunLockPath}: ${packageName}=${version ?? "<missing>"}`);
     }
   }
 
@@ -129,7 +188,15 @@ function mismatches(expectedVersion) {
 
   if (fileExists(meta.provenanceSbomPath)) {
     const provenanceSbom = readText(meta.provenanceSbomPath);
-    if (!provenanceSbom.includes(`pkg:npm/${meta.root.name}@${expectedVersion}`)) {
+    const hasRootNpmComponent = npmPurlPrefixes(meta.root.name).some((prefix) =>
+      provenanceSbom.includes(prefix),
+    );
+    if (
+      hasRootNpmComponent &&
+      !npmPurlCandidates(meta.root.name, expectedVersion).some((candidate) =>
+        provenanceSbom.includes(candidate),
+      )
+    ) {
       results.push(`${meta.provenanceSbomPath}: npm purl not updated to ${expectedVersion}`);
     }
     if (!provenanceSbom.includes(`pkg:cargo/${meta.cargoName}@${expectedVersion}`)) {
@@ -142,12 +209,14 @@ function mismatches(expectedVersion) {
 
 function syncVersion(nextVersion) {
   const meta = packageMeta();
+  const previousVersion = meta.root.version;
 
   meta.root.version = nextVersion;
-  for (const name of Object.keys(meta.root.optionalDependencies ?? {})) {
-    if (name.startsWith(meta.optionalPrefix)) {
-      meta.root.optionalDependencies[name] = nextVersion;
-    }
+  const optionalPackages = Object.keys(meta.root.optionalDependencies ?? {}).filter((name) =>
+    name.startsWith(meta.optionalPrefix),
+  );
+  for (const packageName of optionalPackages) {
+    meta.root.optionalDependencies[packageName] = nextVersion;
   }
   writeJson(meta.packageJsonPath, meta.root);
 
@@ -184,41 +253,29 @@ function syncVersion(nextVersion) {
   writeText(meta.cargoLockPath, cargoLock);
 
   let bunLock = readText(meta.bunLockPath);
-  for (const pkg of Object.keys(meta.root.optionalDependencies ?? {}).filter((name) =>
-    name.startsWith(meta.optionalPrefix),
-  )) {
-    const escaped = pkg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    bunLock = replaceRequired(
-      bunLock,
-      new RegExp(`("${escaped}": ")([^"]+)(")`),
-      `$1${nextVersion}$3`,
-      meta.bunLockPath,
-    );
+  for (const packageName of optionalPackages) {
+    bunLock = replaceBunLockVersion(bunLock, packageName, nextVersion, meta.bunLockPath);
   }
   writeText(meta.bunLockPath, bunLock);
 
   if (fileExists(meta.indexCjsPath)) {
     let indexCjs = readText(meta.indexCjsPath);
-    indexCjs = replaceRequired(
-      indexCjs,
-      /expected [^ ]+ but got/g,
-      `expected ${nextVersion} but got`,
-      meta.indexCjsPath,
-    );
+    if (!indexCjs.includes(previousVersion)) {
+      throw new Error(`Expected ${meta.indexCjsPath} to contain ${previousVersion}`);
+    }
+    indexCjs = indexCjs.replaceAll(previousVersion, nextVersion);
     writeText(meta.indexCjsPath, indexCjs);
   }
 
   if (fileExists(meta.provenanceSbomPath)) {
     let provenanceSbom = readText(meta.provenanceSbomPath);
-    provenanceSbom = replaceRequired(
-      provenanceSbom,
-      new RegExp(
-        `pkg:npm/${meta.root.name.replace("/", "\\/")}@[^"\\s<]+`,
-        "g",
-      ),
-      `pkg:npm/${meta.root.name}@${nextVersion}`,
-      meta.provenanceSbomPath,
-    );
+    for (const prefix of npmPurlPrefixes(meta.root.name)) {
+      provenanceSbom = replaceIfPresent(
+        provenanceSbom,
+        new RegExp(`${escapeRegex(prefix)}[^"\\s<]+`, "g"),
+        `${prefix}${nextVersion}`,
+      );
+    }
     provenanceSbom = replaceRequired(
       provenanceSbom,
       new RegExp(`pkg:cargo/${meta.cargoName}@[^"\\s<]+`, "g"),

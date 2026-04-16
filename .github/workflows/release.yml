@@ -3,7 +3,6 @@ name: Release
 env:
   NODE_VERSION: "22"
   CARGO_INCREMENTAL: 0
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
   workflow_dispatch:
@@ -197,7 +196,6 @@ jobs:
 
   publish:
     name: Publish
-    if: ${{ inputs.publish_to_npm }}
     needs: [verify, test]
     runs-on: ubuntu-latest
     permissions:
@@ -259,6 +257,7 @@ jobs:
           fi
 
       - name: Publish to npm
+        if: ${{ inputs.publish_to_npm }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |

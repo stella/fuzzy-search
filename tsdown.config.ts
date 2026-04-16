@@ -9,7 +9,7 @@ export default defineConfig([
     clean: true,
     sourcemap: true,
     hash: false,
-    deps: { neverBundle: [/index\.js/] },
+    deps: { neverBundle: [/index\.cjs/] },
   },
   {
     entry: ["src/wasm.ts"],
