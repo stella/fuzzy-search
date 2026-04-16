@@ -173,9 +173,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
 
-      - name: Install cdxgen
-        run: npm install --global "@cyclonedx/cdxgen@${{ env.CDXGEN_VERSION }}"
-
       - uses: actions/download-artifact@v8
         with:
           path: artifacts

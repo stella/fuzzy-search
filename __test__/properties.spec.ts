@@ -1572,7 +1572,6 @@ for (const ww of [false, true]) {
 describe("property: cartesian options × distance", () => {
   test(
     "all 16 combos: every match is valid",
-    { timeout: 15_000 },
     () => {
     const czChar = fc.constantFrom(
       ..."aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž ABCČDĎEÉĚ.,!?-".split(
@@ -1583,7 +1582,9 @@ describe("property: cartesian options × distance", () => {
       minLength: 4,
       maxLength: 8,
       unit: czChar,
-    });
+    },
+    15_000,
+  );
     const czStr = fc.string({
       minLength: 0,
       maxLength: 60,
