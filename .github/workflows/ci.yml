@@ -35,12 +35,14 @@ jobs:
         with:
           filters: |
             rust:
+              - '.github/workflows/**'
               - 'src/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
               - 'deny.toml'
               - '.github/workflows/ci.yml'
             build:
+              - '.github/workflows/**'
               - 'src/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
@@ -54,6 +56,7 @@ jobs:
               - '.github/workflows/ci.yml'
               - '.github/workflows/release.yml'
             provenance:
+              - '.github/workflows/**'
               - 'bun.lock'
               - 'Cargo.lock'
               - '**/package.json'
