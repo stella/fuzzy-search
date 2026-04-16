@@ -1,10 +1,5 @@
 name: CI
 
-env:
-  NODE_VERSION: "22"
-  CARGO_INCREMENTAL: 0
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
   push:
     branches: [main]
@@ -98,9 +93,9 @@ jobs:
 
   napi-ci:
     needs: [check-changes, trust-check]
-    uses: stella/.github/.github/workflows/rust-napi-ci.yml@a9a5c55fd7a6952399294fe4f84d49f96816d847
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@db6009bc879df55e8f2b2ecba1823d31fcc87317
     with:
-      node-version: ${{ env.NODE_VERSION }}
+      node-version: "22"
       trusted: ${{ github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true' }}
       rust-changed: ${{ needs.check-changes.outputs.rust-changed }}
       build-changed: ${{ needs.check-changes.outputs.build-changed }}
