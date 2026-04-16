@@ -2121,6 +2121,12 @@
         ],
         "occurrences": [
           {
+            "location": "fuzzy-search.wasi-browser.js#6"
+          },
+          {
+            "location": "fuzzy-search.wasi.cjs#15"
+          },
+          {
             "location": "wasi-worker-browser.mjs#1"
           },
           {
@@ -2152,6 +2158,10 @@
         {
           "name": "SrcFile",
           "value": "node_modules/@napi-rs/wasm-runtime/package.json"
+        },
+        {
+          "name": "ImportedModules",
+          "value": "@napi-rs/wasm-runtime,createOnMessage,@napi-rs/wasm-runtime/createOnMessage,getDefaultContext,@napi-rs/wasm-runtime/getDefaultContext,instantiateNapiModuleSync,@napi-rs/wasm-runtime/instantiateNapiModuleSync,WASI,@napi-rs/wasm-runtime/WASI,MessageHandler,@napi-rs/wasm-runtime/MessageHandler"
         }
       ],
       "purl": "pkg:npm/%40napi-rs/wasm-runtime@1.1.1",
@@ -2212,6 +2222,10 @@
         {
           "name": "SrcFile",
           "value": "node_modules/vite/package.json"
+        },
+        {
+          "name": "ImportedModules",
+          "value": "vite,Plugin,vite/Plugin,UserConfig,vite/UserConfig"
         }
       ],
       "purl": "pkg:npm/vite@8.0.8",
