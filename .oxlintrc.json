@@ -33,7 +33,7 @@
   "ignorePatterns": [
     "*.node",
     "npm/",
-    "index.js",
+    "index.cjs",
     "index.d.ts"
   ],
   "overrides": [
