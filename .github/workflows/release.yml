@@ -1,0 +1,407 @@
+name: Release
+
+env:
+  NODE_VERSION: "22"
+  NPM_VERSION: "11.11.1"
+  CDXGEN_VERSION: "12.1.5"
+  CARGO_INCREMENTAL: 0
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing git tag to release, e.g. v1.0.0
+        required: true
+        type: string
+      publish_to_npm:
+        description: Publish npm packages after creating the GitHub release
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify release inputs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Validate tag and package versions
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          git rev-parse --verify "refs/tags/${RELEASE_TAG}" >/dev/null
+          node scripts/version-sync.mjs check --tag "${RELEASE_TAG}"
+
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+          targets: wasm32-wasip1-threads
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          shared-key: release-verify
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: cargo clippy --all-targets --all-features -- -Dwarnings
+      - run: cargo fmt --all -- --check
+
+      - name: License audit
+        run: |
+          cargo install cargo-deny --locked
+          cargo deny check
+
+      - name: Docs
+        run: cargo doc --no-deps
+        env:
+          RUSTDOCFLAGS: -Dwarnings
+
+      - run: cargo test --all-targets --all-features
+
+      - uses: stella/.github/actions/provenance-check@6c88c6f9ea4beaa132caec7c60f65b1b9b32a74a
+        with:
+          provenance-version: v0.1.3
+
+      - run: bun run build
+      - run: bun run build:js
+      - run: bun test
+      - run: bun run test:props
+      - run: bun run test:runtime:bun
+      - run: bun run test:runtime:node
+
+  build:
+    name: Build - ${{ matrix.settings.target }}
+    needs: [verify]
+    runs-on: ${{ matrix.settings.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - target: x86_64-apple-darwin
+            os: macos-15
+          - target: aarch64-apple-darwin
+            os: macos-15
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            use-cross: true
+          - target: wasm32-wasip1-threads
+            os: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: stable
+          targets: ${{ matrix.settings.target }}
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          shared-key: release-build-${{ matrix.settings.target }}
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - run: bun install --frozen-lockfile
+
+      - name: Build (native)
+        if: >-
+          !matrix.settings.use-cross
+          && matrix.settings.target != 'wasm32-wasip1-threads'
+        run: >
+          bun run build
+          --target ${{ matrix.settings.target }}
+
+      - name: Build (cross-compile)
+        if: ${{ matrix.settings.use-cross }}
+        run: >
+          bun run build
+          --target ${{ matrix.settings.target }}
+          --use-napi-cross
+
+      - name: Build (WASM)
+        if: matrix.settings.target == 'wasm32-wasip1-threads'
+        run: bun run build:wasm
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: |
+            *.node
+            *.wasm
+            !*.debug.wasm
+            *.cjs
+            *.wasi-browser.js
+            wasi-worker*.mjs
+          if-no-files-found: error
+
+  test:
+    name: Test
+    needs: [build]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - run: bun install --frozen-lockfile
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: artifacts
+
+      - name: Move artifacts
+        shell: bash
+        run: |
+          ls -R artifacts/
+          for dir in artifacts/bindings-*; do
+            cp -- "$dir"/*.node . 2>/dev/null || true
+            cp -- "$dir"/*.wasm . 2>/dev/null || true
+            cp -- "$dir"/*.cjs . 2>/dev/null || true
+            cp -- "$dir"/*.wasi-browser.js . 2>/dev/null || true
+            cp -- "$dir"/wasi-worker*.mjs . 2>/dev/null || true
+          done
+          ls -la -- *.node 2>/dev/null || echo "No .node files"
+          ls -la -- *.wasm 2>/dev/null || echo "No .wasm files"
+
+      - run: bun test
+
+      - name: Property tests
+        if: matrix.os == 'ubuntu-latest'
+        run: bun run test:props
+
+  publish:
+    name: Publish
+    needs: [verify, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      attestations: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+
+      - name: Install npm for trusted publishing
+        run: npm install --global "npm@${{ env.NPM_VERSION }}"
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - run: bun install --frozen-lockfile
+
+      - name: Install cdxgen
+        run: npm install --global "@cyclonedx/cdxgen@${{ env.CDXGEN_VERSION }}"
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: artifacts
+
+      - name: Prepare npm packages
+        run: bun x @napi-rs/cli artifacts
+
+      - name: Move artifacts
+        shell: bash
+        run: |
+          ls -R artifacts/
+          for dir in artifacts/bindings-*; do
+            cp -- "$dir"/*.node . 2>/dev/null || true
+            cp -- "$dir"/*.wasm . 2>/dev/null || true
+            cp -- "$dir"/*.cjs . 2>/dev/null || true
+            cp -- "$dir"/*.wasi-browser.js . 2>/dev/null || true
+            cp -- "$dir"/wasi-worker*.mjs . 2>/dev/null || true
+          done
+
+      - name: Build JS/TS entrypoints
+        run: bun run build:js
+
+      - name: Pack release tarballs
+        id: pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+
+          root_json="$(npm pack --json --ignore-scripts --pack-destination release-artifacts)"
+          root_file="$(echo "$root_json" | jq -r '.[0].filename')"
+          root_tarball="release-artifacts/$root_file"
+
+          while IFS= read -r pkg; do
+            (
+              cd "$pkg"
+              npm pack --json --ignore-scripts --pack-destination "$GITHUB_WORKSPACE/release-artifacts" >/dev/null
+            )
+          done < <(find npm -mindepth 1 -maxdepth 1 -type d | sort)
+
+          (
+            cd wasm
+            npm pack --json --ignore-scripts --pack-destination "$GITHUB_WORKSPACE/release-artifacts" >/dev/null
+          )
+
+          mapfile -t aux_tarballs < <(find release-artifacts -maxdepth 1 -name '*.tgz' ! -name "$root_file" | sort)
+
+          echo "root_tarball=$root_tarball" >> "$GITHUB_OUTPUT"
+          {
+            echo 'aux_tarballs<<EOF'
+            printf '%s\n' "${aux_tarballs[@]}"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+          ls -la release-artifacts
+
+      - name: Generate release checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd release-artifacts
+            sha256sum -- ./*.tgz > SHA256SUMS
+          )
+
+      - name: Generate attestation SBOM
+        run: >
+          cdxgen
+          --spec-version 1.6
+          --required-only
+          --exclude-regex '(^|/)node_modules(/.*)?$'
+          --output release-artifacts/attest-sbom.cdx.json
+          .
+
+      - name: Attest root package tarball with SBOM
+        uses: actions/attest@281a49d4cbb0a72c9575a50d18f6deb515a11deb
+        with:
+          subject-path: ${{ steps.pack.outputs.root_tarball }}
+          sbom-path: release-artifacts/attest-sbom.cdx.json
+
+      - name: Attest auxiliary package tarballs
+        if: steps.pack.outputs.aux_tarballs != ''
+        uses: actions/attest@281a49d4cbb0a72c9575a50d18f6deb515a11deb
+        with:
+          subject-path: ${{ steps.pack.outputs.aux_tarballs }}
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          release_flags=()
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            release_flags+=(--prerelease)
+          fi
+
+          assets=(
+            release-artifacts/*.tgz
+            release-artifacts/SHA256SUMS
+            provenance/sbom.cdx.json
+            provenance/THIRD-PARTY-NOTICES.txt
+            provenance/report.json
+          )
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+            if ((${#release_flags[@]})); then
+              gh release edit "$RELEASE_TAG" "${release_flags[@]}"
+            fi
+          else
+            gh release create "$RELEASE_TAG" "${assets[@]}" \
+              --verify-tag \
+              --generate-notes \
+              "${release_flags[@]}" \
+              --title "$RELEASE_TAG"
+          fi
+
+      - name: Publish to npm
+        if: ${{ inputs.publish_to_npm }}
+        run: |
+          set -euo pipefail
+
+          publish_tarball() {
+            local tarball="$1"
+            local package_json
+            local package_name
+            local package_version
+            local attempt
+            local published=false
+
+            tarball="$(realpath "$tarball")"
+            package_json="$(tar -xOf "$tarball" package/package.json)"
+            package_name="$(jq -r '.name' <<<"$package_json")"
+            package_version="$(jq -r '.version' <<<"$package_json")"
+
+            if npm view "${package_name}@${package_version}" version --json >/dev/null 2>&1; then
+              echo "Skipping already-published ${package_name}@${package_version}"
+              published=true
+            fi
+
+            if [[ "$published" != "true" ]]; then
+              for attempt in 1 2 3 4 5; do
+                if npm publish "$tarball" --provenance --access public --tag "$NPM_DIST_TAG"; then
+                  published=true
+                  break
+                fi
+
+                if npm view "${package_name}@${package_version}" version --json >/dev/null 2>&1; then
+                  echo "Detected ${package_name}@${package_version} after publish attempt ${attempt}"
+                  published=true
+                  break
+                fi
+
+                if [[ "$attempt" -eq 5 ]]; then
+                  echo "Failed to publish ${package_name}@${package_version} after ${attempt} attempts" >&2
+                  return 1
+                fi
+
+                sleep $((attempt * 10))
+              done
+            fi
+
+            return 0
+          }
+
+          # Intentional for the initial public release line:
+          # prereleases should still be the default install.
+          NPM_DIST_TAG="latest"
+
+          while IFS= read -r tarball; do
+            [[ -n "$tarball" ]] || continue
+            publish_tarball "$tarball"
+          done <<< "$AUX_TARBALLS"
+
+          publish_tarball "$ROOT_TARBALL"
+        env:
+          AUX_TARBALLS: ${{ steps.pack.outputs.aux_tarballs }}
+          ROOT_TARBALL: ${{ steps.pack.outputs.root_tarball }}

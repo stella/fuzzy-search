@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types:
+      [
+        opened,
+        synchronize,
+        reopened,
+        ready_for_review,
+        labeled,
+      ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      rust-changed: ${{ steps.filter.outputs.rust }}
+      build-changed: ${{ steps.filter.outputs.build }}
+      provenance-changed: ${{ steps.filter.outputs.provenance }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
+        id: filter
+        with:
+          filters: |
+            rust:
+              - '.github/workflows/**'
+              - 'src/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'deny.toml'
+              - '.github/workflows/ci.yml'
+            build:
+              - '.github/workflows/**'
+              - 'src/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'package.json'
+              - 'bun.lock'
+              - 'index.cjs'
+              - 'tsdown.config.ts'
+              - 'scripts/**'
+              - 'wasm/**'
+              - 'npm/**'
+              - '.github/workflows/ci.yml'
+              - '.github/workflows/release.yml'
+            provenance:
+              - '.github/workflows/**'
+              - 'bun.lock'
+              - 'Cargo.lock'
+              - '**/package.json'
+              - 'Cargo.toml'
+              - 'src/**'
+              - 'wasm/**'
+              - '*.js'
+              - '*.cjs'
+              - '*.mjs'
+              - '.provenance.yml'
+              - 'provenance/**'
+              - '.github/workflows/ci.yml'
+
+  trust-check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      trusted: ${{ steps.check.outputs.trusted }}
+    steps:
+      - name: Check if PR is trusted
+        id: check
+        env:
+          HEAD_REPO: >-
+            ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+        run: |
+          if [[ "$HEAD_REPO" == "$BASE_REPO" ]]; then
+            echo "trusted=true" >> "$GITHUB_OUTPUT"
+          elif [[ '${{ contains(github.event.pull_request.labels.*.name, 'run-ci') }}' == 'true' ]]; then
+            echo "trusted=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "trusted=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Fork PR without 'run-ci' label — CI skipped."
+          fi
+
+  napi-ci:
+    if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (needs.trust-check.result == 'success' || needs.trust-check.result == 'skipped') }}
+    needs: [check-changes, trust-check]
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@6c88c6f9ea4beaa132caec7c60f65b1b9b32a74a
+    with:
+      node-version: "22"
+      trusted: ${{ (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') && 'true' || 'false' }}
+      rust-changed: ${{ needs.check-changes.outputs.rust-changed }}
+      build-changed: ${{ needs.check-changes.outputs.build-changed }}
+      provenance-changed: ${{ needs.check-changes.outputs.provenance-changed }}
+      provenance-version: v0.1.3
+      property-test-command: bun run test:props
+    secrets: inherit
