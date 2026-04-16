@@ -28,6 +28,7 @@ try {
     napiPath,
     ["build", "--platform", "--target", "wasm32-wasip1-threads", "--release"],
     {
+      shell: process.platform === "win32",
       stdio: "inherit",
     },
   );
@@ -39,4 +40,6 @@ try {
   if ((result.status ?? 1) !== 0) {
     process.exit(result.status ?? 1);
   }
+
+  await import("./fix-napi-loader.mjs");
 }

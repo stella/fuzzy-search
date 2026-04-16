@@ -688,12 +688,14 @@ describe("property: single vs multi-pattern", () => {
   });
 });
 
-// ─── Property 14: STRICT single-pattern oracle ─
+// ─── Property 14: single-pattern oracle parity ─
 //
 // For a single pattern on short text, our library
-// must produce EXACTLY the same matches as the
-// oracle (same start, end, distance). No slack.
-// This is the strongest correctness guarantee.
+// must agree with the oracle on distance and match
+// region coverage. Equivalent fuzzy alignments can
+// shift start/end by a few code points, so this
+// property checks semantic parity rather than
+// insisting on one exact alignment.
 
 describe("property: strict oracle (single pattern)", () => {
   test("every library match exists in oracle", () => {
