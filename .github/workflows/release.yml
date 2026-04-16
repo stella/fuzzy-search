@@ -390,12 +390,7 @@ jobs:
             return 0
           }
 
-          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
-          if [[ "$PACKAGE_VERSION" == *-* ]]; then
-            NPM_DIST_TAG="next"
-          else
-            NPM_DIST_TAG="latest"
-          fi
+          NPM_DIST_TAG="latest"
 
           while IFS= read -r tarball; do
             [[ -n "$tarball" ]] || continue
@@ -404,6 +399,5 @@ jobs:
 
           publish_tarball "$ROOT_TARBALL"
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           AUX_TARBALLS: ${{ steps.pack.outputs.aux_tarballs }}
           ROOT_TARBALL: ${{ steps.pack.outputs.root_tarball }}
