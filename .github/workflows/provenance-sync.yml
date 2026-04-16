@@ -118,5 +118,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add provenance/
-          git commit -m "chore: refresh provenance artifacts [skip ci]"
+          git commit -m "chore: refresh provenance artifacts"
           git push origin "HEAD:${HEAD_REF}"
