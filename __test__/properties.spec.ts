@@ -87,6 +87,39 @@ type OracleMatch = {
   distance: number;
 };
 
+type OracleCandidate = {
+  start: number;
+  end: number;
+  distance: number;
+};
+
+function oracleSinglePatternCandidates(
+  pat: string,
+  hay: string,
+  k: number,
+): OracleCandidate[] {
+  const matches: OracleCandidate[] = [];
+  const m = pat.length;
+  const minLen = Math.max(1, m - k);
+  const maxLen = m + k;
+
+  for (let start = 0; start <= hay.length - minLen; start++) {
+    for (
+      let len = minLen;
+      len <= maxLen && start + len <= hay.length;
+      len++
+    ) {
+      const end = start + len;
+      const distance = levenshtein(pat, hay.slice(start, end));
+      if (distance <= k) {
+        matches.push({ start, end, distance });
+      }
+    }
+  }
+
+  return matches;
+}
+
 function oracleFuzzySearch(
   pats: string[],
   hay: string,
@@ -714,14 +747,19 @@ describe("property: strict oracle (single pattern)", () => {
           const real = buildFS([pat], k, false).findIter(
             hay,
           );
-          const oracle = oracleFuzzySearch([pat], hay, k);
+          const oracle = oracleSinglePatternCandidates(
+            pat,
+            hay,
+            k,
+          );
 
           // Multiple equally-good alignments can
           // exist for the same fuzzy match. The
-          // strict check here is that the oracle
-          // contains an equivalent region with the
-          // same distance, not necessarily the
-          // identical start/end pair.
+          // strict check here is that the exhaustive
+          // single-pattern candidate set contains an
+          // equivalent region with the same distance,
+          // not necessarily the identical start/end
+          // pair.
           for (const rm of real) {
             const found = oracle.some(
               (om) =>
