@@ -98,7 +98,7 @@ jobs:
 
   napi-ci:
     needs: [check-changes, trust-check]
-    uses: stella/.github/.github/workflows/rust-napi-ci.yml@d822e755446b6c02b9c6b0ee8b77b988dcafe6e2
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@a9a5c55fd7a6952399294fe4f84d49f96816d847
     with:
       node-version: ${{ env.NODE_VERSION }}
       trusted: ${{ github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true' }}
