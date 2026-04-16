@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "output_dir": "provenance",
+  "projects": [
+    {
+      "id": "root",
+      "path": ".",
+      "ecosystems": [
+        "javascript",
+        "rust"
+      ],
+      "sbom": "sbom.cdx.json",
+      "notice": "THIRD-PARTY-NOTICES.txt",
+      "dependencies_with_licenses": 46
+    }
+  ],
+  "containers": []
+}

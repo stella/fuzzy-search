@@ -1,0 +1,3 @@
+# Use sparse index for faster resolution.
+[registries.crates-io]
+protocol = "sparse"

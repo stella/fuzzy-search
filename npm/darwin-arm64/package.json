@@ -1,0 +1,39 @@
+{
+  "name": "@stll/fuzzy-search-darwin-arm64",
+  "version": "1.0.0-rc.1",
+  "cpu": [
+    "arm64"
+  ],
+  "main": "fuzzy-search.darwin-arm64.node",
+  "files": [
+    "fuzzy-search.darwin-arm64.node"
+  ],
+  "description": "Approximate substring matching for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
+  "keywords": [
+    "approximate-matching",
+    "edit-distance",
+    "fuzzy-search",
+    "levenshtein",
+    "napi-rs",
+    "native",
+    "rust"
+  ],
+  "homepage": "https://github.com/stella/fuzzy-search#readme",
+  "license": "MIT",
+  "engines": {
+    "node": ">= 18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stella/fuzzy-search.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stella/fuzzy-search/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "os": [
+    "darwin"
+  ]
+}

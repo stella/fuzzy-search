@@ -1,0 +1,34 @@
+# @stll/fuzzy-search
+
+NAPI-RS bindings for fuzzy string matching via Myers'
+bit-parallel algorithm. Exposes multi-pattern fuzzy
+search and a standalone edit-distance helper for
+Node.js and Bun.
+
+Install:
+
+  npm install @stll/fuzzy-search
+  # or
+  bun add @stll/fuzzy-search
+
+## API
+
+```typescript
+import { FuzzySearch, distance } from "@stll/fuzzy-search";
+
+const search = new FuzzySearch(
+  [{ pattern: "hello", distance: 1 }],
+  { wholeWords: false },
+);
+
+search.isMatch("helo world"); // true
+distance("kitten", "sitting"); // 3
+```
+
+For browser usage, use the separate
+`@stll/fuzzy-search-wasm` package.
+
+If you use the browser package with Vite, import
+`@stll/fuzzy-search-wasm/vite` and add the plugin
+to your Vite config so the generated WASM loader is
+not pre-bundled into broken asset URLs.
