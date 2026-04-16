@@ -104,6 +104,6 @@ jobs:
       rust-changed: ${{ needs.check-changes.outputs.rust-changed }}
       build-changed: ${{ needs.check-changes.outputs.build-changed }}
       provenance-changed: ${{ needs.check-changes.outputs.provenance-changed }}
-      provenance-version: v0.1.2
+      provenance-version: v0.1.3
       property-test-command: bun run test:props
     secrets: inherit

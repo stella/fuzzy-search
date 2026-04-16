@@ -2152,10 +2152,6 @@
         {
           "name": "SrcFile",
           "value": "node_modules/@napi-rs/wasm-runtime/package.json"
-        },
-        {
-          "name": "ImportedModules",
-          "value": "@napi-rs/wasm-runtime,instantiateNapiModuleSync,@napi-rs/wasm-runtime/instantiateNapiModuleSync,MessageHandler,@napi-rs/wasm-runtime/MessageHandler,WASI,@napi-rs/wasm-runtime/WASI"
         }
       ],
       "purl": "pkg:npm/%40napi-rs/wasm-runtime@1.1.1",
@@ -2216,10 +2212,6 @@
         {
           "name": "SrcFile",
           "value": "node_modules/vite/package.json"
-        },
-        {
-          "name": "ImportedModules",
-          "value": "vite,Plugin,vite/Plugin,UserConfig,vite/UserConfig"
         }
       ],
       "purl": "pkg:npm/vite@8.0.8",
