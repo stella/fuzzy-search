@@ -221,6 +221,18 @@ jobs:
       - name: Prepare npm packages
         run: bun x @napi-rs/cli artifacts
 
+      - name: Move artifacts
+        shell: bash
+        run: |
+          ls -R artifacts/
+          for dir in artifacts/bindings-*; do
+            cp -- "$dir"/*.node . 2>/dev/null || true
+            cp -- "$dir"/*.wasm . 2>/dev/null || true
+            cp -- "$dir"/*.cjs . 2>/dev/null || true
+            cp -- "$dir"/*.js . 2>/dev/null || true
+            cp -- "$dir"/wasi-worker*.mjs . 2>/dev/null || true
+          done
+
       - name: Build JS/TS entrypoints
         run: bun run build:js
 
