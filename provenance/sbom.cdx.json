@@ -141,54 +141,6 @@
       "version": "0.11.0"
     },
     {
-      "bom-ref": "pkg:cargo/ctor@0.6.3",
-      "evidence": {
-        "identity": [
-          {
-            "concludedValue": "Cargo.lock",
-            "confidence": 0.6,
-            "field": "purl",
-            "methods": [
-              {
-                "confidence": 0.6,
-                "technique": "manifest-analysis",
-                "value": "Cargo.lock"
-              }
-            ]
-          }
-        ]
-      },
-      "group": "",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "424e0138278faeb2b401f174ad17e715c829512d74f3d1e81eb43365c2e0590e"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0"
-          }
-        },
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "name": "ctor",
-      "properties": [
-        {
-          "name": "SrcFile",
-          "value": "Cargo.lock"
-        }
-      ],
-      "purl": "pkg:cargo/ctor@0.6.3",
-      "type": "library",
-      "version": "0.6.3"
-    },
-    {
       "bom-ref": "pkg:cargo/ctor-proc-macro@0.0.7",
       "evidence": {
         "identity": [
@@ -237,7 +189,7 @@
       "version": "0.0.7"
     },
     {
-      "bom-ref": "pkg:cargo/dtor@0.1.1",
+      "bom-ref": "pkg:cargo/ctor@0.6.3",
       "evidence": {
         "identity": [
           {
@@ -258,7 +210,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "404d02eeb088a82cfd873006cb713fe411306c7d182c344905e101fb1167d301"
+          "content": "424e0138278faeb2b401f174ad17e715c829512d74f3d1e81eb43365c2e0590e"
         }
       ],
       "licenses": [
@@ -273,16 +225,16 @@
           }
         }
       ],
-      "name": "dtor",
+      "name": "ctor",
       "properties": [
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/dtor@0.1.1",
+      "purl": "pkg:cargo/ctor@0.6.3",
       "type": "library",
-      "version": "0.1.1"
+      "version": "0.6.3"
     },
     {
       "bom-ref": "pkg:cargo/dtor-proc-macro@0.0.6",
@@ -333,7 +285,7 @@
       "version": "0.0.6"
     },
     {
-      "bom-ref": "pkg:cargo/futures@0.3.32",
+      "bom-ref": "pkg:cargo/dtor@0.1.1",
       "evidence": {
         "identity": [
           {
@@ -354,7 +306,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "8b147ee9d1f6d097cef9ce628cd2ee62288d963e16fb287bd9286455b241382d"
+          "content": "404d02eeb088a82cfd873006cb713fe411306c7d182c344905e101fb1167d301"
         }
       ],
       "licenses": [
@@ -369,16 +321,16 @@
           }
         }
       ],
-      "name": "futures",
+      "name": "dtor",
       "properties": [
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/futures@0.3.32",
+      "purl": "pkg:cargo/dtor@0.1.1",
       "type": "library",
-      "version": "0.3.32"
+      "version": "0.1.1"
     },
     {
       "bom-ref": "pkg:cargo/futures-channel@0.3.32",
@@ -765,6 +717,54 @@
       "version": "0.3.32"
     },
     {
+      "bom-ref": "pkg:cargo/futures@0.3.32",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8b147ee9d1f6d097cef9ce628cd2ee62288d963e16fb287bd9286455b241382d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "futures",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/futures@0.3.32",
+      "type": "library",
+      "version": "0.3.32"
+    },
+    {
       "bom-ref": "pkg:cargo/itoa@1.0.17",
       "evidence": {
         "identity": [
@@ -904,49 +904,6 @@
       "version": "2.8.0"
     },
     {
-      "bom-ref": "pkg:cargo/napi@3.8.3",
-      "evidence": {
-        "identity": [
-          {
-            "concludedValue": "Cargo.lock",
-            "confidence": 0.6,
-            "field": "purl",
-            "methods": [
-              {
-                "confidence": 0.6,
-                "technique": "manifest-analysis",
-                "value": "Cargo.lock"
-              }
-            ]
-          }
-        ]
-      },
-      "group": "",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "e6944d0bf100571cd6e1a98a316cdca262deb6fccf8d93f5ae1502ca3fc88bd3"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "name": "napi",
-      "properties": [
-        {
-          "name": "SrcFile",
-          "value": "Cargo.lock"
-        }
-      ],
-      "purl": "pkg:cargo/napi@3.8.3",
-      "type": "library",
-      "version": "3.8.3"
-    },
-    {
       "bom-ref": "pkg:cargo/napi-build@2.3.1",
       "evidence": {
         "identity": [
@@ -988,49 +945,6 @@
       "purl": "pkg:cargo/napi-build@2.3.1",
       "type": "library",
       "version": "2.3.1"
-    },
-    {
-      "bom-ref": "pkg:cargo/napi-derive@3.5.2",
-      "evidence": {
-        "identity": [
-          {
-            "concludedValue": "Cargo.lock",
-            "confidence": 0.6,
-            "field": "purl",
-            "methods": [
-              {
-                "confidence": 0.6,
-                "technique": "manifest-analysis",
-                "value": "Cargo.lock"
-              }
-            ]
-          }
-        ]
-      },
-      "group": "",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "2c914b5e420182bfb73504e0607592cdb8e2e21437d450883077669fb72a114d"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "name": "napi-derive",
-      "properties": [
-        {
-          "name": "SrcFile",
-          "value": "Cargo.lock"
-        }
-      ],
-      "purl": "pkg:cargo/napi-derive@3.5.2",
-      "type": "library",
-      "version": "3.5.2"
     },
     {
       "bom-ref": "pkg:cargo/napi-derive-backend@5.0.2",
@@ -1076,6 +990,49 @@
       "version": "5.0.2"
     },
     {
+      "bom-ref": "pkg:cargo/napi-derive@3.5.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2c914b5e420182bfb73504e0607592cdb8e2e21437d450883077669fb72a114d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "napi-derive",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/napi-derive@3.5.2",
+      "type": "library",
+      "version": "3.5.2"
+    },
+    {
       "bom-ref": "pkg:cargo/napi-sys@3.2.1",
       "evidence": {
         "identity": [
@@ -1117,6 +1074,49 @@
       "purl": "pkg:cargo/napi-sys@3.2.1",
       "type": "library",
       "version": "3.2.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/napi@3.8.3",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e6944d0bf100571cd6e1a98a316cdca262deb6fccf8d93f5ae1502ca3fc88bd3"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "napi",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/napi@3.8.3",
+      "type": "library",
+      "version": "3.8.3"
     },
     {
       "bom-ref": "pkg:cargo/nohash-hasher@0.2.0",
@@ -2095,6 +2095,146 @@
       "purl": "pkg:cargo/zmij@1.0.21",
       "type": "library",
       "version": "1.0.21"
+    },
+    {
+      "authors": [
+        {
+          "name": "LongYinan (https://github.com/Brooooooklyn)"
+        }
+      ],
+      "bom-ref": "pkg:npm/@napi-rs/wasm-runtime@1.1.1",
+      "description": "Runtime and polyfill for wasm targets",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "node_modules/@napi-rs/wasm-runtime/package.json",
+            "confidence": 0.7,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.7,
+                "technique": "manifest-analysis",
+                "value": "node_modules/@napi-rs/wasm-runtime/package.json"
+              }
+            ]
+          }
+        ],
+        "occurrences": [
+          {
+            "location": "wasi-worker-browser.mjs#5"
+          },
+          {
+            "location": "wasi-worker.mjs#9"
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://napi.rs/"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/napi-rs/napi-rs.git"
+        }
+      ],
+      "group": "@napi-rs",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+          }
+        }
+      ],
+      "name": "wasm-runtime",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "node_modules/@napi-rs/wasm-runtime/package.json"
+        },
+        {
+          "name": "ImportedModules",
+          "value": "@napi-rs/wasm-runtime,instantiateNapiModuleSync,@napi-rs/wasm-runtime/instantiateNapiModuleSync,MessageHandler,@napi-rs/wasm-runtime/MessageHandler,WASI,@napi-rs/wasm-runtime/WASI"
+        }
+      ],
+      "purl": "pkg:npm/%40napi-rs/wasm-runtime@1.1.1",
+      "scope": "required",
+      "type": "library",
+      "version": "1.1.1"
+    },
+    {
+      "authors": [
+        {
+          "name": "Evan You"
+        }
+      ],
+      "bom-ref": "pkg:npm/vite@8.0.8",
+      "description": "Native-ESM powered web dev build tool",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "node_modules/vite/package.json",
+            "confidence": 0.7,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.7,
+                "technique": "manifest-analysis",
+                "value": "node_modules/vite/package.json"
+              }
+            ]
+          }
+        ],
+        "occurrences": [
+          {
+            "location": "src/vite.ts#5"
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://vite.dev"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/vitejs/vite.git"
+        }
+      ],
+      "group": "",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+          }
+        }
+      ],
+      "name": "vite",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "node_modules/vite/package.json"
+        },
+        {
+          "name": "ImportedModules",
+          "value": "vite,Plugin,vite/Plugin,UserConfig,vite/UserConfig"
+        }
+      ],
+      "purl": "pkg:npm/vite@8.0.8",
+      "scope": "required",
+      "tags": [
+        "web"
+      ],
+      "type": "library",
+      "version": "8.0.8"
+    }
+  ],
+  "compositions": [
+    {
+      "aggregate": "incomplete",
+      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.0.0-rc.1"
     }
   ],
   "dependencies": [
@@ -2374,6 +2514,10 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/zmij@1.0.21"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:npm/@stll/fuzzy-search@1.0.0-rc.1"
     }
   ],
   "metadata": {
@@ -2383,8 +2527,37 @@
       }
     ],
     "component": {
-      "bom-ref": "pkg:cargo/stella-fuzzy-search@1.0.0-rc.1",
-      "group": "",
+      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.0.0-rc.1",
+      "components": [
+        {
+          "bom-ref": "pkg:cargo/stella-fuzzy-search@1.0.0-rc.1",
+          "group": "",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT",
+                "url": "https://opensource.org/licenses/MIT"
+              }
+            }
+          ],
+          "name": "stella-fuzzy-search",
+          "purl": "pkg:cargo/stella-fuzzy-search@1.0.0-rc.1",
+          "type": "application",
+          "version": "1.0.0-rc.1"
+        }
+      ],
+      "description": "Approximate substring matching for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/stella/fuzzy-search#readme"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/stella/fuzzy-search.git"
+        }
+      ],
+      "group": "@stll",
       "licenses": [
         {
           "license": {
@@ -2393,8 +2566,8 @@
           }
         }
       ],
-      "name": "stella-fuzzy-search",
-      "purl": "pkg:cargo/stella-fuzzy-search@1.0.0-rc.1",
+      "name": "fuzzy-search",
+      "purl": "pkg:npm/%40stll/fuzzy-search@1.0.0-rc.1",
       "type": "application",
       "version": "1.0.0-rc.1"
     },
