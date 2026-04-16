@@ -1,7 +1,5 @@
 import { instantiateNapiModuleSync, MessageHandler, WASI } from '@napi-rs/wasm-runtime'
 
-const errorOutputs = []
-
 const handler = new MessageHandler({
   onLoad({ wasmModule, wasmMemory }) {
     const wasi = new WASI({
@@ -9,10 +7,9 @@ const handler = new MessageHandler({
         // eslint-disable-next-line no-console
         console.log.apply(console, arguments)
       },
-      printErr: function() {
+      printErr: function () {
         // eslint-disable-next-line no-console
         console.error.apply(console, arguments)
-        
       },
     })
     return instantiateNapiModuleSync(wasmModule, {
@@ -28,7 +25,6 @@ const handler = new MessageHandler({
       },
     })
   },
-  
 })
 
 globalThis.onmessage = function (e) {
