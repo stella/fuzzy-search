@@ -43,8 +43,15 @@ export function buildFuzzySearchWasmViteConfig(
 export default function stllFuzzySearchWasmVite(): Plugin {
   return {
     name: "stll-fuzzy-search-wasm",
-    config(config) {
-      return buildFuzzySearchWasmViteConfig(config);
+    config() {
+      return {
+        optimizeDeps: {
+          exclude: [...WASM_VITE_PACKAGES],
+        },
+        ssr: {
+          external: [...WASM_VITE_PACKAGES],
+        },
+      };
     },
   };
 }
