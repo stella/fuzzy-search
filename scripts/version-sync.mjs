@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
 import process from "node:process";
 
-const ROOT = new URL("../", import.meta.url);
+const ROOT = fileURLToPath(new URL("../", import.meta.url));
 
 function repoPath(...segments) {
-  return path.join(new URL(ROOT).pathname, ...segments);
+  return path.join(ROOT, ...segments);
 }
 
 function readText(filePath) {
@@ -292,14 +293,24 @@ function parseArgs() {
   for (let i = 0; i < rest.length; i += 1) {
     const token = rest[i];
     if (token === "--version") {
-      args.set("version", rest[i + 1]);
+      const value = rest[i + 1];
+      if (value == null) {
+        throw new Error("Missing value for --version");
+      }
+      args.set("version", value);
       i += 1;
       continue;
     }
     if (token === "--tag") {
-      args.set("tag", rest[i + 1]);
+      const value = rest[i + 1];
+      if (value == null) {
+        throw new Error("Missing value for --tag");
+      }
+      args.set("tag", value);
       i += 1;
+      continue;
     }
+    throw new Error(`Unknown argument: ${token}`);
   }
   return { command, args };
 }
