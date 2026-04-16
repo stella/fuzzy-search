@@ -4,10 +4,11 @@
 
 # @stll/fuzzy-search
 
-[NAPI-RS](https://napi.rs/) fuzzy string matching
-for Node.js and Bun. Finds approximate occurrences
-of patterns within edit distance k, immune to typos,
-OCR errors, and diacritics variants.
+[NAPI-RS](https://napi.rs/) approximate substring
+matching for Node.js and Bun. Finds near-matches
+within edit distance k with stable UTF-16 offsets,
+replace-safe match ranges, and optional diacritics
+normalization.
 
 Built on [Myers' bit-parallel algorithm](https://doi.org/10.1145/316542.316550)
 (1999), implemented in Rust and exposed to
@@ -23,6 +24,19 @@ bun add @stll/fuzzy-search
 
 The companion `@stll/fuzzy-search-wasm` package is
 available for browser builds.
+
+If you use the browser package with Vite, import the
+bundled plugin so the generated WASM loader is not
+pre-bundled into broken asset URLs:
+
+```typescript
+import { defineConfig } from "vite";
+import stllFuzzySearchWasm from "@stll/fuzzy-search-wasm/vite";
+
+export default defineConfig({
+  plugins: [stllFuzzySearchWasm()],
+});
+```
 
 GitHub releases include npm tarballs, an SBOM, and
 third-party notices.
@@ -150,12 +164,15 @@ Levenshtein baselines.
 Representative baseline from the checked-in public
 harness on this machine:
 
+- runtime: Bun `1.3.12`
+- platform: macOS `26.4.1` (`Darwin arm64`)
+
 | Scenario                         | `@stll/fuzzy-search` | Sliding-window JS baseline | Relative |
 | -------------------------------- | -------------------- | -------------------------- | -------- |
-| Czech legal, `64 KB`, `5` names  | `6.63 ms`            | `322.14 ms`                | `48.6x`  |
-| Bible, `4.0 MB`, `5` names       | `625.93 ms`          | `13838.85 ms`              | `22.1x`  |
-| Czech news, `4.8 MB`, `5` names  | `1835.48 ms`         | `17793.23 ms`              | `9.7x`   |
-| German news, `5.5 MB`, `5` names | `1706.15 ms`         | `23522.77 ms`              | `13.8x`  |
+| Czech legal, `64 KB`, `5` names  | `2.41 ms`            | `80.78 ms`                 | `33.5x`  |
+| Bible, `4.0 MB`, `5` names       | `239.91 ms`          | `3903.26 ms`               | `16.3x`  |
+| Czech news, `4.8 MB`, `5` names  | `262.39 ms`          | `4350.52 ms`               | `16.6x`  |
+| German news, `5.5 MB`, `5` names | `405.72 ms`          | `6816.03 ms`               | `16.8x`  |
 
 These rows are substring mode (`wholeWords: false`)
 with edit distance `1-2`, which is the core workload

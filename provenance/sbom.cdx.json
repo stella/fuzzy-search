@@ -2121,7 +2121,7 @@
         ],
         "occurrences": [
           {
-            "location": "wasi-worker-browser.mjs#1"
+            "location": "wasi-worker-browser.mjs#5"
           },
           {
             "location": "wasi-worker.mjs#9"
@@ -2162,6 +2162,73 @@
       "scope": "required",
       "type": "library",
       "version": "1.1.1"
+    },
+    {
+      "authors": [
+        {
+          "name": "Evan You"
+        }
+      ],
+      "bom-ref": "pkg:npm/vite@8.0.8",
+      "description": "Native-ESM powered web dev build tool",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "node_modules/vite/package.json",
+            "confidence": 0.7,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.7,
+                "technique": "manifest-analysis",
+                "value": "node_modules/vite/package.json"
+              }
+            ]
+          }
+        ],
+        "occurrences": [
+          {
+            "location": "src/vite.ts#5"
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://vite.dev"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/vitejs/vite.git"
+        }
+      ],
+      "group": "",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+          }
+        }
+      ],
+      "name": "vite",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "node_modules/vite/package.json"
+        },
+        {
+          "name": "ImportedModules",
+          "value": "vite,Plugin,vite/Plugin,UserConfig,vite/UserConfig"
+        }
+      ],
+      "purl": "pkg:npm/vite@8.0.8",
+      "scope": "required",
+      "tags": [
+        "web"
+      ],
+      "type": "library",
+      "version": "8.0.8"
     }
   ],
   "compositions": [
@@ -2479,7 +2546,7 @@
           "version": "0.1.1"
         }
       ],
-      "description": "Fuzzy substring search for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
+      "description": "Approximate substring matching for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
       "externalReferences": [
         {
           "type": "vcs",
