@@ -7,7 +7,7 @@ sbom:
   exclude_regexes:
     - '(^|/)dist(/.*)?$'
     - '(^|/)wasm/dist(/.*)?$'
-    - '(^|/)[^/]+\.wasi(?:-browser)?\.js$'
+    - '(^|/)[^/]+\.wasi(?:-browser)?\.(?:c?js)$'
     - '(^|/)browser\.js$'
     - '(^|/)[^/]+\.node$'
     - '(^|/)[^/]+\.wasm$'
