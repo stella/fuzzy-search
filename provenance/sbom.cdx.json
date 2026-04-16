@@ -2121,7 +2121,7 @@
         ],
         "occurrences": [
           {
-            "location": "fuzzy-search.wasi-browser.js#6"
+            "location": "fuzzy-search.wasi-browser.js#5"
           },
           {
             "location": "fuzzy-search.wasi.cjs#15"
@@ -2161,7 +2161,7 @@
         },
         {
           "name": "ImportedModules",
-          "value": "@napi-rs/wasm-runtime,createOnMessage,@napi-rs/wasm-runtime/createOnMessage,getDefaultContext,@napi-rs/wasm-runtime/getDefaultContext,instantiateNapiModuleSync,@napi-rs/wasm-runtime/instantiateNapiModuleSync,WASI,@napi-rs/wasm-runtime/WASI,MessageHandler,@napi-rs/wasm-runtime/MessageHandler"
+          "value": "@napi-rs/wasm-runtime,getDefaultContext,@napi-rs/wasm-runtime/getDefaultContext,instantiateNapiModuleSync,@napi-rs/wasm-runtime/instantiateNapiModuleSync,WASI,@napi-rs/wasm-runtime/WASI,MessageHandler,@napi-rs/wasm-runtime/MessageHandler"
         }
       ],
       "purl": "pkg:npm/%40napi-rs/wasm-runtime@1.1.1",
