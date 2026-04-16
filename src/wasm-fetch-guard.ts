@@ -45,8 +45,17 @@ export function injectWasmFetchGuard(
 export function wasmFetchGuardPlugin(packageName: string) {
   return {
     name: "stll-wasm-fetch-guard",
-    transform(code: string, id: string) {
-      return injectWasmFetchGuard(code, id, packageName);
+    transform(
+      this: { warn(message: string): void },
+      code: string,
+      id: string,
+    ) {
+      return injectWasmFetchGuard(
+        code,
+        id,
+        packageName,
+        this.warn.bind(this),
+      );
     },
   };
 }

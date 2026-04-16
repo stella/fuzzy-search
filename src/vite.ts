@@ -20,6 +20,7 @@ export function buildFuzzySearchWasmViteConfig(
   config: UserConfig = {},
 ): UserConfig {
   return {
+    ...config,
     optimizeDeps: {
       ...config.optimizeDeps,
       exclude: mergeStrings(
