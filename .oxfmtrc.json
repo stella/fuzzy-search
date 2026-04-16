@@ -4,7 +4,9 @@
     "*.node",
     "npm/",
     "index.cjs",
-    "index.d.ts"
+    "index.d.ts",
+    "*.wasi.cjs",
+    "*.wasi-browser.js"
   ],
   "printWidth": 60,
   "sortImports": {

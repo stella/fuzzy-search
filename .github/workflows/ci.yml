@@ -97,7 +97,7 @@ jobs:
   napi-ci:
     if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (needs.trust-check.result == 'success' || needs.trust-check.result == 'skipped') }}
     needs: [check-changes, trust-check]
-    uses: stella/.github/.github/workflows/rust-napi-ci.yml@6c88c6f9ea4beaa132caec7c60f65b1b9b32a74a
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@0c2f7b7b214f1939f4ed9fc05db3f853e5211ea6
     with:
       node-version: "22"
       trusted: ${{ (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') && 'true' || 'false' }}
