@@ -9,7 +9,7 @@ const require = createRequire(import.meta.url);
 // SAFETY: NAPI-RS auto-generated loader returns the
 // native binding object; its shape is validated by
 // usage in the core classes.
-const native = require("../index.js") as NativeBinding;
+const native = require("../index.cjs") as NativeBinding;
 
 initBinding(native);
 

@@ -22,7 +22,7 @@
   },
   "files": [
     "dist",
-    "index.js"
+    "index.cjs"
   ],
   "type": "module",
   "types": "dist/index.d.mts",
@@ -37,15 +37,20 @@
     "access": "restricted"
   },
   "scripts": {
-    "build": "napi build --platform --release",
-    "build:debug": "napi build --platform",
-    "build:wasm": "napi build --platform --target wasm32-wasip1-threads --release",
+    "fix:loader": "node scripts/fix-napi-loader.mjs",
+    "build": "node scripts/build-native.mjs --platform --release",
+    "build:debug": "node scripts/build-native.mjs --platform",
+    "build:wasm": "node scripts/build-native.mjs --platform --target wasm32-wasip1-threads --release",
     "artifacts": "napi artifacts",
     "universal": "napi universal",
-    "build:js": "tsdown",
-    "prepublishOnly": "napi prepublish -t npm && tsdown",
+    "build:js": "node scripts/ensure-wasm-artifact.mjs && tsdown",
+    "prepublishOnly": "napi prepublish -t npm && node scripts/fix-napi-loader.mjs && tsdown",
     "test": "bun test __test__/index.spec.ts",
     "test:props": "bun test __test__/properties.spec.ts",
+    "test:runtime:bun": "bun scripts/runtime-smoke.mjs",
+    "test:runtime:node": "node scripts/runtime-smoke.mjs",
+    "version:sync": "node scripts/version-sync.mjs sync",
+    "version:check": "node scripts/version-sync.mjs check",
     "format": "oxfmt . && rustfmt src/lib.rs",
     "lint": "oxlint .",
     "bench": "bun __bench__/speed.ts",
@@ -56,24 +61,25 @@
     "bench:download": "bash __bench__/download-corpus.sh"
   },
   "devDependencies": {
-    "@emnapi/core": "^1.9.1",
-    "@emnapi/runtime": "^1.9.1",
-    "@napi-rs/cli": "^3.5.1",
+    "@emnapi/core": "^1.9.2",
+    "@emnapi/runtime": "^1.9.2",
+    "@napi-rs/cli": "^3.6.1",
     "@tybys/wasm-util": "^0.10.1",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.5.2",
     "bun-types": "^1.3.11",
-    "emnapi": "^1.9.1",
+    "emnapi": "^1.9.2",
     "fast-check": "^4.6.0",
-    "oxfmt": "^0.42.0",
-    "oxlint": "^1.57.0",
-    "tsdown": "^0.21.6"
+    "oxfmt": "^0.44.0",
+    "oxlint": "^1.59.0",
+    "tsdown": "^0.21.7",
+    "typescript": "^5.9.3"
   },
   "optionalDependencies": {
-    "@stll/fuzzy-search-darwin-arm64": "0.0.2",
-    "@stll/fuzzy-search-darwin-x64": "0.0.2",
-    "@stll/fuzzy-search-linux-arm64-gnu": "0.0.2",
-    "@stll/fuzzy-search-linux-x64-gnu": "0.0.2",
-    "@stll/fuzzy-search-wasm32-wasi": "0.0.2"
+    "@stll/fuzzy-search-darwin-arm64": "0.1.1",
+    "@stll/fuzzy-search-darwin-x64": "0.1.1",
+    "@stll/fuzzy-search-linux-arm64-gnu": "0.1.1",
+    "@stll/fuzzy-search-linux-x64-gnu": "0.1.1",
+    "@stll/fuzzy-search-wasm32-wasi": "0.1.1"
   },
   "napi": {
     "binaryName": "fuzzy-search",

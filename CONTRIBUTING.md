@@ -27,6 +27,8 @@ The package ships native binaries for each platform as
 optional npm sub-packages (`npm/<target>/`). On install,
 npm/bun only downloads the binary matching the host platform.
 
+The generated N-API loader is checked in as `index.cjs`.
+
 Browser/WASM support is published as a separate package,
 `@stll/fuzzy-search-wasm` (source in `wasm/package.json`).
 Its entry point is `wasm/dist/wasm.mjs`, which imports from

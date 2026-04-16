@@ -1,14 +1,8 @@
 name: CI
 
-env:
-  NODE_VERSION: "22"
-  CARGO_INCREMENTAL: 0
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
     types:
       [
@@ -25,16 +19,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── Path filter (skip native builds for non-Rust changes)
   check-changes:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: read
     outputs:
       rust-changed: ${{ steps.filter.outputs.rust }}
+      build-changed: ${{ steps.filter.outputs.build }}
+      provenance-changed: ${{ steps.filter.outputs.provenance }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -42,9 +38,35 @@ jobs:
               - 'src/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
+              - 'deny.toml'
+              - '.github/workflows/ci.yml'
+            build:
+              - 'src/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'package.json'
+              - 'bun.lock'
+              - 'index.cjs'
+              - 'tsdown.config.ts'
+              - 'scripts/**'
+              - 'wasm/**'
+              - 'npm/**'
+              - '.github/workflows/ci.yml'
+              - '.github/workflows/release.yml'
+            provenance:
+              - 'bun.lock'
+              - 'Cargo.lock'
+              - '**/package.json'
+              - 'Cargo.toml'
+              - 'src/**'
+              - 'wasm/**'
+              - '*.js'
+              - '*.cjs'
+              - '*.mjs'
+              - '.provenance.yml'
+              - 'provenance/**'
               - '.github/workflows/ci.yml'
 
-  # ── Trust gate (PRs only) ─────────────────────
   trust-check:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -69,219 +91,16 @@ jobs:
             echo "::notice::Fork PR without 'run-ci' label — CI skipped."
           fi
 
-  # ── Lint (PRs + push) ─────────────────────────
-  lint:
-    name: Lint
-    if: >-
-      always()
-      && (github.event_name != 'pull_request'
-          || needs.trust-check.outputs.trusted == 'true')
-    needs: [trust-check]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bun run lint
-
-  # ── Rust checks (PRs + push) ──────────────────
-  rust-checks:
-    name: Rust checks
-    if: >-
-      always()
-      && needs.check-changes.outputs.rust-changed == 'true'
-      && (github.event_name != 'pull_request'
-          || needs.trust-check.outputs.trusted == 'true')
-    needs: [trust-check, check-changes]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: rust-checks
-
-      - name: Clippy
-        run: cargo clippy --all-targets -- -Dwarnings
-
-      - name: Format
-        run: cargo fmt -- --check
-
-      - name: License audit
-        run: |
-          cargo install cargo-deny --locked
-          cargo deny check
-
-      - name: Docs
-        run: cargo doc --no-deps
-        env:
-          RUSTDOCFLAGS: -Dwarnings
-
-  # ── Build (push to main + tags only) ──────────
-  build:
-    name: Build - ${{ matrix.settings.target }}
-    needs: [check-changes]
-    if: >-
-      github.event_name != 'pull_request'
-      && (startsWith(github.ref, 'refs/tags/v')
-          || needs.check-changes.outputs.rust-changed == 'true')
-    runs-on: ${{ matrix.settings.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        settings:
-          - target: x86_64-apple-darwin
-            os: macos-15
-          - target: aarch64-apple-darwin
-            os: macos-15
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            use-cross: true
-          - target: wasm32-wasip1-threads
-            os: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.settings.target }}
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: build-${{ matrix.settings.target }}
-
-      - uses: oven-sh/setup-bun@v2
-
-      - run: bun install --frozen-lockfile
-
-      - name: Build (wasm)
-        if: matrix.settings.target == 'wasm32-wasip1-threads'
-        run: bun run build:wasm
-
-      - name: Build (native)
-        if: >-
-          matrix.settings.target != 'wasm32-wasip1-threads'
-          && !matrix.settings.use-cross
-        run: >
-          bun run build
-          --target ${{ matrix.settings.target }}
-
-      - name: Build (cross-compile)
-        if: ${{ matrix.settings.use-cross }}
-        run: >
-          bun run build
-          --target ${{ matrix.settings.target }}
-          --use-napi-cross
-
-      - name: Upload native bindings
-        if: >-
-          matrix.settings.target != 'wasm32-wasip1-threads'
-        uses: actions/upload-artifact@v7
-        with:
-          name: bindings-${{ matrix.settings.target }}
-          path: "*.node"
-          if-no-files-found: error
-
-      - name: Upload wasm bindings
-        if: >-
-          matrix.settings.target == 'wasm32-wasip1-threads'
-        uses: actions/upload-artifact@v7
-        with:
-          name: bindings-${{ matrix.settings.target }}
-          path: |
-            *.wasm
-            !*.debug.wasm
-            *.cjs
-            *.js
-            wasi-worker*.mjs
-          if-no-files-found: error
-
-  # ── Test (after build, push only) ─────────────
-  test:
-    name: Test
-    needs: [build]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-15]
-    steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-
-      - uses: actions/download-artifact@v8
-        with:
-          path: artifacts
-
-      - name: Move artifacts
-        shell: bash
-        run: |
-          ls -R artifacts/
-          for dir in artifacts/bindings-*; do
-            cp "$dir"/*.node . 2>/dev/null || true
-            cp "$dir"/*.wasm . 2>/dev/null || true
-            cp "$dir"/*.cjs . 2>/dev/null || true
-            cp "$dir"/*.js . 2>/dev/null || true
-            cp "$dir"/wasi-worker*.mjs . 2>/dev/null || true
-          done
-          ls -la *.node 2>/dev/null || echo "No .node files"
-
-      - run: bun test
-
-  # ── Publish (tags only) ───────────────────────
-  publish:
-    name: Publish
-    if: >-
-      always()
-      && startsWith(github.ref, 'refs/tags/v')
-      && !contains(needs.*.result, 'failure')
-      && !contains(needs.*.result, 'cancelled')
-    needs: [test, lint, rust-checks]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          registry-url: https://registry.npmjs.org
-
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-
-      - uses: actions/download-artifact@v8
-        with:
-          path: artifacts
-
-      - name: Prepare npm packages
-        run: bun x @napi-rs/cli artifacts
-
-      - name: Build JS/TS entrypoints
-        run: bun run build:js
-
-      - name: Publish to npm
-        run: |
-          npm publish --access restricted
-          for pkg in npm/*/; do
-            cd "$pkg"
-            npm publish --access restricted
-            cd ../..
-          done
-          cd wasm
-          npm publish --access restricted
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  napi-ci:
+    if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (needs.trust-check.result == 'success' || needs.trust-check.result == 'skipped') }}
+    needs: [check-changes, trust-check]
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@9ac6ab48ea0da4805dbe0b04631bffd39e5651b8
+    with:
+      node-version: "22"
+      trusted: ${{ (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') && 'true' || 'false' }}
+      rust-changed: ${{ needs.check-changes.outputs.rust-changed }}
+      build-changed: ${{ needs.check-changes.outputs.build-changed }}
+      provenance-changed: ${{ needs.check-changes.outputs.provenance-changed }}
+      provenance-version: v0.1.1
+      property-test-command: bun run test:props
+    secrets: inherit

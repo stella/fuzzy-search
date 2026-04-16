@@ -15,20 +15,8 @@ JavaScript via [NAPI-RS](https://github.com/napi-rs/napi-rs).
 
 ## Install
 
-```bash
-npm install @stll/fuzzy-search
-# or
-bun add @stll/fuzzy-search
-```
-
-Prebuilt binaries are available for:
-
-| Platform      | Architecture |
-| ------------- | ------------ |
-| macOS         | x64, arm64   |
-| Linux (glibc) | x64, arm64   |
-| Linux (musl)  | x64          |
-| Windows       | x64          |
+Public npm publishing is not enabled yet. The planned
+package name is `@stll/fuzzy-search`.
 
 ## Usage
 
@@ -110,35 +98,14 @@ fs.replaceAll("Smlouva s Gais1erová", [
 
 ## Benchmarks
 
-Measured on Apple M3, 24 GB RAM, macOS 25.3.0,
-Bun 1.3.10. Search-only times, automaton pre-built.
+The repository includes a checked-in benchmark harness
+for synthetic and corpus-based searches. Run it locally:
 
-### Synthetic legal text (64KB, 5 patterns, dist 1-2)
-
-| Library                      | Time       | Speedup |
-| ---------------------------- | ---------- | ------- |
-| **@stll/fuzzy-search**       | **2.3 ms** | —       |
-| fuzzball.extract             | 9.2 ms     | 3.9x    |
-| fuse.js (word-split)         | 57 ms      | 25x     |
-| fastest-levenshtein + window | 82 ms      | 35x     |
-| naive JS (sliding window)    | 511 ms     | 219x    |
-
-### Real corpus (Canterbury bible.txt, 4.0 MB)
-
-| Library                      | Time       | Speedup |
-| ---------------------------- | ---------- | ------- |
-| **@stll/fuzzy-search**       | **258 ms** | —       |
-| fastest-levenshtein + window | 4,249 ms   | 16.5x   |
-
-### Real corpus (Leipzig Czech news, 4.8 MB)
-
-| Library                      | Time       | Speedup |
-| ---------------------------- | ---------- | ------- |
-| **@stll/fuzzy-search**       | **249 ms** | —       |
-| fastest-levenshtein + window | 4,147 ms   | 16.6x   |
-
-Run locally:
-`bun run bench:install && bun run bench:download && bun run bench:speed`
+```bash
+bun run bench:install
+bun run bench:download
+bun run bench:speed
+```
 
 <details>
 <summary>Alternatives tested</summary>
@@ -152,22 +119,11 @@ Run locally:
 
 ## Correctness
 
-Every match is verified against a naive Levenshtein
-oracle:
-
-- **36 property tests** × 1,000 random inputs =
-  36,000 test cases (~9,000 assertions).
-- **25,528 matches** oracle-verified on real corpora
-  (Canterbury bible.txt, Leipzig Czech news) across
-  all option combinations.
-- **9 bugs found and fixed** by property tests.
-
-Properties include: distance correctness (oracle),
-non-overlapping, monotonic offsets, wholeWords
-boundaries, normalization idempotence, full cartesian
-product of all option combinations × distances,
-UTF-16 supplementary plane, CJK text, long patterns
-(50-63 chars), duplicate/substring patterns.
+Correctness is covered by example-based tests and
+property tests. The property suite verifies distance
+bounds, oracle agreement, whole-word boundaries,
+UTF-16 offset stability, normalization behavior, and
+mixed option combinations over randomized inputs.
 
 ## API
 

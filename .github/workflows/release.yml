@@ -1,0 +1,287 @@
+name: Release
+
+env:
+  NODE_VERSION: "22"
+  CARGO_INCREMENTAL: 0
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing git tag to release, e.g. v0.1.1
+        required: true
+        type: string
+      publish_to_npm:
+        description: Publish npm packages after creating the GitHub release
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify release inputs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Validate tag and package versions
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          git rev-parse --verify "refs/tags/${RELEASE_TAG}" >/dev/null
+          node scripts/version-sync.mjs check --tag "${RELEASE_TAG}"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          targets: wasm32-wasip1-threads
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: release-verify
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: cargo clippy --all-targets --all-features -- -Dwarnings
+      - run: cargo fmt --all -- --check
+
+      - name: License audit
+        run: |
+          cargo install cargo-deny --locked
+          cargo deny check
+
+      - name: Docs
+        run: cargo doc --no-deps
+        env:
+          RUSTDOCFLAGS: -Dwarnings
+
+      - run: cargo test --all-targets --all-features
+      - run: bun run build
+      - run: bun run build:js
+      - run: bun test
+      - run: bun run test:props
+      - run: bun run test:runtime:bun
+      - run: bun run test:runtime:node
+
+      - uses: stella/.github/actions/provenance-check@0107276320ff349dda9bcd9e111680cca1951fce
+        with:
+          provenance-version: v0.1.1
+
+  build:
+    name: Build - ${{ matrix.settings.target }}
+    needs: [verify]
+    runs-on: ${{ matrix.settings.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - target: x86_64-apple-darwin
+            os: macos-15
+          - target: aarch64-apple-darwin
+            os: macos-15
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            use-cross: true
+          - target: wasm32-wasip1-threads
+            os: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.settings.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: release-build-${{ matrix.settings.target }}
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+
+      - name: Build (WASM)
+        if: matrix.settings.target == 'wasm32-wasip1-threads'
+        run: bun run build:wasm
+
+      - name: Build (native)
+        if: >-
+          matrix.settings.target != 'wasm32-wasip1-threads'
+          && !matrix.settings.use-cross
+        run: >
+          bun run build
+          --target ${{ matrix.settings.target }}
+
+      - name: Build (cross-compile)
+        if: ${{ matrix.settings.use-cross }}
+        run: >
+          bun run build
+          --target ${{ matrix.settings.target }}
+          --use-napi-cross
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: |
+            *.node
+            *.wasm
+            !*.debug.wasm
+            *.cjs
+            *.js
+            wasi-worker*.mjs
+          if-no-files-found: error
+
+  test:
+    name: Test
+    needs: [build]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: Move artifacts
+        shell: bash
+        run: |
+          ls -R artifacts/
+          for dir in artifacts/bindings-*; do
+            cp -- "$dir"/*.node . 2>/dev/null || true
+            cp -- "$dir"/*.wasm . 2>/dev/null || true
+            cp -- "$dir"/*.cjs . 2>/dev/null || true
+            cp -- "$dir"/*.js . 2>/dev/null || true
+            cp -- "$dir"/wasi-worker*.mjs . 2>/dev/null || true
+          done
+          ls -la -- *.node 2>/dev/null || echo "No .node files"
+          ls -la -- *.wasm 2>/dev/null || echo "No .wasm files"
+
+      - run: bun test
+
+      - name: Property tests
+        if: matrix.os == 'ubuntu-latest'
+        run: bun run test:props
+
+  publish:
+    name: Publish
+    needs: [verify, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: Prepare npm packages
+        run: bun x @napi-rs/cli artifacts
+
+      - name: Move artifacts
+        shell: bash
+        run: |
+          ls -R artifacts/
+          for dir in artifacts/bindings-*; do
+            cp -- "$dir"/*.node . 2>/dev/null || true
+            cp -- "$dir"/*.wasm . 2>/dev/null || true
+            cp -- "$dir"/*.cjs . 2>/dev/null || true
+            cp -- "$dir"/*.js . 2>/dev/null || true
+            cp -- "$dir"/wasi-worker*.mjs . 2>/dev/null || true
+          done
+
+      - name: Build JS/TS entrypoints
+        run: bun run build:js
+
+      - name: Pack release tarballs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+          npm pack --json --ignore-scripts --pack-destination release-artifacts >/dev/null
+          while IFS= read -r pkg; do
+            (
+              cd "$pkg"
+              npm pack --json --ignore-scripts --pack-destination "$GITHUB_WORKSPACE/release-artifacts" >/dev/null
+            )
+          done < <(find npm -mindepth 1 -maxdepth 1 -type d | sort)
+          (
+            cd wasm
+            npm pack --json --ignore-scripts --pack-destination "$GITHUB_WORKSPACE/release-artifacts" >/dev/null
+          )
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          mapfile -t assets < <(find release-artifacts -maxdepth 1 -name '*.tgz' | sort)
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+          else
+            gh release create "$RELEASE_TAG" "${assets[@]}" \
+              --title "$RELEASE_TAG" \
+              --generate-notes
+          fi
+
+      - name: Publish to npm
+        if: ${{ inputs.publish_to_npm }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          npm publish --access restricted
+          for pkg in npm/*/; do
+            (
+              cd "$pkg"
+              npm publish --access restricted
+            )
+          done
+          (
+            cd wasm
+            npm publish --access restricted
+          )
