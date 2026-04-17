@@ -2099,69 +2099,6 @@
     {
       "authors": [
         {
-          "name": "LongYinan (https://github.com/Brooooooklyn)"
-        }
-      ],
-      "bom-ref": "pkg:npm/@napi-rs/wasm-runtime@1.1.1",
-      "description": "Runtime and polyfill for wasm targets",
-      "evidence": {
-        "identity": [
-          {
-            "concludedValue": "node_modules/@napi-rs/wasm-runtime/package.json",
-            "confidence": 0.7,
-            "field": "purl",
-            "methods": [
-              {
-                "confidence": 0.7,
-                "technique": "manifest-analysis",
-                "value": "node_modules/@napi-rs/wasm-runtime/package.json"
-              }
-            ]
-          }
-        ],
-        "occurrences": [
-          {
-            "location": "wasi-worker-browser.mjs#1"
-          },
-          {
-            "location": "wasi-worker.mjs#9"
-          }
-        ]
-      },
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "https://napi.rs/"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/napi-rs/napi-rs.git"
-        }
-      ],
-      "group": "@napi-rs",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-          }
-        }
-      ],
-      "name": "wasm-runtime",
-      "properties": [
-        {
-          "name": "SrcFile",
-          "value": "node_modules/@napi-rs/wasm-runtime/package.json"
-        }
-      ],
-      "purl": "pkg:npm/%40napi-rs/wasm-runtime@1.1.1",
-      "scope": "required",
-      "type": "library",
-      "version": "1.1.1"
-    },
-    {
-      "authors": [
-        {
           "name": "Evan You"
         }
       ],
