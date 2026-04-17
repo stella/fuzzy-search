@@ -11,7 +11,7 @@
       ],
       "sbom": "sbom.cdx.json",
       "notice": "THIRD-PARTY-NOTICES.txt",
-      "dependencies_with_licenses": 46
+      "dependencies_with_licenses": 45
     }
   ],
   "containers": []
