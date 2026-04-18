@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search-wasm32-wasi",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "cpu": [
     "wasm32"
   ],

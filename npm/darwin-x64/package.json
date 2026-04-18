@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search-darwin-x64",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "cpu": [
     "x64"
   ],
