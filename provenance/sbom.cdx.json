@@ -1669,7 +1669,7 @@
       ],
       "purl": "pkg:cargo/stella-fuzzy-search@1.0.0",
       "type": "library",
-      "version": "1.0.0-rc.1"
+      "version": "1.0.0"
     },
     {
       "bom-ref": "pkg:cargo/syn@2.0.117",
@@ -2472,7 +2472,7 @@
           "name": "stella-fuzzy-search",
           "purl": "pkg:cargo/stella-fuzzy-search@1.0.0",
           "type": "application",
-          "version": "1.0.0-rc.1"
+          "version": "1.0.0"
         }
       ],
       "description": "Approximate substring matching for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
@@ -2498,7 +2498,7 @@
       "name": "fuzzy-search",
       "purl": "pkg:npm/%40stll/fuzzy-search@1.0.0",
       "type": "application",
-      "version": "1.0.0-rc.1"
+      "version": "1.0.0"
     },
     "lifecycles": [
       {
