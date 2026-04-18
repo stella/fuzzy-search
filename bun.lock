@@ -325,15 +325,15 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-rc.12", "", {}, "sha512-HHMwmarRKvoFsJorqYlFeFRzXZqCt2ETQlEDOb9aqssrnVBB1/+xgTGtuTrIk5vzLNX1MjMtTf7W9z3tsSbrxw=="],
 
-    "@stll/fuzzy-search-darwin-arm64": ["@stll/fuzzy-search-darwin-arm64@1.0.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-oQzmubjl+UtdHzxedfUFQ6E5Updb0SNW86RDBwuMcVVMWVU0+wWjtTPk9luNc65J96gqT3knQyAKIX2GQQmu1Q=="],
+    "@stll/fuzzy-search-darwin-arm64": ["@stll/fuzzy-search-darwin-arm64@1.0.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-igTmf8ayNplEsGZz8VWWL4SMDrawpo5++gtx0YOvUp93AKZB2an9C7uVShD8ZGRXuivWa8O5mcYw2HlCEWK1aQ=="],
 
-    "@stll/fuzzy-search-darwin-x64": ["@stll/fuzzy-search-darwin-x64@1.0.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-OQeKhIhY/pHbl9CXbKK1E0FWPo5ALX1RjBP1k6EhLiA58+vgGYa/U7zNLxcLBUVtoGI/6xYBhS8uVMcJy245Xw=="],
+    "@stll/fuzzy-search-darwin-x64": ["@stll/fuzzy-search-darwin-x64@1.0.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-I/9uUPJlyTPMi/P7IMPfqiBpZovZj/Irse/0Xh8k9CHEFyki8QeNPFqXkjhVvYmTz5bZHQMhPkPwkR9j5gaYNQ=="],
 
-    "@stll/fuzzy-search-linux-arm64-gnu": ["@stll/fuzzy-search-linux-arm64-gnu@1.0.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-PgCvkUnI1352L5ttLl+/I2QyaiD2KRpfC9Tdg7N35hIefVmzNEX3pn2qOmEppCLXUX5lBMjEVjDArXbseKiVxA=="],
+    "@stll/fuzzy-search-linux-arm64-gnu": ["@stll/fuzzy-search-linux-arm64-gnu@1.0.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-yBPdczFyyOQ2qvq9viIhzI1j2gB0KkEoRfrMmLWMk//MTqNRdztCUmngySlVA95WaboQtCAusUp7AuI4ahFcQQ=="],
 
-    "@stll/fuzzy-search-linux-x64-gnu": ["@stll/fuzzy-search-linux-x64-gnu@1.0.0", "", { "os": "linux", "cpu": "x64" }, "sha512-u1yAbr7ZFqo5PGTtDLEHHJ/PlvLb8mtpEz2Ayb4KZP1rsnX3sfv1FghO4wUHVrF/5IzMIn183mZtm1fzDf4P9A=="],
+    "@stll/fuzzy-search-linux-x64-gnu": ["@stll/fuzzy-search-linux-x64-gnu@1.0.0", "", { "os": "linux", "cpu": "x64" }, "sha512-Si7cd/CuSdDOOccxoBnYAb20ci84VPjkH9agnu+5k0AYzuXuSjasIn9MlnsUuYKH9n3lyjTa9b46fA4ydqdYQA=="],
 
-    "@stll/fuzzy-search-wasm32-wasi": ["@stll/fuzzy-search-wasm32-wasi@1.0.0", "", { "dependencies": { "@napi-rs/wasm-runtime": "^1.1.3" }, "cpu": "none" }, "sha512-Dxp/ifdpUOod8wi3lsvD2uqbNxHpYqKYKGEQj6mB4mDfrLmrXQXYbt19/BwyVMgd1Y4qKi58Ghkt+WCWb6RTUA=="],
+    "@stll/fuzzy-search-wasm32-wasi": ["@stll/fuzzy-search-wasm32-wasi@1.0.0", "", { "dependencies": { "@napi-rs/wasm-runtime": "^1.1.3" }, "cpu": "none" }, "sha512-B2gJF855p7hu6Zzryms3dRszByyipwhja7zANMaG9PMeKpZ93V/d/GyWRpk36D37+nZLXPhuwCzyLCcLAQiSYQ=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 
