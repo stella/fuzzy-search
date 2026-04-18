@@ -1642,7 +1642,7 @@
       "version": "0.4.12"
     },
     {
-      "bom-ref": "pkg:cargo/stella-fuzzy-search@1.0.0-rc.1",
+      "bom-ref": "pkg:cargo/stella-fuzzy-search@1.0.0",
       "evidence": {
         "identity": [
           {
@@ -1667,7 +1667,7 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/stella-fuzzy-search@1.0.0-rc.1",
+      "purl": "pkg:cargo/stella-fuzzy-search@1.0.0",
       "type": "library",
       "version": "1.0.0-rc.1"
     },
@@ -2163,7 +2163,7 @@
   "compositions": [
     {
       "aggregate": "incomplete",
-      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.0.0-rc.1"
+      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.0.0"
     }
   ],
   "dependencies": [
@@ -2398,7 +2398,7 @@
         "pkg:cargo/unicode-normalization@0.1.25",
         "pkg:cargo/unicode-segmentation@1.12.0"
       ],
-      "ref": "pkg:cargo/stella-fuzzy-search@1.0.0-rc.1"
+      "ref": "pkg:cargo/stella-fuzzy-search@1.0.0"
     },
     {
       "dependsOn": [
@@ -2446,7 +2446,7 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:npm/@stll/fuzzy-search@1.0.0-rc.1"
+      "ref": "pkg:npm/@stll/fuzzy-search@1.0.0"
     }
   ],
   "metadata": {
@@ -2456,10 +2456,10 @@
       }
     ],
     "component": {
-      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.0.0-rc.1",
+      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.0.0",
       "components": [
         {
-          "bom-ref": "pkg:cargo/stella-fuzzy-search@1.0.0-rc.1",
+          "bom-ref": "pkg:cargo/stella-fuzzy-search@1.0.0",
           "group": "",
           "licenses": [
             {
@@ -2470,7 +2470,7 @@
             }
           ],
           "name": "stella-fuzzy-search",
-          "purl": "pkg:cargo/stella-fuzzy-search@1.0.0-rc.1",
+          "purl": "pkg:cargo/stella-fuzzy-search@1.0.0",
           "type": "application",
           "version": "1.0.0-rc.1"
         }
@@ -2496,7 +2496,7 @@
         }
       ],
       "name": "fuzzy-search",
-      "purl": "pkg:npm/%40stll/fuzzy-search@1.0.0-rc.1",
+      "purl": "pkg:npm/%40stll/fuzzy-search@1.0.0",
       "type": "application",
       "version": "1.0.0-rc.1"
     },

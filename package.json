@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "description": "Approximate substring matching for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
   "keywords": [
     "approximate-matching",
@@ -76,11 +76,11 @@
     "vite": "^8.0.8"
   },
   "optionalDependencies": {
-    "@stll/fuzzy-search-darwin-arm64": "1.0.0-rc.1",
-    "@stll/fuzzy-search-darwin-x64": "1.0.0-rc.1",
-    "@stll/fuzzy-search-linux-arm64-gnu": "1.0.0-rc.1",
-    "@stll/fuzzy-search-linux-x64-gnu": "1.0.0-rc.1",
-    "@stll/fuzzy-search-wasm32-wasi": "1.0.0-rc.1"
+    "@stll/fuzzy-search-darwin-arm64": "1.0.0",
+    "@stll/fuzzy-search-darwin-x64": "1.0.0",
+    "@stll/fuzzy-search-linux-arm64-gnu": "1.0.0",
+    "@stll/fuzzy-search-linux-x64-gnu": "1.0.0",
+    "@stll/fuzzy-search-wasm32-wasi": "1.0.0"
   },
   "napi": {
     "binaryName": "fuzzy-search",
