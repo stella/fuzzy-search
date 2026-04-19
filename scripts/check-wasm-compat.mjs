@@ -22,10 +22,8 @@ try {
 // trying to strip strings/comments — bundled output makes stripping fragile.
 /** @type {{ pattern: RegExp; name: string }[]} */
 const BANNED = [
-  // Buffer API calls
-  { pattern: /\bBuffer\s*\.\s*(from|alloc|concat|isBuffer)\s*\(/g, name: "Buffer.*(" },
-  { pattern: /\bBuffer\s*\.\s*(byteLength|compare)\s*\(/g, name: "Buffer.*(" },
-  // Bare Buffer used as a constructor or value (not in a type union)
+  // Any Buffer member access or constructor
+  { pattern: /\bBuffer\s*\.\s*\w+\s*\(/g, name: "Buffer.*()" },
   { pattern: /new\s+Buffer\s*\(/g, name: "new Buffer()" },
   // CJS require
   { pattern: /\brequire\s*\(\s*["']/g, name: "require()" },
@@ -37,10 +35,14 @@ const BANNED = [
   // Node CJS globals
   { pattern: /\b__dirname\b/g, name: "__dirname" },
   { pattern: /\b__filename\b/g, name: "__filename" },
-  // Node built-in module imports
+  // Node built-in module imports (static and dynamic)
   {
     pattern: /(?:from|import)\s*["']node:/g,
     name: 'import "node:*"',
+  },
+  {
+    pattern: /import\s*\(\s*["']node:/g,
+    name: 'import("node:*")',
   },
 ];
 
