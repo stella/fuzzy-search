@@ -189,6 +189,54 @@
       "version": "0.0.7"
     },
     {
+      "bom-ref": "pkg:cargo/ctor@0.11.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "400a21f1014a968ec518c7ccdf9b4a4ed0cac8c56ccb6d604f8b91f00110501e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "ctor",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/ctor@0.11.1",
+      "type": "library",
+      "version": "0.11.1"
+    },
+    {
       "bom-ref": "pkg:cargo/ctor@0.6.3",
       "evidence": {
         "identity": [
@@ -947,7 +995,7 @@
       "version": "2.3.1"
     },
     {
-      "bom-ref": "pkg:cargo/napi-derive-backend@5.0.2",
+      "bom-ref": "pkg:cargo/napi-derive-backend@5.0.4",
       "evidence": {
         "identity": [
           {
@@ -968,7 +1016,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "f0864cf6a82e2cfb69067374b64c9253d7e910e5b34db833ed7495dda56ccb18"
+          "content": "0d5af30503edf933ce7377cf6d4c877a62b0f1107ea05585f1b5e430e88d5baf"
         }
       ],
       "licenses": [
@@ -985,12 +1033,12 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/napi-derive-backend@5.0.2",
+      "purl": "pkg:cargo/napi-derive-backend@5.0.4",
       "type": "library",
-      "version": "5.0.2"
+      "version": "5.0.4"
     },
     {
-      "bom-ref": "pkg:cargo/napi-derive@3.5.2",
+      "bom-ref": "pkg:cargo/napi-derive@3.5.5",
       "evidence": {
         "identity": [
           {
@@ -1011,7 +1059,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "2c914b5e420182bfb73504e0607592cdb8e2e21437d450883077669fb72a114d"
+          "content": "a4ba740fe4c9524d86fd90798fd8ccdb23402b3eef7e7c30897a8a369b529fcf"
         }
       ],
       "licenses": [
@@ -1028,9 +1076,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/napi-derive@3.5.2",
+      "purl": "pkg:cargo/napi-derive@3.5.5",
       "type": "library",
-      "version": "3.5.2"
+      "version": "3.5.5"
     },
     {
       "bom-ref": "pkg:cargo/napi-sys@3.2.1",
@@ -2182,11 +2230,8 @@
       "ref": "pkg:cargo/convert_case@0.11.0"
     },
     {
-      "dependsOn": [
-        "pkg:cargo/ctor-proc-macro@0.0.7",
-        "pkg:cargo/dtor@0.1.1"
-      ],
-      "ref": "pkg:cargo/ctor@0.6.3"
+      "dependsOn": [],
+      "ref": "pkg:cargo/ctor@0.11.1"
     },
     {
       "dependsOn": [],
@@ -2303,13 +2348,13 @@
     {
       "dependsOn": [
         "pkg:cargo/convert_case@0.11.0",
-        "pkg:cargo/ctor@0.6.3",
-        "pkg:cargo/napi-derive-backend@5.0.2",
+        "pkg:cargo/ctor@0.11.1",
+        "pkg:cargo/napi-derive-backend@5.0.4",
         "pkg:cargo/proc-macro2@1.0.106",
         "pkg:cargo/quote@1.0.45",
         "pkg:cargo/syn@2.0.117"
       ],
-      "ref": "pkg:cargo/napi-derive@3.5.2"
+      "ref": "pkg:cargo/napi-derive@3.5.5"
     },
     {
       "dependsOn": [
@@ -2319,7 +2364,7 @@
         "pkg:cargo/semver@1.0.27",
         "pkg:cargo/syn@2.0.117"
       ],
-      "ref": "pkg:cargo/napi-derive-backend@5.0.2"
+      "ref": "pkg:cargo/napi-derive-backend@5.0.4"
     },
     {
       "dependsOn": [
@@ -2392,7 +2437,7 @@
     {
       "dependsOn": [
         "pkg:cargo/napi-build@2.3.1",
-        "pkg:cargo/napi-derive@3.5.2",
+        "pkg:cargo/napi-derive@3.5.5",
         "pkg:cargo/napi@3.8.3",
         "pkg:cargo/unicode-case-mapping@1.0.0",
         "pkg:cargo/unicode-normalization@0.1.25",
