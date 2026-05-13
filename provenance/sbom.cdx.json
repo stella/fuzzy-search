@@ -1642,7 +1642,7 @@
       "version": "0.4.12"
     },
     {
-      "bom-ref": "pkg:cargo/stella-fuzzy-search@1.0.0",
+      "bom-ref": "pkg:cargo/stella-fuzzy-search@1.0.1",
       "evidence": {
         "identity": [
           {
@@ -1667,9 +1667,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/stella-fuzzy-search@1.0.0",
+      "purl": "pkg:cargo/stella-fuzzy-search@1.0.1",
       "type": "library",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "bom-ref": "pkg:cargo/syn@2.0.117",
@@ -2099,10 +2099,83 @@
     {
       "authors": [
         {
+          "name": "LongYinan (https://github.com/Brooooooklyn)"
+        }
+      ],
+      "bom-ref": "pkg:npm/@napi-rs/wasm-runtime@1.1.4",
+      "description": "Runtime and polyfill for wasm targets",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "node_modules/@napi-rs/wasm-runtime/package.json",
+            "confidence": 0.7,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.7,
+                "technique": "manifest-analysis",
+                "value": "node_modules/@napi-rs/wasm-runtime/package.json"
+              }
+            ]
+          }
+        ],
+        "occurrences": [
+          {
+            "location": "fuzzy-search.wasi-browser.js#5"
+          },
+          {
+            "location": "fuzzy-search.wasi.cjs#15"
+          },
+          {
+            "location": "wasi-worker-browser.mjs#1"
+          },
+          {
+            "location": "wasi-worker.mjs#9"
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://napi.rs/"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/napi-rs/napi-rs.git"
+        }
+      ],
+      "group": "@napi-rs",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+          }
+        }
+      ],
+      "name": "wasm-runtime",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "node_modules/@napi-rs/wasm-runtime/package.json"
+        },
+        {
+          "name": "ImportedModules",
+          "value": "@napi-rs/wasm-runtime,getDefaultContext,@napi-rs/wasm-runtime/getDefaultContext,instantiateNapiModuleSync,@napi-rs/wasm-runtime/instantiateNapiModuleSync,WASI,@napi-rs/wasm-runtime/WASI,MessageHandler,@napi-rs/wasm-runtime/MessageHandler"
+        }
+      ],
+      "purl": "pkg:npm/%40napi-rs/wasm-runtime@1.1.4",
+      "scope": "required",
+      "type": "library",
+      "version": "1.1.4"
+    },
+    {
+      "authors": [
+        {
           "name": "Evan You"
         }
       ],
-      "bom-ref": "pkg:npm/vite@8.0.8",
+      "bom-ref": "pkg:npm/vite@8.0.12",
       "description": "Native-ESM powered web dev build tool",
       "evidence": {
         "identity": [
@@ -2149,21 +2222,25 @@
         {
           "name": "SrcFile",
           "value": "node_modules/vite/package.json"
+        },
+        {
+          "name": "ImportedModules",
+          "value": "vite,Plugin,vite/Plugin,UserConfig,vite/UserConfig"
         }
       ],
-      "purl": "pkg:npm/vite@8.0.8",
+      "purl": "pkg:npm/vite@8.0.12",
       "scope": "required",
       "tags": [
         "web"
       ],
       "type": "library",
-      "version": "8.0.8"
+      "version": "8.0.12"
     }
   ],
   "compositions": [
     {
       "aggregate": "incomplete",
-      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.0.0"
+      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.0.1"
     }
   ],
   "dependencies": [
@@ -2398,7 +2475,7 @@
         "pkg:cargo/unicode-normalization@0.1.25",
         "pkg:cargo/unicode-segmentation@1.12.0"
       ],
-      "ref": "pkg:cargo/stella-fuzzy-search@1.0.0"
+      "ref": "pkg:cargo/stella-fuzzy-search@1.0.1"
     },
     {
       "dependsOn": [
@@ -2446,7 +2523,7 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:npm/@stll/fuzzy-search@1.0.0"
+      "ref": "pkg:npm/@stll/fuzzy-search@1.0.1"
     }
   ],
   "metadata": {
@@ -2456,10 +2533,10 @@
       }
     ],
     "component": {
-      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.0.0",
+      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.0.1",
       "components": [
         {
-          "bom-ref": "pkg:cargo/stella-fuzzy-search@1.0.0",
+          "bom-ref": "pkg:cargo/stella-fuzzy-search@1.0.1",
           "group": "",
           "licenses": [
             {
@@ -2470,9 +2547,9 @@
             }
           ],
           "name": "stella-fuzzy-search",
-          "purl": "pkg:cargo/stella-fuzzy-search@1.0.0",
+          "purl": "pkg:cargo/stella-fuzzy-search@1.0.1",
           "type": "application",
-          "version": "1.0.0"
+          "version": "1.0.1"
         }
       ],
       "description": "Approximate substring matching for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
@@ -2496,9 +2573,9 @@
         }
       ],
       "name": "fuzzy-search",
-      "purl": "pkg:npm/%40stll/fuzzy-search@1.0.0",
+      "purl": "pkg:npm/%40stll/fuzzy-search@1.0.1",
       "type": "application",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     "lifecycles": [
       {
