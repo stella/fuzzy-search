@@ -83,7 +83,7 @@ jobs:
       # The PR-time install in ci.yml is unchanged — that still uses
       # `bun install --frozen-lockfile` and catches lockfile drift
       # on every PR.
-      - run: npm install --no-audit --no-fund --no-save --no-package-lock
+      - run: npm install --omit=optional --no-audit --no-fund --no-save --no-package-lock
       - run: bun run lint
       - run: cargo clippy --all-targets --all-features -- -Dwarnings
       - run: cargo fmt --all -- --check
@@ -104,6 +104,7 @@ jobs:
         with:
           provenance-version: v0.1.3
 
+      - run: npm install --no-audit --no-fund --no-save --no-package-lock
       - run: bun run build
       - run: bun run build:js
       - run: bun test
