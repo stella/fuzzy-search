@@ -1958,7 +1958,7 @@
       "version": "0.1.25"
     },
     {
-      "bom-ref": "pkg:cargo/unicode-segmentation@1.12.0",
+      "bom-ref": "pkg:cargo/unicode-segmentation@1.13.2",
       "evidence": {
         "identity": [
           {
@@ -1979,7 +1979,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "f6ccf251212114b54433ec949fd6a7841275f9ada20dddd2f29e9ceea4501493"
+          "content": "9629274872b2bfaf8d66f5f15725007f635594914870f65218920345aa11aa8c"
         }
       ],
       "licenses": [
@@ -2001,9 +2001,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/unicode-segmentation@1.12.0",
+      "purl": "pkg:cargo/unicode-segmentation@1.13.2",
       "type": "library",
-      "version": "1.12.0"
+      "version": "1.13.2"
     },
     {
       "bom-ref": "pkg:cargo/windows-link@0.2.1",
@@ -2177,7 +2177,7 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/unicode-segmentation@1.12.0"
+        "pkg:cargo/unicode-segmentation@1.13.2"
       ],
       "ref": "pkg:cargo/convert_case@0.11.0"
     },
@@ -2396,7 +2396,7 @@
         "pkg:cargo/napi@3.8.3",
         "pkg:cargo/unicode-case-mapping@1.0.0",
         "pkg:cargo/unicode-normalization@0.1.25",
-        "pkg:cargo/unicode-segmentation@1.12.0"
+        "pkg:cargo/unicode-segmentation@1.13.2"
       ],
       "ref": "pkg:cargo/stella-fuzzy-search@1.0.0"
     },
@@ -2434,7 +2434,7 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/unicode-segmentation@1.12.0"
+      "ref": "pkg:cargo/unicode-segmentation@1.13.2"
     },
     {
       "dependsOn": [],

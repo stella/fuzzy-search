@@ -48,7 +48,7 @@ Project: root
 - unicode-case-mapping 1.0.0 — Apache-2.0
 - unicode-ident 1.0.24 — (MIT OR Apache-2.0) AND Unicode-3.0
 - unicode-normalization 0.1.25 — Apache-2.0 OR MIT
-- unicode-segmentation 1.12.0 — Apache-2.0 OR MIT
+- unicode-segmentation 1.13.2 — Apache-2.0 OR MIT
 - vite 8.0.8 — MIT
 - windows-link 0.2.1 — Apache-2.0 OR MIT
 - zmij 1.0.21 — MIT
