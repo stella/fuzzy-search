@@ -189,6 +189,54 @@
       "version": "0.0.7"
     },
     {
+      "bom-ref": "pkg:cargo/ctor@0.11.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "400a21f1014a968ec518c7ccdf9b4a4ed0cac8c56ccb6d604f8b91f00110501e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "ctor",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/ctor@0.11.1",
+      "type": "library",
+      "version": "0.11.1"
+    },
+    {
       "bom-ref": "pkg:cargo/ctor@0.6.3",
       "evidence": {
         "identity": [
@@ -1076,7 +1124,7 @@
       "version": "3.2.1"
     },
     {
-      "bom-ref": "pkg:cargo/napi@3.8.3",
+      "bom-ref": "pkg:cargo/napi@3.8.6",
       "evidence": {
         "identity": [
           {
@@ -1097,7 +1145,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "e6944d0bf100571cd6e1a98a316cdca262deb6fccf8d93f5ae1502ca3fc88bd3"
+          "content": "8e55037284865448ecf329baa86a4d05401f647ebde99f5747b640d32c2c5226"
         }
       ],
       "licenses": [
@@ -1114,9 +1162,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/napi@3.8.3",
+      "purl": "pkg:cargo/napi@3.8.6",
       "type": "library",
-      "version": "3.8.3"
+      "version": "3.8.6"
     },
     {
       "bom-ref": "pkg:cargo/nohash-hasher@0.2.0",
@@ -2182,11 +2230,8 @@
       "ref": "pkg:cargo/convert_case@0.11.0"
     },
     {
-      "dependsOn": [
-        "pkg:cargo/ctor-proc-macro@0.0.7",
-        "pkg:cargo/dtor@0.1.1"
-      ],
-      "ref": "pkg:cargo/ctor@0.6.3"
+      "dependsOn": [],
+      "ref": "pkg:cargo/ctor@0.11.1"
     },
     {
       "dependsOn": [],
@@ -2285,7 +2330,7 @@
     {
       "dependsOn": [
         "pkg:cargo/bitflags@2.11.0",
-        "pkg:cargo/ctor@0.6.3",
+        "pkg:cargo/ctor@0.11.1",
         "pkg:cargo/futures@0.3.32",
         "pkg:cargo/napi-build@2.3.1",
         "pkg:cargo/napi-sys@3.2.1",
@@ -2294,7 +2339,7 @@
         "pkg:cargo/serde@1.0.228",
         "pkg:cargo/serde_json@1.0.149"
       ],
-      "ref": "pkg:cargo/napi@3.8.3"
+      "ref": "pkg:cargo/napi@3.8.6"
     },
     {
       "dependsOn": [],
@@ -2393,7 +2438,7 @@
       "dependsOn": [
         "pkg:cargo/napi-build@2.3.1",
         "pkg:cargo/napi-derive@3.5.2",
-        "pkg:cargo/napi@3.8.3",
+        "pkg:cargo/napi@3.8.6",
         "pkg:cargo/unicode-case-mapping@1.0.0",
         "pkg:cargo/unicode-normalization@0.1.25",
         "pkg:cargo/unicode-segmentation@1.12.0"
