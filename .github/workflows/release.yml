@@ -66,24 +66,12 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
-      # npm, not bun. bun has a standing bug in tarball integrity
-      # verification for napi-rs platform-matrix packages
-      # (`@stll/<pkg>-<target>`): the downloaded tarball's sha512
-      # matches the lockfile byte-for-byte AND matches what the npm
-      # registry serves, but bun's internal check disagrees.
-      # Reproducible across bun 1.3.12–1.3.14, and reproducible
-      # locally on macOS too. Tracked upstream at
-      # https://github.com/oven-sh/bun/issues/26879 (and siblings).
-      #
-      # The upstream napi-rs package-template uses yarn for the same
-      # reason — bun and napi-rs platform-deps don't get along.
-      #
-      # npm-populated `node_modules` works fine for every downstream
-      # `bun run ...` command in this workflow (verified locally).
-      # The PR-time install in ci.yml is unchanged — that still uses
-      # `bun install --frozen-lockfile` and catches lockfile drift
-      # on every PR.
-      - run: npm install --omit=optional --no-audit --no-fund --no-save --no-package-lock
+      # Keep release installs on Bun so the resolver matches CI and
+      # provenance-sync. --no-verify is scoped to release because Bun has
+      # a standing false-positive integrity bug for already-published
+      # napi-rs platform tarballs (`@stll/<pkg>-<target>`).
+      # Track upstream: https://github.com/oven-sh/bun/issues/26879
+      - run: bun install --frozen-lockfile --no-verify
       - run: bun run lint
       - run: cargo clippy --all-targets --all-features -- -Dwarnings
       - run: cargo fmt --all -- --check
@@ -104,7 +92,7 @@ jobs:
         with:
           provenance-version: v0.1.3
 
-      - run: npm install --no-audit --no-fund --no-save --no-package-lock
+      - run: bun install --frozen-lockfile --no-verify
       - run: bun run build
       - run: bun run build:js
       - run: bun test
@@ -153,7 +141,7 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
-      - run: npm install --no-audit --no-fund --no-save --no-package-lock
+      - run: bun install --frozen-lockfile --no-verify
 
       - name: Build (native)
         if: >-
@@ -202,7 +190,7 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      - run: npm install --no-audit --no-fund --no-save --no-package-lock
+      - run: bun install --frozen-lockfile --no-verify
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -252,7 +240,7 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      - run: npm install --no-audit --no-fund --no-save --no-package-lock
+      - run: bun install --frozen-lockfile --no-verify
 
       - name: Install cdxgen
         run: npm install --global "@cyclonedx/cdxgen@${{ env.CDXGEN_VERSION }}"
