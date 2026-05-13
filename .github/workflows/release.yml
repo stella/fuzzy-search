@@ -66,7 +66,17 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
-      - run: bun install --frozen-lockfile
+      # Plain `bun install` here, not `--frozen-lockfile`. bun has a
+      # standing bug in tarball integrity verification for napi-rs
+      # platform-matrix packages (`@stll/<pkg>-<target>`) where the
+      # downloaded tarball's sha512 matches the lockfile byte-for-byte
+      # AND matches what the npm registry serves, but bun's internal
+      # check disagrees. Reproducible on every bun release we tried
+      # (1.3.12–1.3.14). Tracked at
+      # https://github.com/oven-sh/bun/issues/26879 (and siblings).
+      # The PR-time install in ci.yml still uses `--frozen-lockfile`,
+      # so real lockfile drift gets caught before merging to main.
+      - run: bun install
       - run: bun run lint
       - run: cargo clippy --all-targets --all-features -- -Dwarnings
       - run: cargo fmt --all -- --check
