@@ -346,62 +346,11 @@ jobs:
 
       - name: Publish to npm
         if: ${{ inputs.publish_to_npm }}
-        run: |
-          set -euo pipefail
-
-          publish_tarball() {
-            local tarball="$1"
-            local package_json
-            local package_name
-            local package_version
-            local attempt
-            local published=false
-
-            tarball="$(realpath "$tarball")"
-            package_json="$(tar -xOf "$tarball" package/package.json)"
-            package_name="$(jq -r '.name' <<<"$package_json")"
-            package_version="$(jq -r '.version' <<<"$package_json")"
-
-            if npm view "${package_name}@${package_version}" version --json >/dev/null 2>&1; then
-              echo "Skipping already-published ${package_name}@${package_version}"
-              published=true
-            fi
-
-            if [[ "$published" != "true" ]]; then
-              for attempt in 1 2 3 4 5; do
-                if npm publish "$tarball" --provenance --access public --tag "$NPM_DIST_TAG"; then
-                  published=true
-                  break
-                fi
-
-                if npm view "${package_name}@${package_version}" version --json >/dev/null 2>&1; then
-                  echo "Detected ${package_name}@${package_version} after publish attempt ${attempt}"
-                  published=true
-                  break
-                fi
-
-                if [[ "$attempt" -eq 5 ]]; then
-                  echo "Failed to publish ${package_name}@${package_version} after ${attempt} attempts" >&2
-                  return 1
-                fi
-
-                sleep $((attempt * 10))
-              done
-            fi
-
-            return 0
-          }
-
-          # Intentional for the initial public release line:
-          # prereleases should still be the default install.
-          NPM_DIST_TAG="latest"
-
-          while IFS= read -r tarball; do
-            [[ -n "$tarball" ]] || continue
-            publish_tarball "$tarball"
-          done <<< "$AUX_TARBALLS"
-
-          publish_tarball "$ROOT_TARBALL"
-        env:
-          AUX_TARBALLS: ${{ steps.pack.outputs.aux_tarballs }}
-          ROOT_TARBALL: ${{ steps.pack.outputs.root_tarball }}
+        uses: stella/.github/.github/actions/npm-publish-hardened@4292546b5b6e5bd8660bd727913b4038644c3d0b
+        with:
+          # Platform sub-packages first so the meta-package (root) can
+          # resolve them as registry-visible optional deps at install
+          # time. Composite publishes the list in order.
+          tarballs: |
+            ${{ steps.pack.outputs.aux_tarballs }}
+            ${{ steps.pack.outputs.root_tarball }}
