@@ -1,13 +1,19 @@
-import { access } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { constants } from "node:fs";
+import { access } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const wasmPath = fileURLToPath(
-  new URL("../fuzzy-search.wasm32-wasi.wasm", import.meta.url),
+  new URL(
+    "../fuzzy-search.wasm32-wasi.wasm",
+    import.meta.url,
+  ),
 );
 const browserPath = fileURLToPath(
-  new URL("../fuzzy-search.wasi-browser.js", import.meta.url),
+  new URL(
+    "../fuzzy-search.wasi-browser.js",
+    import.meta.url,
+  ),
 );
 const napiPath = fileURLToPath(
   new URL(
@@ -26,7 +32,13 @@ try {
 
   const result = spawnSync(
     napiPath,
-    ["build", "--platform", "--target", "wasm32-wasip1-threads", "--release"],
+    [
+      "build",
+      "--platform",
+      "--target",
+      "wasm32-wasip1-threads",
+      "--release",
+    ],
     {
       shell: process.platform === "win32",
       stdio: "inherit",

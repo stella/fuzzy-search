@@ -1,5 +1,5 @@
-import { access, rename, rm } from "node:fs/promises";
 import { constants } from "node:fs";
+import { access, rename, rm } from "node:fs/promises";
 
 const source = new URL("../index.js", import.meta.url);
 const target = new URL("../index.cjs", import.meta.url);

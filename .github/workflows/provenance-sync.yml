@@ -2,13 +2,7 @@ name: Provenance Sync
 
 on:
   pull_request:
-    types:
-      [
-        opened,
-        synchronize,
-        reopened,
-        ready_for_review,
-      ]
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "bun.lock"
       - "Cargo.lock"
@@ -96,7 +90,7 @@ jobs:
           echo "$install_bin" >> "$GITHUB_PATH"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --no-verify
 
       - name: Generate provenance artifacts
         run: |

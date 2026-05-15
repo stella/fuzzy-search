@@ -103,14 +103,21 @@ function oracleSinglePatternCandidates(
   const minLen = Math.max(1, m - k);
   const maxLen = m + k;
 
-  for (let start = 0; start <= hay.length - minLen; start++) {
+  for (
+    let start = 0;
+    start <= hay.length - minLen;
+    start++
+  ) {
     for (
       let len = minLen;
       len <= maxLen && start + len <= hay.length;
       len++
     ) {
       const end = start + len;
-      const distance = levenshtein(pat, hay.slice(start, end));
+      const distance = levenshtein(
+        pat,
+        hay.slice(start, end),
+      );
       if (distance <= k) {
         matches.push({ start, end, distance });
       }
@@ -1608,9 +1615,7 @@ for (const ww of [false, true]) {
 }
 
 describe("property: cartesian options × distance", () => {
-  test(
-    "all 16 combos: every match is valid",
-    () => {
+  test("all 16 combos: every match is valid", () => {
     const czChar = fc.constantFrom(
       ..."aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž ABCČDĎEÉĚ.,!?-".split(
         "",
@@ -1620,9 +1625,7 @@ describe("property: cartesian options × distance", () => {
       minLength: 4,
       maxLength: 8,
       unit: czChar,
-    },
-    15_000,
-  );
+    });
     const czStr = fc.string({
       minLength: 0,
       maxLength: 60,
@@ -1699,8 +1702,7 @@ describe("property: cartesian options × distance", () => {
       ),
       PARAMS,
     );
-    },
-  );
+  });
 });
 
 // ─── Property 29: duplicate patterns ────────
