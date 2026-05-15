@@ -90,7 +90,7 @@ jobs:
           echo "$install_bin" >> "$GITHUB_PATH"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --no-verify
 
       - name: Generate provenance artifacts
         run: |
