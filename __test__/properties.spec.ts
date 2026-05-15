@@ -1621,14 +1621,11 @@ describe("property: cartesian options × distance", () => {
         "",
       ),
     );
-    const czPat = fc.string(
-      {
-        minLength: 4,
-        maxLength: 8,
-        unit: czChar,
-      },
-      15_000,
-    );
+    const czPat = fc.string({
+      minLength: 4,
+      maxLength: 8,
+      unit: czChar,
+    });
     const czStr = fc.string({
       minLength: 0,
       maxLength: 60,
