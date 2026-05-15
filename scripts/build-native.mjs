@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { access, rename, rm } from "node:fs/promises";
 import { constants } from "node:fs";
+import { access, rename, rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const cliPath = new URL(
@@ -10,7 +10,11 @@ const cliPath = new URL(
 
 const result = spawnSync(
   process.execPath,
-  [fileURLToPath(cliPath), "build", ...process.argv.slice(2)],
+  [
+    fileURLToPath(cliPath),
+    "build",
+    ...process.argv.slice(2),
+  ],
   {
     stdio: "inherit",
   },

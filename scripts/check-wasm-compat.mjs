@@ -14,7 +14,9 @@ let code;
 try {
   code = readFileSync(WASM_DIST, "utf8");
 } catch {
-  console.error(`\u2717 ${WASM_DIST} not found \u2014 run build:js first`);
+  console.error(
+    `\u2717 ${WASM_DIST} not found \u2014 run build:js first`,
+  );
   process.exit(1);
 }
 
@@ -23,13 +25,17 @@ try {
 /** @type {{ pattern: RegExp; name: string }[]} */
 const BANNED = [
   // Any Buffer member access or constructor
-  { pattern: /\bBuffer\s*\.\s*\w+\s*\(/g, name: "Buffer.*()" },
+  {
+    pattern: /\bBuffer\s*\.\s*\w+\s*\(/g,
+    name: "Buffer.*()",
+  },
   { pattern: /new\s+Buffer\s*\(/g, name: "new Buffer()" },
   // CJS require
   { pattern: /\brequire\s*\(\s*["']/g, name: "require()" },
   // Node process globals
   {
-    pattern: /\bprocess\s*\.\s*(env|argv|cwd|exit|stdout|stderr|pid|platform|arch)\b/g,
+    pattern:
+      /\bprocess\s*\.\s*(env|argv|cwd|exit|stdout|stderr|pid|platform|arch)\b/g,
     name: "process.*",
   },
   // Node CJS globals
@@ -53,12 +59,18 @@ for (const { pattern, name } of BANNED) {
   for (const m of code.matchAll(pattern)) {
     const line = code.slice(0, m.index).split("\n").length;
     const lineContent = code.split("\n")[line - 1].trim();
-    issues.push({ name, line, snippet: lineContent.slice(0, 80) });
+    issues.push({
+      name,
+      line,
+      snippet: lineContent.slice(0, 80),
+    });
   }
 }
 
 if (issues.length > 0) {
-  console.error(`\u2717 ${WASM_DIST} contains Node.js-only APIs:\n`);
+  console.error(
+    `\u2717 ${WASM_DIST} contains Node.js-only APIs:\n`,
+  );
   for (const { name, line, snippet } of issues) {
     console.error(`  line ${line}: ${name}`);
     console.error(`    ${snippet}`);

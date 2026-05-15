@@ -35,8 +35,11 @@ describe("stllFuzzySearchWasmVite", () => {
     const plugin = stllFuzzySearchWasmVite();
 
     expect(plugin.name).toBe("stll-fuzzy-search-wasm");
-    expect(plugin.config?.({ optimizeDeps: { exclude: ["existing-package"] } }))
-      .toEqual({
+    expect(
+      plugin.config?.({
+        optimizeDeps: { exclude: ["existing-package"] },
+      }),
+    ).toEqual({
       optimizeDeps: {
         exclude: [...WASM_VITE_PACKAGES],
       },
