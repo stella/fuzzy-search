@@ -17,5 +17,5 @@ jobs:
     uses: stella/.github/.github/workflows/provenance-update.yml@cbcba03b6492bbc8a29da0bf2416b01431c4d90a
     secrets: inherit
     with:
-      install-command: bun install --frozen-lockfile
+      install-command: bun install --frozen-lockfile --no-verify
       provenance-version: v0.1.3
