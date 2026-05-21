@@ -115,6 +115,15 @@ export type FuzzyMatch = {
   text: string;
   /** Actual Levenshtein edit distance. */
   distance: number;
+  /**
+   * Normalized similarity in `[0, 1]`:
+   * `1 - distance / pattern.length`, clamped at 0.
+   * Always populated. `distance=0` yields `1.0`
+   * (perfect); higher distances yield lower scores.
+   * Lets callers rank across patterns of differing
+   * lengths without computing the ratio themselves.
+   */
+  score: number;
   /** Pattern name (if provided). */
   name?: string;
 };
@@ -160,9 +169,20 @@ const normalizeEntry = (
   );
 };
 
+/** Score formula: clamped `1 - distance / patternLength`. */
+const computeScore = (
+  distance: number,
+  patternLength: number,
+): number => {
+  if (patternLength <= 0) return 0;
+  const raw = 1 - distance / patternLength;
+  return raw < 0 ? 0 : raw;
+};
+
 const unpack = (
   packed: Uint32Array,
   haystack: string,
+  patterns: string[],
   names: (string | undefined)[],
 ): FuzzyMatch[] => {
   const len = packed.length;
@@ -182,12 +202,19 @@ const unpack = (
         `Malformed packed array at offset ${String(i)}`,
       );
     }
+    const pat = patterns[idx];
+    if (pat === undefined) {
+      throw new Error(
+        `Malformed packed array: pattern index ${String(idx)} out of range`,
+      );
+    }
     const m: FuzzyMatch = {
       pattern: idx,
       start,
       end,
       text: haystack.slice(start, end),
       distance,
+      score: computeScore(distance, pat.length),
     };
     if (names[idx] !== undefined) {
       m.name = names[idx];
@@ -230,11 +257,13 @@ const unpack = (
  * ```
  */
 export class FuzzySearch {
+  private _patterns: string[];
   private _names: (string | undefined)[];
   private _inner: NativeFuzzySearch;
 
   constructor(patterns: PatternEntry[], options?: Options) {
     const entries = patterns.map(normalizeEntry);
+    this._patterns = entries.map((e) => e.pattern);
     this._names = entries.map((e) => e.name);
     this._inner = new binding.FuzzySearch(entries, options);
   }
@@ -257,6 +286,7 @@ export class FuzzySearch {
     return unpack(
       this._inner._findIterPacked(haystack),
       haystack,
+      this._patterns,
       this._names,
     );
   }
