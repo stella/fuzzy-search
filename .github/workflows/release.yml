@@ -373,3 +373,14 @@ jobs:
           tarballs: |
             ${{ steps.pack.outputs.aux_tarballs }}
             ${{ steps.pack.outputs.root_tarball }}
+
+  update-changelog:
+    name: Update CHANGELOG
+    needs: publish
+    if: inputs.publish_to_npm
+    uses: stella/.github/.github/workflows/changelog-update.yml@d11bdc933dec609e291f6685f470b039d8342b6a
+    with:
+      tag: ${{ inputs.tag }}
+    permissions:
+      contents: write
+      pull-requests: write
