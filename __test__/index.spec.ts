@@ -729,3 +729,298 @@ describe("distance() vs js-levenshtein", () => {
     ).toBe(1);
   });
 });
+
+// ─── score ───────────────────────────────────
+
+describe("score", () => {
+  test("score = 1 for exact matches", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "hello", distance: 0 }],
+      { wholeWords: false },
+    );
+    const matches = fs.findIter("hello");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.score).toBe(1);
+  });
+
+  test("score reflects distance/length ratio", () => {
+    // pattern length 5, distance 1 -> 1 - 1/5 = 0.8
+    const fs = new FuzzySearch(
+      [{ pattern: "hello", distance: 1 }],
+      { wholeWords: false },
+    );
+    const matches = fs.findIter("helo world");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.distance).toBe(1);
+    expect(matches[0]!.score).toBeCloseTo(0.8, 10);
+  });
+
+  test("score grid across pattern lengths", () => {
+    // (pattern, distance) -> expected score
+    const cases: {
+      pattern: string;
+      hay: string;
+      dist: number;
+      expected: number;
+    }[] = [
+      { pattern: "ab", hay: "ab", dist: 1, expected: 1 },
+      { pattern: "abc", hay: "abc", dist: 1, expected: 1 },
+      {
+        pattern: "abc",
+        hay: "abd",
+        dist: 1,
+        expected: 2 / 3,
+      },
+      {
+        pattern: "abcdef",
+        hay: "abcdef",
+        dist: 2,
+        expected: 1,
+      },
+      {
+        pattern: "abcdef",
+        hay: "abcdex",
+        dist: 2,
+        expected: 5 / 6,
+      },
+      {
+        pattern: "abcdef",
+        hay: "abcdxx",
+        dist: 2,
+        expected: 4 / 6,
+      },
+    ];
+    for (const c of cases) {
+      const fs = new FuzzySearch(
+        [{ pattern: c.pattern, distance: c.dist }],
+        { wholeWords: false },
+      );
+      const matches = fs.findIter(c.hay);
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches[0]!.score).toBeCloseTo(c.expected, 10);
+    }
+  });
+
+  test("score is always in [0, 1]", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "abcdef", distance: 3 }],
+      { wholeWords: false },
+    );
+    for (const m of fs.findIter("abxyzf abcdef abdcef")) {
+      expect(m.score).toBeGreaterThanOrEqual(0);
+      expect(m.score).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test("score is deterministic across calls", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "Novák", distance: 2 }],
+      { wholeWords: false },
+    );
+    const a = fs.findIter("xx Nowák yy");
+    const b = fs.findIter("xx Nowák yy");
+    expect(a.length).toBe(b.length);
+    for (let i = 0; i < a.length; i++) {
+      expect(a[i]!.score).toBe(b[i]!.score);
+    }
+  });
+});
+
+// ─── minScore ────────────────────────────────
+
+describe("minScore", () => {
+  test("filters below threshold (inclusive at boundary)", () => {
+    // pattern "hello" len=5, distance 2 -> score 0.6
+    // pattern "world" len=5, distance 1 -> score 0.8
+    const fs = new FuzzySearch(
+      [
+        { pattern: "hello", distance: 2 },
+        { pattern: "world", distance: 2 },
+      ],
+      { wholeWords: false, minScore: 0.8 },
+    );
+    const matches = fs.findIter("hxllo wxrld");
+    // "hxllo" against "hello" distance 1 -> score 0.8
+    // "wxrld" against "world" distance 1 -> score 0.8
+    // Both should pass inclusive 0.8.
+    expect(matches).toHaveLength(2);
+    for (const m of matches) {
+      expect(m.score).toBeGreaterThanOrEqual(0.8);
+    }
+  });
+
+  test("strict cutoff drops low-score matches", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "hello", distance: 2 }],
+      { wholeWords: false, minScore: 0.85 },
+    );
+    // "hxllo" -> distance 1 -> score 0.8, dropped
+    expect(fs.findIter("hxllo")).toHaveLength(0);
+    // exact match -> score 1, kept
+    expect(fs.findIter("hello")).toHaveLength(1);
+  });
+
+  test("minScore = 0 admits everything", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "hello", distance: 2 }],
+      { wholeWords: false, minScore: 0 },
+    );
+    expect(fs.findIter("hxxlo").length).toBeGreaterThan(0);
+  });
+
+  test("minScore = 1 keeps only perfect matches", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "hello", distance: 2 }],
+      { wholeWords: false, minScore: 1 },
+    );
+    expect(fs.findIter("hello")).toHaveLength(1);
+    expect(fs.findIter("helo")).toHaveLength(0);
+  });
+
+  test("minScore does not affect isMatch", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "hello", distance: 2 }],
+      { wholeWords: false, minScore: 1 },
+    );
+    // findIter would drop the dist-1 hit; isMatch
+    // still reports any-match.
+    expect(fs.isMatch("hxllo")).toBe(true);
+  });
+
+  test("minScore does not affect replaceAll", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "hello", distance: 2 }],
+      { wholeWords: false, minScore: 1 },
+    );
+    // Despite minScore=1, replaceAll still rewrites
+    // the dist-1 match (documented asymmetry).
+    expect(fs.replaceAll("hxllo", ["[X]"])).toBe("[X]");
+  });
+});
+
+// ─── kBest ───────────────────────────────────
+
+describe("kBest", () => {
+  test("returns top k by score descending", () => {
+    const fs = new FuzzySearch(
+      [
+        { pattern: "foo", distance: 1 },
+        { pattern: "bar", distance: 1 },
+      ],
+      { wholeWords: false, kBest: 1 },
+    );
+    // "foo" exact (score 1), "bxr" approx (score 2/3)
+    const matches = fs.findIter("foo bxr");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.text).toBe("foo");
+    expect(matches[0]!.score).toBe(1);
+  });
+
+  test("ties broken by lower start", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "ab", distance: 0 }],
+      { wholeWords: false, kBest: 1 },
+    );
+    const matches = fs.findIter("ab xx ab");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.start).toBe(0);
+  });
+
+  test("ties broken by pattern index (same score, same start impossible — use distinct starts)", () => {
+    // With non-overlapping matches, same start
+    // cannot happen. The tertiary key is the
+    // pattern index. Use two patterns at equal
+    // length, one matching slightly earlier.
+    const fs = new FuzzySearch(
+      [
+        { pattern: "abc", distance: 0 },
+        { pattern: "xyz", distance: 0 },
+      ],
+      { wholeWords: false, kBest: 2 },
+    );
+    const matches = fs.findIter("xyz abc");
+    expect(matches).toHaveLength(2);
+    // Same score (1), so sorted by start ascending
+    expect(matches[0]!.text).toBe("xyz");
+    expect(matches[1]!.text).toBe("abc");
+  });
+
+  test("kBest larger than count returns all", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "abc", distance: 1 }],
+      { wholeWords: false, kBest: 100 },
+    );
+    const matches = fs.findIter("abc xyz abd");
+    expect(matches.length).toBeLessThanOrEqual(2);
+  });
+
+  test("kBest = 0 returns empty", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "abc", distance: 1 }],
+      { wholeWords: false, kBest: 0 },
+    );
+    expect(fs.findIter("abc")).toHaveLength(0);
+  });
+
+  test("kBest output is sorted by score descending", () => {
+    const fs = new FuzzySearch(
+      [
+        { pattern: "alpha", distance: 2 },
+        { pattern: "beta", distance: 2 },
+      ],
+      { wholeWords: false, kBest: 5 },
+    );
+    // "alpha" (score 1), "betx" (score 0.75)
+    const matches = fs.findIter("alpha betx");
+    expect(matches).toHaveLength(2);
+    expect(matches[0]!.score).toBe(1);
+    expect(matches[1]!.score).toBe(0.75);
+  });
+
+  test("kBest does not affect isMatch", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "abc", distance: 1 }],
+      { wholeWords: false, kBest: 0 },
+    );
+    expect(fs.isMatch("abc")).toBe(true);
+  });
+
+  test("kBest does not affect replaceAll", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "abc", distance: 1 }],
+      { wholeWords: false, kBest: 0 },
+    );
+    expect(fs.replaceAll("abc xyz", ["X"])).toBe("X xyz");
+  });
+});
+
+// ─── minScore + kBest combined ───────────────
+
+describe("minScore + kBest", () => {
+  test("filter first, then rank", () => {
+    const fs = new FuzzySearch(
+      [
+        { pattern: "alpha", distance: 3 },
+        { pattern: "beta", distance: 2 },
+      ],
+      { wholeWords: false, minScore: 0.6, kBest: 1 },
+    );
+    // "alpxx" -> distance 2 vs alpha -> score 0.6 (kept)
+    // "beta"  -> distance 0 vs beta  -> score 1   (kept)
+    // After minScore: two matches, kBest=1 keeps top by score
+    const matches = fs.findIter("alpxx beta");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.text).toBe("beta");
+    expect(matches[0]!.score).toBe(1);
+  });
+
+  test("kBest does not resurrect filtered matches", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "hello", distance: 2 }],
+      { wholeWords: false, minScore: 1, kBest: 10 },
+    );
+    // dist-1 match has score 0.8, filtered out.
+    // kBest can't pull it back.
+    expect(fs.findIter("hxllo")).toHaveLength(0);
+  });
+});

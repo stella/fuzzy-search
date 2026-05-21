@@ -25,6 +25,26 @@ search.isMatch("helo world"); // true
 distance("kitten", "sitting"); // 3
 ```
 
+### Scored output
+
+Every match carries `score: number` in `[0, 1]`,
+computed as `1 - distance / pattern.length` and
+clamped at 0. Use `minScore` to drop low-quality
+matches and `kBest` to keep the top k by score:
+
+```typescript
+const search = new FuzzySearch(
+  [{ pattern: "hello", distance: 2 }],
+  { wholeWords: false, minScore: 0.8, kBest: 3 },
+);
+```
+
+`minScore` is inclusive (`score >= minScore`).
+`kBest` ranks by score descending, ties broken by
+lower `start`, then pattern index. Both options apply
+to `findIter` only; `replaceAll` still rewrites every
+distance-qualified match.
+
 For browser usage, use the separate
 `@stll/fuzzy-search-wasm` package.
 

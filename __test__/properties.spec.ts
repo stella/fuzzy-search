@@ -1908,3 +1908,202 @@ describe("property: CJK text", () => {
     );
   });
 });
+
+// ─── Property 34: score always in [0, 1] ─────
+
+describe("property: score in [0, 1]", () => {
+  test("every match has score in [0, 1]", () => {
+    fc.assert(
+      fc.property(
+        patterns,
+        haystack,
+        maxDist,
+        (pats, hay, k) => {
+          const fs = buildFS(pats, k, false);
+          for (const m of fs.findIter(hay)) {
+            expect(m.score).toBeGreaterThanOrEqual(0);
+            expect(m.score).toBeLessThanOrEqual(1);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+
+  test("score = 1 iff distance = 0", () => {
+    fc.assert(
+      fc.property(
+        patterns,
+        haystack,
+        maxDist,
+        (pats, hay, k) => {
+          const fs = buildFS(pats, k, false);
+          for (const m of fs.findIter(hay)) {
+            if (m.distance === 0) {
+              expect(m.score).toBe(1);
+            } else {
+              expect(m.score).toBeLessThan(1);
+            }
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 35: kBest cap ─────────────────
+
+describe("property: kBest cap", () => {
+  test("kBest=N never returns more than N matches", () => {
+    fc.assert(
+      fc.property(
+        patterns,
+        haystack,
+        maxDist,
+        fc.integer({ min: 0, max: 20 }),
+        (pats, hay, k, kBest) => {
+          // Filter patterns the same way buildFS does
+          // so the constructor accepts them.
+          const valid = pats.filter(
+            (p) => Array.from(p).length > k,
+          );
+          const entries =
+            valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
+          const fs = new FuzzySearch(
+            entries.map((p) => ({
+              pattern: p,
+              distance: k,
+            })),
+            { wholeWords: false, kBest },
+          );
+          const matches = fs.findIter(hay);
+          expect(matches.length).toBeLessThanOrEqual(kBest);
+        },
+      ),
+      PARAMS,
+    );
+  });
+
+  test("kBest output is sorted by score descending", () => {
+    fc.assert(
+      fc.property(
+        patterns,
+        haystack,
+        maxDist,
+        fc.integer({ min: 1, max: 20 }),
+        (pats, hay, k, kBest) => {
+          const valid = pats.filter(
+            (p) => Array.from(p).length > k,
+          );
+          const entries =
+            valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
+          const fs = new FuzzySearch(
+            entries.map((p) => ({
+              pattern: p,
+              distance: k,
+            })),
+            { wholeWords: false, kBest },
+          );
+          const matches = fs.findIter(hay);
+          for (let i = 1; i < matches.length; i++) {
+            expect(
+              matches[i - 1]!.score,
+            ).toBeGreaterThanOrEqual(matches[i]!.score);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
+
+// ─── Property 36: minScore filter ───────────
+
+describe("property: minScore filter", () => {
+  test("every returned match has score >= minScore", () => {
+    fc.assert(
+      fc.property(
+        patterns,
+        haystack,
+        maxDist,
+        fc.float({
+          min: Math.fround(0),
+          max: Math.fround(1),
+          noNaN: true,
+        }),
+        (pats, hay, k, minScore) => {
+          const valid = pats.filter(
+            (p) => Array.from(p).length > k,
+          );
+          const entries =
+            valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
+          const fs = new FuzzySearch(
+            entries.map((p) => ({
+              pattern: p,
+              distance: k,
+            })),
+            { wholeWords: false, minScore },
+          );
+          for (const m of fs.findIter(hay)) {
+            expect(m.score).toBeGreaterThanOrEqual(
+              minScore,
+            );
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+
+  test("minScore filtered set is a subset of unfiltered", () => {
+    fc.assert(
+      fc.property(
+        patterns,
+        haystack,
+        maxDist,
+        fc.float({
+          min: Math.fround(0),
+          max: Math.fround(1),
+          noNaN: true,
+        }),
+        (pats, hay, k, minScore) => {
+          const valid = pats.filter(
+            (p) => Array.from(p).length > k,
+          );
+          const entries =
+            valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
+          const unfiltered = new FuzzySearch(
+            entries.map((p) => ({
+              pattern: p,
+              distance: k,
+            })),
+            { wholeWords: false },
+          ).findIter(hay);
+          const filtered = new FuzzySearch(
+            entries.map((p) => ({
+              pattern: p,
+              distance: k,
+            })),
+            { wholeWords: false, minScore },
+          ).findIter(hay);
+          expect(filtered.length).toBeLessThanOrEqual(
+            unfiltered.length,
+          );
+          // Each filtered match should be present
+          // in the unfiltered set (same start/end/pattern).
+          for (const f of filtered) {
+            const found = unfiltered.some(
+              (u) =>
+                u.start === f.start &&
+                u.end === f.end &&
+                u.pattern === f.pattern,
+            );
+            expect(found).toBe(true);
+          }
+        },
+      ),
+      PARAMS,
+    );
+  });
+});
