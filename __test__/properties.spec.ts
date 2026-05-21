@@ -2007,9 +2007,9 @@ describe("property: kBest cap", () => {
           );
           const matches = fs.findIter(hay);
           for (let i = 1; i < matches.length; i++) {
-            expect(matches[i - 1]!.score).toBeGreaterThanOrEqual(
-              matches[i]!.score,
-            );
+            expect(
+              matches[i - 1]!.score,
+            ).toBeGreaterThanOrEqual(matches[i]!.score);
           }
         },
       ),
@@ -2046,7 +2046,9 @@ describe("property: minScore filter", () => {
             { wholeWords: false, minScore },
           );
           for (const m of fs.findIter(hay)) {
-            expect(m.score).toBeGreaterThanOrEqual(minScore);
+            expect(m.score).toBeGreaterThanOrEqual(
+              minScore,
+            );
           }
         },
       ),

@@ -765,7 +765,12 @@ describe("score", () => {
     }[] = [
       { pattern: "ab", hay: "ab", dist: 1, expected: 1 },
       { pattern: "abc", hay: "abc", dist: 1, expected: 1 },
-      { pattern: "abc", hay: "abd", dist: 1, expected: 2 / 3 },
+      {
+        pattern: "abc",
+        hay: "abd",
+        dist: 1,
+        expected: 2 / 3,
+      },
       {
         pattern: "abcdef",
         hay: "abcdef",
