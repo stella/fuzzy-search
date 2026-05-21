@@ -348,7 +348,7 @@ export class FuzzySearch {
     const kBest = this._kBest;
     if (kBest === undefined) return filtered;
     if (kBest <= 0) return [];
-    const sorted = [...filtered].sort(compareForKBest);
+    const sorted = filtered.sort(compareForKBest);
     return sorted.length <= kBest
       ? sorted
       : sorted.slice(0, kBest);
