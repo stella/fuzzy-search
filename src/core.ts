@@ -84,6 +84,17 @@ export type Options = {
    * @default false
    */
   caseInsensitive?: boolean;
+  /**
+   * Drop matches whose normalized similarity
+   * score is below this threshold. Score is
+   * `1 - distance / pattern.length`, clamped to
+   * `[0, 1]`. The comparison is inclusive:
+   * `score >= minScore` keeps the match.
+   *
+   * Applied after distance filtering. Does not
+   * affect `replaceAll`.
+   */
+  minScore?: number;
 };
 
 /** A pattern entry with its edit distance. */
@@ -259,12 +270,14 @@ const unpack = (
 export class FuzzySearch {
   private _patterns: string[];
   private _names: (string | undefined)[];
+  private _minScore: number | undefined;
   private _inner: NativeFuzzySearch;
 
   constructor(patterns: PatternEntry[], options?: Options) {
     const entries = patterns.map(normalizeEntry);
     this._patterns = entries.map((e) => e.pattern);
     this._names = entries.map((e) => e.name);
+    this._minScore = options?.minScore;
     this._inner = new binding.FuzzySearch(entries, options);
   }
 
@@ -275,25 +288,39 @@ export class FuzzySearch {
 
   /**
    * Returns `true` if any pattern matches
-   * within its edit distance.
+   * within its edit distance. Not affected by
+   * `minScore`.
    */
   isMatch(haystack: string): boolean {
     return this._inner.isMatch(haystack);
   }
 
-  /** Find all non-overlapping fuzzy matches. */
+  /**
+   * Find non-overlapping fuzzy matches in
+   * ascending `start` order. When `minScore`
+   * is set, matches whose score is below it
+   * are dropped.
+   */
   findIter(haystack: string): FuzzyMatch[] {
-    return unpack(
+    const matches = unpack(
       this._inner._findIterPacked(haystack),
       haystack,
       this._patterns,
       this._names,
     );
+    const minScore = this._minScore;
+    if (minScore === undefined) return matches;
+    return matches.filter((m) => m.score >= minScore);
   }
 
   /**
    * Replace all fuzzy matches.
    * `replacements[i]` replaces pattern `i`.
+   *
+   * Always replaces every distance-qualified
+   * match; ignores `minScore` so the
+   * `replacements`-by-pattern contract stays
+   * deterministic.
    *
    * @throws {Error} If `replacements.length`
    *   does not equal `patternCount`.
