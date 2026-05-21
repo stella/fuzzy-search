@@ -111,8 +111,45 @@ const fs = new FuzzySearch(patterns, {
   // Unicode word boundaries (reserved for future
   // UAX#29 segmentation support).
   unicodeBoundaries: true, // default: true
+
+  // Drop matches whose score is below threshold.
+  // Score = 1 - distance / pattern.length.
+  // Inclusive (score >= minScore keeps the match).
+  minScore: 0.7,
+
+  // Return only the top k matches by score, across
+  // all patterns. Tie-broken by start, then pattern.
+  kBest: 5,
 });
 ```
+
+### Scored output
+
+Every match carries a normalized score in `[0, 1]`,
+computed as `1 - distance / pattern.length` and
+clamped at 0. Pair it with `minScore` and `kBest` for
+top-N ranking without a follow-up sort:
+
+```typescript
+const fs = new FuzzySearch(
+  [
+    { pattern: "Novák", distance: 2 },
+    { pattern: "Gaislerová", distance: 2 },
+  ],
+  { wholeWords: true, minScore: 0.7, kBest: 3 },
+);
+
+fs.findIter("Nowák a Gais1erova");
+// [
+//   { pattern: 0, text: "Nowák", distance: 1, score: 0.8, ... },
+//   { pattern: 1, text: "Gais1erova", distance: 2, score: 0.8, ... },
+// ]
+```
+
+`replaceAll` always replaces every distance-qualified
+match and ignores `minScore` / `kBest`, so the
+`replacements`-by-pattern contract stays
+deterministic.
 
 ### Replace
 
@@ -218,6 +255,8 @@ type Options = {
   wholeWords?: boolean; // default: true
   caseInsensitive?: boolean; // default: false
   unicodeBoundaries?: boolean; // default: true
+  minScore?: number; // drop matches below threshold
+  kBest?: number; // top-k by score, ties by start
 };
 
 type FuzzyMatch = {
@@ -226,6 +265,7 @@ type FuzzyMatch = {
   end: number; // exclusive
   text: string; // matched substring
   distance: number; // actual Levenshtein distance
+  score: number; // 1 - distance/pattern.length
   name?: string; // pattern name (if provided)
 };
 ```
