@@ -91,10 +91,23 @@ export type Options = {
    * `[0, 1]`. The comparison is inclusive:
    * `score >= minScore` keeps the match.
    *
-   * Applied after distance filtering. Does not
-   * affect `replaceAll`.
+   * Applied after distance filtering, before
+   * `kBest` ranking. Does not affect
+   * `replaceAll`.
    */
   minScore?: number;
+  /**
+   * Return only the top `k` matches across the
+   * entire haystack, ranked by score descending.
+   * Ties are broken by lower `start`, then by
+   * pattern index ascending for deterministic
+   * ordering. Returned matches are sorted by
+   * score (highest first), not by `start`.
+   *
+   * Applied after `minScore`. Does not affect
+   * `replaceAll`.
+   */
+  kBest?: number;
 };
 
 /** A pattern entry with its edit distance. */
@@ -190,6 +203,20 @@ const computeScore = (
   return raw < 0 ? 0 : raw;
 };
 
+/**
+ * Stable ranking for `kBest`: higher score wins;
+ * ties go to lower `start`, then pattern
+ * index ascending.
+ */
+const compareForKBest = (
+  a: FuzzyMatch,
+  b: FuzzyMatch,
+): number => {
+  if (a.score !== b.score) return b.score - a.score;
+  if (a.start !== b.start) return a.start - b.start;
+  return a.pattern - b.pattern;
+};
+
 const unpack = (
   packed: Uint32Array,
   haystack: string,
@@ -271,6 +298,7 @@ export class FuzzySearch {
   private _patterns: string[];
   private _names: (string | undefined)[];
   private _minScore: number | undefined;
+  private _kBest: number | undefined;
   private _inner: NativeFuzzySearch;
 
   constructor(patterns: PatternEntry[], options?: Options) {
@@ -278,6 +306,7 @@ export class FuzzySearch {
     this._patterns = entries.map((e) => e.pattern);
     this._names = entries.map((e) => e.name);
     this._minScore = options?.minScore;
+    this._kBest = options?.kBest;
     this._inner = new binding.FuzzySearch(entries, options);
   }
 
@@ -289,17 +318,20 @@ export class FuzzySearch {
   /**
    * Returns `true` if any pattern matches
    * within its edit distance. Not affected by
-   * `minScore`.
+   * `minScore` or `kBest`.
    */
   isMatch(haystack: string): boolean {
     return this._inner.isMatch(haystack);
   }
 
   /**
-   * Find non-overlapping fuzzy matches in
-   * ascending `start` order. When `minScore`
-   * is set, matches whose score is below it
-   * are dropped.
+   * Find non-overlapping fuzzy matches.
+   *
+   * Without `minScore` or `kBest`, matches are
+   * returned in ascending `start` order. With
+   * `kBest`, matches are returned in
+   * score-descending order (ties broken by
+   * `start`, then pattern index).
    */
   findIter(haystack: string): FuzzyMatch[] {
     const matches = unpack(
@@ -309,8 +341,17 @@ export class FuzzySearch {
       this._names,
     );
     const minScore = this._minScore;
-    if (minScore === undefined) return matches;
-    return matches.filter((m) => m.score >= minScore);
+    const filtered =
+      minScore === undefined
+        ? matches
+        : matches.filter((m) => m.score >= minScore);
+    const kBest = this._kBest;
+    if (kBest === undefined) return filtered;
+    if (kBest <= 0) return [];
+    const sorted = [...filtered].sort(compareForKBest);
+    return sorted.length <= kBest
+      ? sorted
+      : sorted.slice(0, kBest);
   }
 
   /**
@@ -318,7 +359,7 @@ export class FuzzySearch {
    * `replacements[i]` replaces pattern `i`.
    *
    * Always replaces every distance-qualified
-   * match; ignores `minScore` so the
+   * match; ignores `minScore` and `kBest` so the
    * `replacements`-by-pattern contract stays
    * deterministic.
    *
