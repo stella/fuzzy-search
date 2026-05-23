@@ -904,7 +904,7 @@
       "version": "2.8.0"
     },
     {
-      "bom-ref": "pkg:cargo/napi-build@2.3.1",
+      "bom-ref": "pkg:cargo/napi-build@2.3.2",
       "evidence": {
         "identity": [
           {
@@ -925,7 +925,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "d376940fd5b723c6893cd1ee3f33abbfd86acb1cd1ec079f3ab04a2a3bc4d3b1"
+          "content": "c9c366d2c8c60b86fa632df75f745509b52f9128f91a6bad4c796e44abb505e1"
         }
       ],
       "licenses": [
@@ -942,9 +942,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/napi-build@2.3.1",
+      "purl": "pkg:cargo/napi-build@2.3.2",
       "type": "library",
-      "version": "2.3.1"
+      "version": "2.3.2"
     },
     {
       "bom-ref": "pkg:cargo/napi-derive-backend@5.0.2",
@@ -2287,7 +2287,7 @@
         "pkg:cargo/bitflags@2.11.0",
         "pkg:cargo/ctor@0.6.3",
         "pkg:cargo/futures@0.3.32",
-        "pkg:cargo/napi-build@2.3.1",
+        "pkg:cargo/napi-build@2.3.2",
         "pkg:cargo/napi-sys@3.2.1",
         "pkg:cargo/nohash-hasher@0.2.0",
         "pkg:cargo/rustc-hash@2.1.1",
@@ -2298,7 +2298,7 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/napi-build@2.3.1"
+      "ref": "pkg:cargo/napi-build@2.3.2"
     },
     {
       "dependsOn": [
@@ -2391,7 +2391,7 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/napi-build@2.3.1",
+        "pkg:cargo/napi-build@2.3.2",
         "pkg:cargo/napi-derive@3.5.2",
         "pkg:cargo/napi@3.8.3",
         "pkg:cargo/unicode-case-mapping@1.0.0",
