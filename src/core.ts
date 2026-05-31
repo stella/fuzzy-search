@@ -165,32 +165,55 @@ const resolveDistance = (
 };
 
 const normalizeEntry = (
-  p: PatternEntry,
+  p: unknown,
   i: number,
 ): NormalizedEntry => {
   if (typeof p === "string") {
     return { pattern: p };
   }
-  if (
-    typeof p === "object" &&
-    p !== null &&
-    typeof p.pattern === "string"
-  ) {
-    if (p.distance === "auto") {
-      return {
-        ...p,
-        distance: resolveDistance("auto", p.pattern.length),
-      };
-    }
-    // SAFETY: The "auto" case was already handled above,
-    // so p.distance is number | undefined — matching
-    // NormalizedEntry.
-    return p as NormalizedEntry;
+
+  if (typeof p !== "object" || p === null || !("pattern" in p)) {
+    throw new TypeError(
+      `Pattern at index ${i} must be a string ` +
+        `or { pattern, distance?, name? }`,
+    );
   }
-  throw new TypeError(
-    `Pattern at index ${i} must be a string ` +
-      `or { pattern, distance?, name? }`,
-  );
+
+  if (typeof p.pattern !== "string") {
+    throw new TypeError(
+      `Pattern at index ${i}: "pattern" field must be a string`,
+    );
+  }
+
+  const entry: NormalizedEntry = { pattern: p.pattern };
+
+  if ("distance" in p && p.distance !== undefined) {
+    if (p.distance === "auto") {
+      entry.distance = resolveDistance("auto", p.pattern.length);
+    } else if (typeof p.distance === "number") {
+      if (!Number.isInteger(p.distance) || p.distance < 0) {
+        throw new TypeError(
+          `Pattern at index ${i}: "distance" field must be a non-negative integer`,
+        );
+      }
+      entry.distance = p.distance;
+    } else {
+      throw new TypeError(
+        `Pattern at index ${i}: "distance" field must be a number or "auto"`,
+      );
+    }
+  }
+
+  if ("name" in p && p.name !== undefined) {
+    if (typeof p.name !== "string") {
+      throw new TypeError(
+        `Pattern at index ${i}: "name" field must be a string`,
+      );
+    }
+    entry.name = p.name;
+  }
+
+  return entry;
 };
 
 /** Score formula: clamped `1 - distance / patternLength`. */

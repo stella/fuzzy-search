@@ -1,6 +1,5 @@
 import { distance as fastLev } from "fastest-levenshtein";
 import Fuse from "fuse.js";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const fuzzball = require("fuzzball");
 
 import { FuzzySearch } from "../src/index";
@@ -207,13 +206,15 @@ export const printSpeedups = (times: number[]) => {
   const stellaMs = times[0]!;
   console.log();
   for (let i = 1; i < times.length; i++) {
-    const lib = libs[i];
-    if (lib && times[i] !== undefined) {
-      console.log(
-        `  vs ${lib.name}: ` +
-          `${(times[i]! / stellaMs).toFixed(1)}x`,
-      );
+    const lib = libs.at(i);
+    const time = times.at(i);
+    if (lib === undefined || time === undefined) {
+      continue;
     }
+    console.log(
+      `  vs ${lib.name}: ` +
+        `${(time / stellaMs).toFixed(1)}x`,
+    );
   }
 };
 
