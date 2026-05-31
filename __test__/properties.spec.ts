@@ -187,13 +187,15 @@ function oracleFuzzySearch(
     // Greedy non-overlapping: sort by start,
     // then by distance (prefer lower), then by
     // length (prefer longer for same distance).
-    candidates.sort((a, b) =>
-      a.start !== b.start
-        ? a.start - b.start
-        : a.dist !== b.dist
-          ? a.dist - b.dist
-          : b.end - b.start - (a.end - a.start),
-    );
+    candidates.sort((a, b) => {
+      if (a.start !== b.start) {
+        return a.start - b.start;
+      }
+      if (a.dist !== b.dist) {
+        return a.dist - b.dist;
+      }
+      return b.end - b.start - (a.end - a.start);
+    });
 
     let lastEnd = 0;
     for (const c of candidates) {
