@@ -51,7 +51,7 @@
     "test:runtime:node": "node scripts/runtime-smoke.mjs",
     "version:sync": "node scripts/version-sync.mjs sync",
     "version:check": "node scripts/version-sync.mjs check",
-    "format": "oxfmt . && rustfmt src/lib.rs",
+    "format": "oxfmt . \"!.ai/**\" \"!.agents/**\" \"!.claude/**\" \"!AGENTS.md\" \"!CLAUDE.md\" \"!GEMINI.md\" && rustfmt src/lib.rs",
     "typecheck": "tsc --noEmit",
     "lint": "bun --bun oxlint -c oxlint.config.ts --report-unused-disable-directives-severity=error --deny-warnings --type-aware .",
     "lint:fix": "bun --bun oxlint -c oxlint.config.ts --type-aware --fix .",
@@ -61,7 +61,9 @@
     "bench:correctness": "bun __bench__/correctness.ts",
     "bench:all": "bun __bench__/speed.ts && bun __bench__/correctness.ts",
     "bench:install": "cd __bench__ && bun install",
-    "bench:download": "bash __bench__/download-corpus.sh"
+    "bench:download": "bash __bench__/download-corpus.sh",
+    "sync-ai": "bash scripts/sync-ai-skills.sh",
+    "sync-ai:check": "bash scripts/sync-ai-skills.sh --check"
   },
   "devDependencies": {
     "@emnapi/core": "^1.10.0",
