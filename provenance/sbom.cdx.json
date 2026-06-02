@@ -2,7 +2,7 @@
   "bomFormat": "CycloneDX",
   "components": [
     {
-      "bom-ref": "pkg:cargo/bitflags@2.11.0",
+      "bom-ref": "pkg:cargo/bitflags@2.12.1",
       "evidence": {
         "identity": [
           {
@@ -23,7 +23,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af"
+          "content": "84d7ced0ae9557296835c32bf1b1e02b44c746701f898460fb000d7eaa84f00a"
         }
       ],
       "licenses": [
@@ -45,9 +45,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/bitflags@2.11.0",
+      "purl": "pkg:cargo/bitflags@2.12.1",
       "type": "library",
-      "version": "2.11.0"
+      "version": "2.12.1"
     },
     {
       "bom-ref": "pkg:cargo/cfg-if@1.0.4",
@@ -621,7 +621,7 @@
       "version": "0.3.32"
     },
     {
-      "bom-ref": "pkg:cargo/itoa@1.0.17",
+      "bom-ref": "pkg:cargo/itoa@1.0.18",
       "evidence": {
         "identity": [
           {
@@ -642,7 +642,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
+          "content": "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
         }
       ],
       "licenses": [
@@ -664,9 +664,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/itoa@1.0.17",
+      "purl": "pkg:cargo/itoa@1.0.18",
       "type": "library",
-      "version": "1.0.17"
+      "version": "1.0.18"
     },
     {
       "bom-ref": "pkg:cargo/libloading@0.9.0",
@@ -712,7 +712,7 @@
       "version": "0.9.0"
     },
     {
-      "bom-ref": "pkg:cargo/memchr@2.8.0",
+      "bom-ref": "pkg:cargo/memchr@2.8.1",
       "evidence": {
         "identity": [
           {
@@ -733,7 +733,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79"
+          "content": "6b947ae49db0d222b1dbc6b113ce7248a3fc3a6ca21b696717bfc000ba4484d8"
         }
       ],
       "licenses": [
@@ -755,9 +755,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/memchr@2.8.0",
+      "purl": "pkg:cargo/memchr@2.8.1",
       "type": "library",
-      "version": "2.8.0"
+      "version": "2.8.1"
     },
     {
       "bom-ref": "pkg:cargo/napi-build@2.3.2",
@@ -1167,7 +1167,7 @@
       "version": "1.0.45"
     },
     {
-      "bom-ref": "pkg:cargo/rustc-hash@2.1.1",
+      "bom-ref": "pkg:cargo/rustc-hash@2.1.2",
       "evidence": {
         "identity": [
           {
@@ -1188,7 +1188,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
+          "content": "94300abf3f1ae2e2b8ffb7b58043de3d399c73fa6f4b73826402a5c457614dbe"
         }
       ],
       "licenses": [
@@ -1210,12 +1210,12 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/rustc-hash@2.1.1",
+      "purl": "pkg:cargo/rustc-hash@2.1.2",
       "type": "library",
-      "version": "2.1.1"
+      "version": "2.1.2"
     },
     {
-      "bom-ref": "pkg:cargo/semver@1.0.27",
+      "bom-ref": "pkg:cargo/semver@1.0.28",
       "evidence": {
         "identity": [
           {
@@ -1236,7 +1236,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "d767eb0aabc880b29956c35734170f26ed551a859dbd361d140cdbeca61ab1e2"
+          "content": "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd"
         }
       ],
       "licenses": [
@@ -1258,9 +1258,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/semver@1.0.27",
+      "purl": "pkg:cargo/semver@1.0.28",
       "type": "library",
-      "version": "1.0.27"
+      "version": "1.0.28"
     },
     {
       "bom-ref": "pkg:cargo/serde@1.0.228",
@@ -1407,7 +1407,7 @@
       "version": "1.0.228"
     },
     {
-      "bom-ref": "pkg:cargo/serde_json@1.0.149",
+      "bom-ref": "pkg:cargo/serde_json@1.0.150",
       "evidence": {
         "identity": [
           {
@@ -1428,7 +1428,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
+          "content": "e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9"
         }
       ],
       "licenses": [
@@ -1450,9 +1450,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/serde_json@1.0.149",
+      "purl": "pkg:cargo/serde_json@1.0.150",
       "type": "library",
-      "version": "1.0.149"
+      "version": "1.0.150"
     },
     {
       "bom-ref": "pkg:cargo/slab@0.4.12",
@@ -1814,7 +1814,7 @@
       "version": "0.1.25"
     },
     {
-      "bom-ref": "pkg:cargo/unicode-segmentation@1.13.2",
+      "bom-ref": "pkg:cargo/unicode-segmentation@1.13.3",
       "evidence": {
         "identity": [
           {
@@ -1835,7 +1835,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "9629274872b2bfaf8d66f5f15725007f635594914870f65218920345aa11aa8c"
+          "content": "c6f5d3c3b1bf09027a88a6bc961fc00497d651009560b5463668dc81b0fa87a8"
         }
       ],
       "licenses": [
@@ -1857,9 +1857,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/unicode-segmentation@1.13.2",
+      "purl": "pkg:cargo/unicode-segmentation@1.13.3",
       "type": "library",
-      "version": "1.13.2"
+      "version": "1.13.3"
     },
     {
       "bom-ref": "pkg:cargo/windows-link@0.2.1",
@@ -2025,7 +2025,7 @@
   "dependencies": [
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/bitflags@2.11.0"
+      "ref": "pkg:cargo/bitflags@2.12.1"
     },
     {
       "dependsOn": [],
@@ -2033,7 +2033,7 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/unicode-segmentation@1.13.2"
+        "pkg:cargo/unicode-segmentation@1.13.3"
       ],
       "ref": "pkg:cargo/convert_case@0.11.0"
     },
@@ -2100,7 +2100,7 @@
         "pkg:cargo/futures-macro@0.3.32",
         "pkg:cargo/futures-sink@0.3.32",
         "pkg:cargo/futures-task@0.3.32",
-        "pkg:cargo/memchr@2.8.0",
+        "pkg:cargo/memchr@2.8.1",
         "pkg:cargo/pin-project-lite@0.2.17",
         "pkg:cargo/slab@0.4.12"
       ],
@@ -2108,7 +2108,7 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/itoa@1.0.17"
+      "ref": "pkg:cargo/itoa@1.0.18"
     },
     {
       "dependsOn": [
@@ -2119,19 +2119,19 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/memchr@2.8.0"
+      "ref": "pkg:cargo/memchr@2.8.1"
     },
     {
       "dependsOn": [
-        "pkg:cargo/bitflags@2.11.0",
+        "pkg:cargo/bitflags@2.12.1",
         "pkg:cargo/ctor@1.0.7",
         "pkg:cargo/futures@0.3.32",
         "pkg:cargo/napi-build@2.3.2",
         "pkg:cargo/napi-sys@3.2.1",
         "pkg:cargo/nohash-hasher@0.2.0",
-        "pkg:cargo/rustc-hash@2.1.1",
+        "pkg:cargo/rustc-hash@2.1.2",
         "pkg:cargo/serde@1.0.228",
-        "pkg:cargo/serde_json@1.0.149"
+        "pkg:cargo/serde_json@1.0.150"
       ],
       "ref": "pkg:cargo/napi@3.9.0"
     },
@@ -2155,7 +2155,7 @@
         "pkg:cargo/convert_case@0.11.0",
         "pkg:cargo/proc-macro2@1.0.106",
         "pkg:cargo/quote@1.0.45",
-        "pkg:cargo/semver@1.0.27",
+        "pkg:cargo/semver@1.0.28",
         "pkg:cargo/syn@2.0.117"
       ],
       "ref": "pkg:cargo/napi-derive-backend@5.0.4"
@@ -2188,11 +2188,11 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/rustc-hash@2.1.1"
+      "ref": "pkg:cargo/rustc-hash@2.1.2"
     },
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/semver@1.0.27"
+      "ref": "pkg:cargo/semver@1.0.28"
     },
     {
       "dependsOn": [
@@ -2216,13 +2216,13 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/itoa@1.0.17",
-        "pkg:cargo/memchr@2.8.0",
+        "pkg:cargo/itoa@1.0.18",
+        "pkg:cargo/memchr@2.8.1",
         "pkg:cargo/serde@1.0.228",
         "pkg:cargo/serde_core@1.0.228",
         "pkg:cargo/zmij@1.0.21"
       ],
-      "ref": "pkg:cargo/serde_json@1.0.149"
+      "ref": "pkg:cargo/serde_json@1.0.150"
     },
     {
       "dependsOn": [],
@@ -2235,7 +2235,7 @@
         "pkg:cargo/napi@3.9.0",
         "pkg:cargo/unicode-case-mapping@1.0.0",
         "pkg:cargo/unicode-normalization@0.1.25",
-        "pkg:cargo/unicode-segmentation@1.13.2"
+        "pkg:cargo/unicode-segmentation@1.13.3"
       ],
       "ref": "pkg:cargo/stella-fuzzy-search@1.1.0"
     },
@@ -2273,7 +2273,7 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/unicode-segmentation@1.13.2"
+      "ref": "pkg:cargo/unicode-segmentation@1.13.3"
     },
     {
       "dependsOn": [],
