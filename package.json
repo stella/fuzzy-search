@@ -51,7 +51,7 @@
     "test:runtime:node": "node scripts/runtime-smoke.mjs",
     "version:sync": "node scripts/version-sync.mjs sync",
     "version:check": "node scripts/version-sync.mjs check",
-    "format": "oxfmt . '!.ai/**' '!.agents/**' '!.claude/**' '!AGENTS.md' '!CLAUDE.md' '!GEMINI.md' && rustfmt src/lib.rs",
+    "format": "oxfmt . \"!.ai/**\" \"!.agents/**\" \"!.claude/**\" \"!AGENTS.md\" \"!CLAUDE.md\" \"!GEMINI.md\" && rustfmt src/lib.rs",
     "typecheck": "tsc --noEmit",
     "lint": "bun --bun oxlint -c oxlint.config.ts --report-unused-disable-directives-severity=error --deny-warnings --type-aware .",
     "lint:fix": "bun --bun oxlint -c oxlint.config.ts --type-aware --fix .",
