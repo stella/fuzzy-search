@@ -40,7 +40,7 @@ jobs:
           ref: refs/tags/${{ inputs.tag }}
           fetch-depth: 0
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -124,7 +124,7 @@ jobs:
         with:
           ref: refs/tags/${{ inputs.tag }}
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -229,7 +229,7 @@ jobs:
         with:
           ref: refs/tags/${{ inputs.tag }}
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org
@@ -320,14 +320,14 @@ jobs:
           .
 
       - name: Attest root package tarball with SBOM
-        uses: actions/attest@281a49d4cbb0a72c9575a50d18f6deb515a11deb
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
         with:
           subject-path: ${{ steps.pack.outputs.root_tarball }}
           sbom-path: release-artifacts/attest-sbom.cdx.json
 
       - name: Attest auxiliary package tarballs
         if: steps.pack.outputs.aux_tarballs != ''
-        uses: actions/attest@281a49d4cbb0a72c9575a50d18f6deb515a11deb
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
         with:
           subject-path: ${{ steps.pack.outputs.aux_tarballs }}
 
