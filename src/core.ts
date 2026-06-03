@@ -172,7 +172,11 @@ const normalizeEntry = (
     return { pattern: p };
   }
 
-  if (typeof p !== "object" || p === null || !("pattern" in p)) {
+  if (
+    typeof p !== "object" ||
+    p === null ||
+    !("pattern" in p)
+  ) {
     throw new TypeError(
       `Pattern at index ${i} must be a string ` +
         `or { pattern, distance?, name? }`,
@@ -189,7 +193,10 @@ const normalizeEntry = (
 
   if ("distance" in p && p.distance !== undefined) {
     if (p.distance === "auto") {
-      entry.distance = resolveDistance("auto", p.pattern.length);
+      entry.distance = resolveDistance(
+        "auto",
+        p.pattern.length,
+      );
     } else if (typeof p.distance === "number") {
       if (!Number.isInteger(p.distance) || p.distance < 0) {
         throw new TypeError(
