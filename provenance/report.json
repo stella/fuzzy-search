@@ -5,7 +5,10 @@
     {
       "id": "root",
       "path": ".",
-      "ecosystems": ["javascript", "rust"],
+      "ecosystems": [
+        "javascript",
+        "rust"
+      ],
       "sbom": "sbom.cdx.json",
       "notice": "THIRD-PARTY-NOTICES.txt",
       "dependencies_with_licenses": 42
