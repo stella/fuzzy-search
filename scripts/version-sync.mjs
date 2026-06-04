@@ -30,6 +30,10 @@ function writeJson(filePath, value) {
   );
 }
 
+function readVersion() {
+  return readText(repoPath("VERSION")).trim();
+}
+
 function fileExists(filePath) {
   return fs.existsSync(filePath);
 }
@@ -159,7 +163,13 @@ function packageMeta() {
 function mismatches(expectedVersion) {
   const meta = packageMeta();
   const results = [];
+  const versionFileVersion = readVersion();
 
+  if (versionFileVersion !== expectedVersion) {
+    results.push(
+      `${repoPath("VERSION")}: version=${versionFileVersion}`,
+    );
+  }
   if (meta.root.version !== expectedVersion) {
     results.push(
       `${meta.packageJsonPath}: version=${meta.root.version}`,
@@ -170,15 +180,15 @@ function mismatches(expectedVersion) {
     meta.root.optionalDependencies ?? {},
   ).filter((name) => name.startsWith(meta.optionalPrefix));
 
-  for (const [name, version] of Object.entries(
+  for (const [name, optionalVersion] of Object.entries(
     meta.root.optionalDependencies ?? {},
   )) {
     if (
       name.startsWith(meta.optionalPrefix) &&
-      version !== expectedVersion
+      optionalVersion !== expectedVersion
     ) {
       results.push(
-        `${meta.packageJsonPath}: optionalDependencies.${name}=${version}`,
+        `${meta.packageJsonPath}: optionalDependencies.${name}=${optionalVersion}`,
       );
     }
   }
@@ -239,13 +249,13 @@ function mismatches(expectedVersion) {
 
   const bunLock = readText(meta.bunLockPath);
   for (const packageName of optionalPackages) {
-    const version = readBunLockVersion(
+    const lockfileVersion = readBunLockVersion(
       bunLock,
       packageName,
     );
-    if (version !== expectedVersion) {
+    if (lockfileVersion !== expectedVersion) {
       results.push(
-        `${meta.bunLockPath}: ${packageName}=${version ?? "<missing>"}`,
+        `${meta.bunLockPath}: ${packageName}=${lockfileVersion ?? "<missing>"}`,
       );
     }
   }
@@ -310,6 +320,7 @@ function syncVersion(nextVersion) {
   const meta = packageMeta();
   const previousVersion = meta.root.version;
 
+  writeText(repoPath("VERSION"), `${nextVersion}\n`);
   meta.root.version = nextVersion;
   const optionalPackages = Object.keys(
     meta.root.optionalDependencies ?? {},
@@ -437,18 +448,26 @@ function parseArgs() {
 
 function main() {
   const { command, args } = parseArgs();
-  const rootVersion = packageMeta().root.version;
+
+  if (command !== "sync" && command !== "check") {
+    console.error(
+      "Usage: node scripts/version-sync.mjs <sync|check> [--version <semver>] [--tag <git-tag>]",
+    );
+    process.exit(1);
+  }
+
+  const version =
+    args.get("version") ??
+    args.get("tag")?.replace(/^v/, "") ??
+    readVersion();
 
   if (command === "sync") {
-    syncVersion(args.get("version") ?? rootVersion);
+    syncVersion(version);
     return;
   }
 
   if (command === "check") {
-    const expectedVersion = args.get("tag")
-      ? args.get("tag").replace(/^v/, "")
-      : rootVersion;
-    const drift = mismatches(expectedVersion);
+    const drift = mismatches(version);
     if (drift.length > 0) {
       console.error("Version drift detected:");
       for (const mismatch of drift) {
@@ -458,11 +477,6 @@ function main() {
     }
     return;
   }
-
-  console.error(
-    "Usage: node scripts/version-sync.mjs <sync|check> [--version <semver>] [--tag <git-tag>]",
-  );
-  process.exit(1);
 }
 
 main();
