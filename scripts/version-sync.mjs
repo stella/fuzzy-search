@@ -102,27 +102,6 @@ function readBunLockVersion(bunLock, packageName) {
   return null;
 }
 
-function replaceBunLockVersion(
-  bunLock,
-  packageName,
-  nextVersion,
-  filePath,
-) {
-  const escaped = escapeRegex(packageName);
-  let updated = replaceRequired(
-    bunLock,
-    new RegExp(`("${escaped}": ")([^"]+)(")`),
-    `$1${nextVersion}$3`,
-    filePath,
-  );
-  updated = replaceIfPresent(
-    updated,
-    new RegExp(`("${escaped}": \\["${escaped}@)([^"]+)`),
-    `$1${nextVersion}`,
-  );
-  return updated;
-}
-
 function collectSbomVersionDrift(
   value,
   expectedPurls,
@@ -216,8 +195,31 @@ function packageMeta() {
   };
 }
 
+function platformPackageManifests() {
+  return fs
+    .readdirSync(repoPath("npm"), {
+      withFileTypes: true,
+    })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => {
+      const manifestPath = repoPath(
+        "npm",
+        entry.name,
+        "package.json",
+      );
+      return {
+        manifestPath,
+        manifest: readJson(manifestPath),
+      };
+    })
+    .sort((left, right) =>
+      left.manifest.name.localeCompare(right.manifest.name),
+    );
+}
+
 function mismatches(expectedVersion) {
   const meta = packageMeta();
+  const platforms = platformPackageManifests();
   const results = [];
   const versionFileVersion = readVersion();
 
@@ -232,21 +234,20 @@ function mismatches(expectedVersion) {
     );
   }
 
-  const optionalPackages = Object.keys(
+  const platformPackageNames = new Set(
+    platforms.map(({ manifest }) => manifest.name),
+  );
+  const sourceOptionalPackages = Object.keys(
     meta.root.optionalDependencies ?? {},
-  ).filter((name) => name.startsWith(meta.optionalPrefix));
-
-  for (const [name, optionalVersion] of Object.entries(
-    meta.root.optionalDependencies ?? {},
-  )) {
-    if (
-      name.startsWith(meta.optionalPrefix) &&
-      optionalVersion !== expectedVersion
-    ) {
-      results.push(
-        `${meta.packageJsonPath}: optionalDependencies.${name}=${optionalVersion}`,
-      );
-    }
+  ).filter(
+    (name) =>
+      platformPackageNames.has(name) ||
+      name.startsWith(meta.optionalPrefix),
+  );
+  for (const packageName of sourceOptionalPackages) {
+    results.push(
+      `${meta.packageJsonPath}: optionalDependencies.${packageName} should be release-generated`,
+    );
   }
 
   const wasm = readJson(meta.wasmManifestPath);
@@ -256,21 +257,15 @@ function mismatches(expectedVersion) {
     );
   }
 
-  for (const entry of fs.readdirSync(repoPath("npm"), {
-    withFileTypes: true,
-  })) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
-    const manifestPath = repoPath(
-      "npm",
-      entry.name,
-      "package.json",
-    );
-    const manifest = readJson(manifestPath);
+  for (const { manifestPath, manifest } of platforms) {
     if (manifest.version !== expectedVersion) {
       results.push(
         `${manifestPath}: version=${manifest.version}`,
+      );
+    }
+    if (!manifest.name.startsWith(meta.optionalPrefix)) {
+      results.push(
+        `${manifestPath}: unexpected package name ${manifest.name}`,
       );
     }
   }
@@ -304,14 +299,14 @@ function mismatches(expectedVersion) {
   }
 
   const bunLock = readText(meta.bunLockPath);
-  for (const packageName of optionalPackages) {
+  for (const packageName of platformPackageNames) {
     const lockfileVersion = readBunLockVersion(
       bunLock,
       packageName,
     );
-    if (lockfileVersion !== expectedVersion) {
+    if (lockfileVersion !== null) {
       results.push(
-        `${meta.bunLockPath}: ${packageName}=${lockfileVersion ?? "<missing>"}`,
+        `${meta.bunLockPath}: ${packageName}=${lockfileVersion}; expected release-generated`,
       );
     }
   }
@@ -380,9 +375,7 @@ function mismatches(expectedVersion) {
       sbomVersionDrift,
     );
     for (const drift of sbomVersionDrift) {
-      results.push(
-        `${meta.provenanceSbomPath}: ${drift}`,
-      );
+      results.push(`${meta.provenanceSbomPath}: ${drift}`);
     }
   }
 
@@ -391,16 +384,30 @@ function mismatches(expectedVersion) {
 
 function syncVersion(nextVersion) {
   const meta = packageMeta();
+  const platforms = platformPackageManifests();
   const previousVersion = meta.root.version;
 
   writeText(repoPath("VERSION"), `${nextVersion}\n`);
   meta.root.version = nextVersion;
-  const optionalPackages = Object.keys(
-    meta.root.optionalDependencies ?? {},
-  ).filter((name) => name.startsWith(meta.optionalPrefix));
-  for (const packageName of optionalPackages) {
-    meta.root.optionalDependencies[packageName] =
-      nextVersion;
+  if (meta.root.optionalDependencies) {
+    const platformPackageNames = new Set(
+      platforms.map(({ manifest }) => manifest.name),
+    );
+    const retainedOptionalDependencies = Object.fromEntries(
+      Object.entries(meta.root.optionalDependencies).filter(
+        ([packageName]) =>
+          !platformPackageNames.has(packageName) &&
+          !packageName.startsWith(meta.optionalPrefix),
+      ),
+    );
+    if (
+      Object.keys(retainedOptionalDependencies).length > 0
+    ) {
+      meta.root.optionalDependencies =
+        retainedOptionalDependencies;
+    } else {
+      delete meta.root.optionalDependencies;
+    }
   }
   writeJson(meta.packageJsonPath, meta.root);
 
@@ -408,18 +415,7 @@ function syncVersion(nextVersion) {
   wasmManifest.version = nextVersion;
   writeJson(meta.wasmManifestPath, wasmManifest);
 
-  for (const entry of fs.readdirSync(repoPath("npm"), {
-    withFileTypes: true,
-  })) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
-    const manifestPath = repoPath(
-      "npm",
-      entry.name,
-      "package.json",
-    );
-    const manifest = readJson(manifestPath);
+  for (const { manifestPath, manifest } of platforms) {
     manifest.version = nextVersion;
     writeJson(manifestPath, manifest);
   }
@@ -443,17 +439,6 @@ function syncVersion(nextVersion) {
     meta.cargoLockPath,
   );
   writeText(meta.cargoLockPath, cargoLock);
-
-  let bunLock = readText(meta.bunLockPath);
-  for (const packageName of optionalPackages) {
-    bunLock = replaceBunLockVersion(
-      bunLock,
-      packageName,
-      nextVersion,
-      meta.bunLockPath,
-    );
-  }
-  writeText(meta.bunLockPath, bunLock);
 
   if (fileExists(meta.indexCjsPath)) {
     let indexCjs = readText(meta.indexCjsPath);
