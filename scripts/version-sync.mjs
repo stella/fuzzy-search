@@ -123,6 +123,62 @@ function replaceBunLockVersion(
   return updated;
 }
 
+function collectSbomVersionDrift(
+  value,
+  expectedPurls,
+  expectedVersion,
+  results,
+) {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectSbomVersionDrift(
+        item,
+        expectedPurls,
+        expectedVersion,
+        results,
+      );
+    }
+    return;
+  }
+
+  if (typeof value !== "object" || value === null) {
+    return;
+  }
+
+  if (
+    typeof value.purl === "string" &&
+    expectedPurls.has(value.purl) &&
+    value.version !== expectedVersion
+  ) {
+    results.push(
+      `${value.purl}: version=${value.version ?? "<missing>"}`,
+    );
+  }
+
+  for (const child of Object.values(value)) {
+    collectSbomVersionDrift(
+      child,
+      expectedPurls,
+      expectedVersion,
+      results,
+    );
+  }
+}
+
+function replaceSbomVersionForPurl(
+  provenanceSbom,
+  purl,
+  nextVersion,
+) {
+  return provenanceSbom.replace(
+    new RegExp(
+      `("purl": "${escapeRegex(purl)}",\\n\\s+"type": "[^"]+",\\n\\s+"version": ")[^"]+(")`,
+      "g",
+    ),
+    `$1${nextVersion}$2`,
+  );
+}
+
 function packageMeta() {
   const root = readJson(repoPath("package.json"));
   const cargoTomlPath = repoPath("Cargo.toml");
@@ -286,6 +342,10 @@ function mismatches(expectedVersion) {
     const provenanceSbom = readText(
       meta.provenanceSbomPath,
     );
+    const expectedPurls = new Set([
+      ...npmPurlCandidates(meta.root.name, expectedVersion),
+      `pkg:cargo/${meta.cargoName}@${expectedVersion}`,
+    ]);
     const hasRootNpmComponent = npmPurlPrefixes(
       meta.root.name,
     ).some((prefix) => provenanceSbom.includes(prefix));
@@ -309,6 +369,19 @@ function mismatches(expectedVersion) {
     ) {
       results.push(
         `${meta.provenanceSbomPath}: cargo purl not updated to ${expectedVersion}`,
+      );
+    }
+
+    const sbomVersionDrift = [];
+    collectSbomVersionDrift(
+      JSON.parse(provenanceSbom),
+      expectedPurls,
+      expectedVersion,
+      sbomVersionDrift,
+    );
+    for (const drift of sbomVersionDrift) {
+      results.push(
+        `${meta.provenanceSbomPath}: ${drift}`,
       );
     }
   }
@@ -413,6 +486,24 @@ function syncVersion(nextVersion) {
       ),
       `pkg:cargo/${meta.cargoName}@${nextVersion}`,
       meta.provenanceSbomPath,
+    );
+    for (const purl of [
+      ...npmPurlCandidates(meta.root.name, nextVersion),
+      `pkg:cargo/${meta.cargoName}@${nextVersion}`,
+    ]) {
+      provenanceSbom = replaceSbomVersionForPurl(
+        provenanceSbom,
+        purl,
+        nextVersion,
+      );
+    }
+    provenanceSbom = replaceIfPresent(
+      provenanceSbom,
+      new RegExp(
+        `("purl": "pkg:cargo/${escapeRegex(meta.cargoName)}@${escapeRegex(nextVersion)}",\\n\\s+"type": "[^"]+",\\n\\s+"version": ")[^"]+(")`,
+        "g",
+      ),
+      `$1${nextVersion}$2`,
     );
     writeText(meta.provenanceSbomPath, provenanceSbom);
   }
