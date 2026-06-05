@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Approximate substring matching for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
   "keywords": [
     "approximate-matching",
@@ -51,6 +51,8 @@
     "test:runtime:node": "node scripts/runtime-smoke.mjs",
     "version:sync": "node scripts/version-sync.mjs sync",
     "version:check": "node scripts/version-sync.mjs check",
+    "release:prepare": "node scripts/prepare-release-package.mjs",
+    "release:check": "node scripts/check-release-tarballs.mjs",
     "format": "oxfmt . \"!provenance/**\" \"!.ai/**\" \"!.agents/**\" \"!.claude/**\" \"!AGENTS.md\" \"!CLAUDE.md\" \"!GEMINI.md\" && rustfmt src/lib.rs",
     "typecheck": "tsc --noEmit",
     "lint": "bun --bun oxlint -c oxlint.config.ts --report-unused-disable-directives-severity=error --deny-warnings --type-aware .",
@@ -82,13 +84,6 @@
     "tsdown": "0.22.1",
     "typescript": "6.0.3",
     "vite": "^8.0.14"
-  },
-  "optionalDependencies": {
-    "@stll/fuzzy-search-darwin-arm64": "1.1.0",
-    "@stll/fuzzy-search-darwin-x64": "1.1.0",
-    "@stll/fuzzy-search-linux-arm64-gnu": "1.1.0",
-    "@stll/fuzzy-search-linux-x64-gnu": "1.1.0",
-    "@stll/fuzzy-search-wasm32-wasi": "1.1.0"
   },
   "napi": {
     "binaryName": "fuzzy-search",

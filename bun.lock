@@ -22,13 +22,6 @@
         "typescript": "6.0.3",
         "vite": "^8.0.14",
       },
-      "optionalDependencies": {
-        "@stll/fuzzy-search-darwin-arm64": "1.1.0",
-        "@stll/fuzzy-search-darwin-x64": "1.1.0",
-        "@stll/fuzzy-search-linux-arm64-gnu": "1.1.0",
-        "@stll/fuzzy-search-linux-x64-gnu": "1.1.0",
-        "@stll/fuzzy-search-wasm32-wasi": "1.1.0",
-      },
     },
   },
   "packages": {
@@ -339,16 +332,6 @@
     "@rolldown/binding-win32-x64-msvc": ["@rolldown/binding-win32-x64-msvc@1.0.2", "", { "os": "win32", "cpu": "x64" }, "sha512-v7qRI7gXLRINcOGXt+7YmAZ6iFuyZVMIoXAxhd8oP+DR9dLfL9GfNIx7PLMxmhZdvq8waUJBQiWN9EKNy+TRBQ=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0", "", {}, "sha512-aKs/3GSWyV0mrhNmt/96/Z3yczC3yvrzYATCiCXQebBsGyYzjNdUphRVLeJQ67ySKVXRfMxt2lm12pmXvbPFQQ=="],
-
-    "@stll/fuzzy-search-darwin-arm64": ["@stll/fuzzy-search-darwin-arm64@1.1.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-igTmf8ayNplEsGZz8VWWL4SMDrawpo5++gtx0YOvUp93AKZB2an9C7uVShD8ZGRXuivWa8O5mcYw2HlCEWK1aQ=="],
-
-    "@stll/fuzzy-search-darwin-x64": ["@stll/fuzzy-search-darwin-x64@1.1.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-I/9uUPJlyTPMi/P7IMPfqiBpZovZj/Irse/0Xh8k9CHEFyki8QeNPFqXkjhVvYmTz5bZHQMhPkPwkR9j5gaYNQ=="],
-
-    "@stll/fuzzy-search-linux-arm64-gnu": ["@stll/fuzzy-search-linux-arm64-gnu@1.1.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-yBPdczFyyOQ2qvq9viIhzI1j2gB0KkEoRfrMmLWMk//MTqNRdztCUmngySlVA95WaboQtCAusUp7AuI4ahFcQQ=="],
-
-    "@stll/fuzzy-search-linux-x64-gnu": ["@stll/fuzzy-search-linux-x64-gnu@1.1.0", "", { "os": "linux", "cpu": "x64" }, "sha512-Si7cd/CuSdDOOccxoBnYAb20ci84VPjkH9agnu+5k0AYzuXuSjasIn9MlnsUuYKH9n3lyjTa9b46fA4ydqdYQA=="],
-
-    "@stll/fuzzy-search-wasm32-wasi": ["@stll/fuzzy-search-wasm32-wasi@1.1.0", "", { "dependencies": { "@napi-rs/wasm-runtime": "^1.1.3" }, "cpu": "none" }, "sha512-B2gJF855p7hu6Zzryms3dRszByyipwhja7zANMaG9PMeKpZ93V/d/GyWRpk36D37+nZLXPhuwCzyLCcLAQiSYQ=="],
 
     "@stll/oxlint-config": ["@stll/oxlint-config@0.3.0", "", { "peerDependencies": { "oxlint": ">=1.66.0", "oxlint-tsgolint": ">=0.23.0" } }, "sha512-kT4jS/0mgMejp5LUrQ7joHljyphqQr2kk2zGyuJGiJqFz7pHnp9lPJw5WmDyoOqEC34+jkHh0vPeNcZIEiXhog=="],
 

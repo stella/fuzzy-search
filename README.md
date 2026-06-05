@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/assets/banner.png" alt="Stella" width="100%" />
+  <img src=".github/assets/banner.png" alt="stella" width="100%" />
 </p>
 
 # @stll/fuzzy-search
@@ -37,9 +37,6 @@ export default defineConfig({
   plugins: [stllFuzzySearchWasm()],
 });
 ```
-
-GitHub releases include npm tarballs, an SBOM, and
-third-party notices.
 
 Prebuilts are available for:
 
