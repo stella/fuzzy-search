@@ -1,0 +1,39 @@
+{
+  "name": "@stll/fuzzy-search-win32-x64-msvc",
+  "version": "1.1.1",
+  "cpu": [
+    "x64"
+  ],
+  "main": "fuzzy-search.win32-x64-msvc.node",
+  "files": [
+    "fuzzy-search.win32-x64-msvc.node"
+  ],
+  "description": "Approximate substring matching for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
+  "keywords": [
+    "approximate-matching",
+    "edit-distance",
+    "fuzzy-search",
+    "levenshtein",
+    "napi-rs",
+    "native",
+    "rust"
+  ],
+  "homepage": "https://github.com/stella/fuzzy-search#readme",
+  "license": "MIT",
+  "engines": {
+    "node": ">= 18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stella/fuzzy-search.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stella/fuzzy-search/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "os": [
+    "win32"
+  ]
+}
