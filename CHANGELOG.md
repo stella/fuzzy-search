@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.2
+
+### Features
+
+- Windows support: publish the
+  `@stll/fuzzy-search-win32-x64-msvc` native binding
+  (x86_64). The loader already resolved it; the
+  package now exists on the registry.
+
 ## 1.1.0
 
 ### Features
