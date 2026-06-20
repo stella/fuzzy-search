@@ -889,7 +889,7 @@
       "version": "3.5.6"
     },
     {
-      "bom-ref": "pkg:cargo/napi-sys@3.2.1",
+      "bom-ref": "pkg:cargo/napi-sys@3.2.2",
       "evidence": {
         "identity": [
           {
@@ -910,7 +910,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "8eb602b84d7c1edae45e50bbf1374696548f36ae179dfa667f577e384bb90c2b"
+          "content": "1f5bcdf71abd3a50d00b49c1c2c75251cb3c913777d6139cd37dabc093a5e400"
         }
       ],
       "licenses": [
@@ -927,12 +927,12 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/napi-sys@3.2.1",
+      "purl": "pkg:cargo/napi-sys@3.2.2",
       "type": "library",
-      "version": "3.2.1"
+      "version": "3.2.2"
     },
     {
-      "bom-ref": "pkg:cargo/napi@3.9.0",
+      "bom-ref": "pkg:cargo/napi@3.9.2",
       "evidence": {
         "identity": [
           {
@@ -953,7 +953,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "f1d395473824516f38dd1071a1a37bc57daa7be65b293ebba4ead5f7abb017a2"
+          "content": "26d3c7dd60231116a47854321c9ac8df6f13435d11aa3a59d8533a76e07a3730"
         }
       ],
       "licenses": [
@@ -970,9 +970,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/napi@3.9.0",
+      "purl": "pkg:cargo/napi@3.9.2",
       "type": "library",
-      "version": "3.9.0"
+      "version": "3.9.2"
     },
     {
       "bom-ref": "pkg:cargo/nohash-hasher@0.2.0",
@@ -2127,13 +2127,13 @@
         "pkg:cargo/ctor@1.0.7",
         "pkg:cargo/futures@0.3.32",
         "pkg:cargo/napi-build@2.3.2",
-        "pkg:cargo/napi-sys@3.2.1",
+        "pkg:cargo/napi-sys@3.2.2",
         "pkg:cargo/nohash-hasher@0.2.0",
         "pkg:cargo/rustc-hash@2.1.2",
         "pkg:cargo/serde@1.0.228",
         "pkg:cargo/serde_json@1.0.150"
       ],
-      "ref": "pkg:cargo/napi@3.9.0"
+      "ref": "pkg:cargo/napi@3.9.2"
     },
     {
       "dependsOn": [],
@@ -2164,7 +2164,7 @@
       "dependsOn": [
         "pkg:cargo/libloading@0.9.0"
       ],
-      "ref": "pkg:cargo/napi-sys@3.2.1"
+      "ref": "pkg:cargo/napi-sys@3.2.2"
     },
     {
       "dependsOn": [],
@@ -2232,7 +2232,7 @@
       "dependsOn": [
         "pkg:cargo/napi-build@2.3.2",
         "pkg:cargo/napi-derive@3.5.6",
-        "pkg:cargo/napi@3.9.0",
+        "pkg:cargo/napi@3.9.2",
         "pkg:cargo/unicode-case-mapping@1.0.0",
         "pkg:cargo/unicode-normalization@0.1.25",
         "pkg:cargo/unicode-segmentation@1.13.3"
