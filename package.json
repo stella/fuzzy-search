@@ -53,7 +53,7 @@
     "version:check": "node scripts/version-sync.mjs check",
     "release:prepare": "node scripts/prepare-release-package.mjs",
     "release:check": "node scripts/check-release-tarballs.mjs",
-    "format": "oxfmt . \"!provenance/**\" \"!.ai/**\" \"!.agents/**\" \"!.claude/**\" \"!AGENTS.md\" \"!CLAUDE.md\" \"!GEMINI.md\" && rustfmt src/lib.rs",
+    "format": "oxfmt . \"!provenance/**\" \"!.ai/**\" \"!.agents/**\" \"!.claude/**\" \"!AGENTS.md\" \"!CLAUDE.md\" \"!GEMINI.md\" && cargo fmt --all",
     "typecheck": "tsc --noEmit",
     "lint": "bun --bun oxlint -c oxlint.config.ts --report-unused-disable-directives-severity=error --deny-warnings --type-aware .",
     "lint:fix": "bun --bun oxlint -c oxlint.config.ts --type-aware --fix .",
