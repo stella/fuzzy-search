@@ -127,7 +127,7 @@ wildcard_imports = "deny"
 [profile.release]
 lto = "fat"
 codegen-units = 1
-panic = "abort"
+panic = "unwind"
 strip = "symbols"
 
 [profile.dev]
