@@ -286,6 +286,15 @@ describe("whole words", () => {
     );
     expect(fs.isMatch("category")).toBe(true);
   });
+
+  test("checks the last matched char at start boundary", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "京a", distance: 0 }],
+      { wholeWords: true },
+    );
+    expect(fs.isMatch("京ab")).toBe(false);
+    expect(fs.isMatch("京a b")).toBe(true);
+  });
 });
 
 // ─── Unicode ─────────────────────────────────

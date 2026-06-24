@@ -160,15 +160,6 @@ fn is_whole_word_inline(chars: &[char], start: usize, end: usize) -> bool {
   let Some(current) = chars.get(start).copied() else {
     return false;
   };
-  let Some(previous_index) = start.checked_sub(1) else {
-    let end_ok = chars
-      .get(end)
-      .is_none_or(|next| !is_word_char(*next) || is_cjk(current));
-    return end_ok;
-  };
-  let Some(previous) = chars.get(previous_index).copied() else {
-    return false;
-  };
   let Some(last) = end
     .checked_sub(1)
     .and_then(|index| chars.get(index))
@@ -176,10 +167,16 @@ fn is_whole_word_inline(chars: &[char], start: usize, end: usize) -> bool {
   else {
     return false;
   };
-  let start_ok = !is_word_char(previous) || is_cjk(current);
   let end_ok = chars
     .get(end)
     .is_none_or(|next| !is_word_char(*next) || is_cjk(last));
+  let Some(previous_index) = start.checked_sub(1) else {
+    return end_ok;
+  };
+  let Some(previous) = chars.get(previous_index).copied() else {
+    return false;
+  };
+  let start_ok = !is_word_char(previous) || is_cjk(current);
   start_ok && end_ok
 }
 
