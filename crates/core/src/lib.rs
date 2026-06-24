@@ -62,6 +62,22 @@ fn get_position(map: &[usize], index: usize) -> Result<usize> {
   map.get(index).copied().ok_or_else(offset_error)
 }
 
+/// Maps a normalized exclusive end (char index) to an exclusive original-char
+/// end.
+///
+/// Reading `map[end]` directly collapses onto the start when `end` lands inside
+/// an NFD expansion of a single original char (e.g. Hangul jamo), where several
+/// normalized chars share one original index — producing an empty span. Round
+/// up to one past the last original char the match actually covers so the span
+/// stays non-empty and whole-original-char aligned. `map` is monotonically
+/// non-decreasing, so `map[end - 1]` is the last original char touched.
+fn original_end_position(map: &[usize], end: usize) -> Result<usize> {
+  let last = end.checked_sub(1).ok_or_else(offset_error)?;
+  get_position(map, last)?
+    .checked_add(1)
+    .ok_or_else(offset_error)
+}
+
 /// Bounds-checked lookup into a char-index → offset map (UTF-16 or byte).
 fn get_offset(map: &[u32], index: usize) -> Result<u32> {
   map.get(index).copied().ok_or_else(offset_error)
@@ -897,7 +913,7 @@ impl FuzzySearch {
           return Ok(true);
         }
         let orig_start = get_position(&pos_map, start)?;
-        let orig_end = get_position(&pos_map, end)?;
+        let orig_end = original_end_position(&pos_map, end)?;
         if boundary.is_whole_word(&orig_chars, orig_start, orig_end) {
           return Ok(true);
         }
@@ -926,7 +942,7 @@ impl FuzzySearch {
 
       for (start, end, dist) in matches {
         let orig_start = get_position(&pos_map, start)?;
-        let orig_end = get_position(&pos_map, end)?;
+        let orig_end = original_end_position(&pos_map, end)?;
 
         if self.whole_words
           && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
@@ -993,7 +1009,7 @@ impl FuzzySearch {
 
       for (start, end, dist) in matches {
         let orig_start = get_position(&pos_map, start)?;
-        let orig_end = get_position(&pos_map, end)?;
+        let orig_end = original_end_position(&pos_map, end)?;
 
         if self.whole_words
           && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
@@ -1065,7 +1081,7 @@ impl FuzzySearch {
 
       for (start, end, dist) in matches {
         let orig_start = get_position(&pos_map, start)?;
-        let orig_end = get_position(&pos_map, end)?;
+        let orig_end = original_end_position(&pos_map, end)?;
 
         if self.whole_words
           && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
@@ -1155,5 +1171,48 @@ mod tests {
     let start = usize::try_from(*packed.get(1).unwrap()).unwrap();
     let end = usize::try_from(*packed.get(2).unwrap()).unwrap();
     assert_eq!(haystack.get(start..end), Some("cat"));
+  }
+
+  #[test]
+  fn normalized_match_end_rounds_to_original_char_boundary() {
+    // Regression: NFD-decomposing `각` (U+AC01) yields three jamo that all map
+    // back to the single original char. A fuzzy match on the `가` (U+AC00 → two
+    // jamo) prefix ends inside that expansion, so a naive `pos_map[end]`
+    // collapses start == end and returns an empty span. The original-char end
+    // must round up to cover the whole syllable. Affects both the UTF-16 and
+    // byte packed paths, which share the offset derivation.
+    let search = FuzzySearch::new(
+      vec![PatternEntry {
+        pattern: String::from("가"),
+        distance: Some(1),
+      }],
+      Options {
+        normalize_diacritics: true,
+        whole_words: false,
+        ..Options::default()
+      },
+    )
+    .unwrap();
+
+    let haystack = "각";
+    let utf16 = search.find_iter_packed(haystack).unwrap();
+    let bytes = search.find_iter_packed_bytes(haystack).unwrap();
+
+    // Exactly one match, with a non-empty span in both unit systems.
+    assert_eq!(utf16.len(), 4, "expected one packed match (4 fields)");
+    assert_eq!(bytes.len(), 4, "expected one packed match (4 fields)");
+
+    let u_start = *utf16.get(1).unwrap();
+    let u_end = *utf16.get(2).unwrap();
+    assert!(u_end > u_start, "UTF-16 span must be non-empty");
+
+    let b_start = *bytes.get(1).unwrap();
+    let b_end = *bytes.get(2).unwrap();
+    assert!(b_end > b_start, "byte span must be non-empty");
+
+    // The byte span slices back to the whole matched syllable.
+    let start = usize::try_from(b_start).unwrap();
+    let end = usize::try_from(b_end).unwrap();
+    assert_eq!(haystack.get(start..end), Some("각"));
   }
 }
