@@ -1148,7 +1148,9 @@ impl FuzzySearch {
   clippy::unwrap_used,
   clippy::missing_assert_message,
   clippy::arithmetic_side_effects,
-  clippy::cast_possible_truncation
+  clippy::cast_possible_truncation,
+  clippy::as_conversions,
+  clippy::indexing_slicing
 )]
 mod tests {
   use super::{
