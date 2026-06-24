@@ -65,27 +65,26 @@ fn get_position(map: &[usize], index: usize) -> Result<usize> {
 /// Maps a normalized exclusive end (char index) to an exclusive original-char
 /// end.
 ///
-/// Normalization is not 1:1, so neither bound alone is correct: NFD expansion
-/// makes several normalized chars share one original index, while stripped
-/// combining marks make some original chars produce no normalized char. The
-/// exclusive end is the later of two candidates:
-/// - `map[end]` — the next surviving normalized boundary; covers trailing
-///   stripped marks attached to the match (e.g. matching `a` in `a\u{0301}b`
-///   must keep the accent so `replace_all` stays span-safe), and
-/// - `map[end - 1] + 1` — one past the last original char actually covered;
-///   keeps the span non-empty when the next normalized char shares the same
-///   original index (e.g. the `가` prefix of Hangul `각` → ㄱㅏㄱ).
+/// Normalization is not 1:1: NFD expansion makes several normalized chars share
+/// one original index, and stripped combining marks make some original chars
+/// produce no normalized char at all. The correct exclusive end is the next
+/// *surviving* original boundary strictly after the last original char the
+/// match covers (`map[end - 1]`) — i.e. the next original char that has its own
+/// normalized form, or the sentinel `orig_len`.
 ///
-/// `map` is monotonically non-decreasing, so taking the max never over-covers.
+/// Walking forward to that boundary in one step: `map` is the sorted list of
+/// surviving original indices (plus the sentinel), so `partition_point` finds
+/// the first entry strictly greater than `map[end - 1]`. This skips both the
+/// remainder of an NFD expansion (entries still equal to the last index) and
+/// any stripped combining marks that follow it (which have no entry), so the
+/// span always ends on a real boundary and `replace_all` never orphans a mark.
 fn original_end_position(map: &[usize], end: usize) -> Result<usize> {
-  let next_boundary = get_position(map, end)?;
-  let Some(last) = end.checked_sub(1) else {
-    return Ok(next_boundary);
+  let Some(last_index) = end.checked_sub(1) else {
+    return get_position(map, end);
   };
-  let after_last_covered = get_position(map, last)?
-    .checked_add(1)
-    .ok_or_else(offset_error)?;
-  Ok(next_boundary.max(after_last_covered))
+  let last = get_position(map, last_index)?;
+  let next = map.partition_point(|&orig| orig <= last);
+  get_position(map, next)
 }
 
 /// Bounds-checked lookup into a char-index → offset map (UTF-16 or byte).
@@ -1145,9 +1144,17 @@ impl FuzzySearch {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::missing_assert_message)]
+#[allow(
+  clippy::unwrap_used,
+  clippy::missing_assert_message,
+  clippy::arithmetic_side_effects,
+  clippy::cast_possible_truncation
+)]
 mod tests {
-  use super::{FuzzySearch, Options, PatternEntry};
+  use super::{
+    FuzzySearch, Options, PatternEntry, normalize_with_map,
+    original_end_position,
+  };
 
   fn matcher(pattern: &str) -> FuzzySearch {
     FuzzySearch::new(
@@ -1260,5 +1267,120 @@ mod tests {
       search.replace_all(haystack, &[String::from("X")]).unwrap(),
       "Xs"
     );
+  }
+
+  #[test]
+  fn normalized_match_end_covers_expansion_then_trailing_mark() {
+    // Compound case: an NFD expansion (Hangul `각` → ㄱㅏㄱ) whose original char
+    // is immediately followed by a stripped combining mark. A match on the `가`
+    // prefix ends inside the expansion, so both single-sided rules stop too
+    // early and leave the accent. The end must skip to the next surviving
+    // boundary (`x`), covering the whole syllable and its trailing mark.
+    let search = FuzzySearch::new(
+      vec![PatternEntry {
+        pattern: String::from("가"),
+        distance: Some(1),
+      }],
+      Options {
+        normalize_diacritics: true,
+        whole_words: false,
+        ..Options::default()
+      },
+    )
+    .unwrap();
+
+    let haystack = "각\u{0301}x";
+
+    let bytes = search.find_iter_packed_bytes(haystack).unwrap();
+    let b_start = usize::try_from(*bytes.get(1).unwrap()).unwrap();
+    let b_end = usize::try_from(*bytes.get(2).unwrap()).unwrap();
+    assert_eq!(haystack.get(b_start..b_end), Some("각\u{0301}"));
+
+    assert_eq!(
+      search.replace_all(haystack, &[String::from("X")]).unwrap(),
+      "Xx"
+    );
+  }
+
+  // Small deterministic xorshift PRNG so the fuzz test is reproducible.
+  struct Rng(u64);
+
+  impl Rng {
+    fn next_u64(&mut self) -> u64 {
+      let mut x = self.0;
+      x ^= x << 13;
+      x ^= x >> 7;
+      x ^= x << 17;
+      self.0 = x;
+      x
+    }
+
+    fn below(&mut self, bound: usize) -> usize {
+      (self.next_u64() % bound as u64) as usize
+    }
+
+    fn boolean(&mut self) -> bool {
+      self.next_u64() & 1 == 1
+    }
+  }
+
+  /// Property fuzz over `original_end_position`: across thousands of random
+  /// original strings (base letters, combining marks, Hangul syllables, spaces)
+  /// and random normalized match ranges, the derived original-char span must
+  /// always land on a real boundary and never orphan a stripped combining mark.
+  ///
+  /// `pos_map` is the source of truth for which original chars survive
+  /// normalization, so the oracle (`expected`) is computed independently of the
+  /// function under test: it is the smallest surviving original index — or the
+  /// sentinel `orig_len` — strictly greater than the last covered original char.
+  #[test]
+  fn fuzz_normalized_end_lands_on_surviving_boundary() {
+    // Mix of: plain bases, combining marks (stripped), precomposed and
+    // Hangul (NFD-expanding), and a space.
+    let alphabet: [char; 8] =
+      ['a', 'b', 'x', ' ', '\u{0301}', '\u{0302}', '각', '가'];
+    let mut rng = Rng(0x9E37_79B9_7F4A_7C15);
+
+    for _ in 0..20_000 {
+      let len = rng.below(8) + 1;
+      let original: String = (0..len)
+        .map(|_| alphabet[rng.below(alphabet.len())])
+        .collect();
+      let (norm, pos_map) = normalize_with_map(&original, true, rng.boolean());
+      if norm.is_empty() {
+        continue;
+      }
+
+      let orig_len = original.chars().count();
+      // Surviving original indices = the entries of pos_map before its sentinel.
+      let surviving = &pos_map[..norm.len()];
+      let survives = |index: usize| surviving.binary_search(&index).is_ok();
+
+      let start = rng.below(norm.len());
+      let end = start + 1 + rng.below(norm.len() - start);
+
+      let orig_start = *pos_map.get(start).unwrap();
+      let orig_end = original_end_position(&pos_map, end).unwrap();
+      let last_covered = *pos_map.get(end - 1).unwrap();
+
+      // Independent oracle: next surviving boundary strictly after last_covered.
+      let expected = (last_covered + 1..=orig_len)
+        .find(|&i| i == orig_len || survives(i))
+        .unwrap();
+
+      assert_eq!(
+        orig_end, expected,
+        "original={original:?} start={start} end={end} map={pos_map:?}"
+      );
+      // Span is non-empty, in range, and covers the last matched char.
+      assert!(orig_start < orig_end, "empty span for {original:?}");
+      assert!(orig_end <= orig_len);
+      assert!(last_covered < orig_end);
+      // Never stops on a stripped combining mark (replace-safety).
+      assert!(
+        orig_end == orig_len || survives(orig_end),
+        "orphaned mark at {orig_end} in {original:?} map={pos_map:?}"
+      );
+    }
   }
 }
