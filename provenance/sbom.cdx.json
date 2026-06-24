@@ -1498,6 +1498,36 @@
       "version": "0.4.12"
     },
     {
+      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.1.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "name": "stella-fuzzy-search-core",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/stella-fuzzy-search-core@1.1.2",
+      "type": "library",
+      "version": "1.1.2"
+    },
+    {
       "bom-ref": "pkg:cargo/stella-fuzzy-search@1.1.2",
       "evidence": {
         "identity": [
@@ -2233,11 +2263,17 @@
         "pkg:cargo/napi-build@2.3.2",
         "pkg:cargo/napi-derive@3.5.6",
         "pkg:cargo/napi@3.9.0",
+        "pkg:cargo/stella-fuzzy-search-core@1.1.2"
+      ],
+      "ref": "pkg:cargo/stella-fuzzy-search@1.1.2"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/unicode-case-mapping@1.0.0",
         "pkg:cargo/unicode-normalization@0.1.25",
         "pkg:cargo/unicode-segmentation@1.13.3"
       ],
-      "ref": "pkg:cargo/stella-fuzzy-search@1.1.2"
+      "ref": "pkg:cargo/stella-fuzzy-search-core@1.1.2"
     },
     {
       "dependsOn": [
@@ -2317,6 +2353,28 @@
           "name": "stella-fuzzy-search",
           "purl": "pkg:cargo/stella-fuzzy-search@1.1.2",
           "type": "application",
+          "version": "1.1.2"
+        },
+        {
+          "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.1.2",
+          "externalReferences": [
+            {
+              "type": "vcs",
+              "url": "https://github.com/stella/fuzzy-search"
+            }
+          ],
+          "group": "",
+          "licenses": [
+            {
+              "license": {
+                "id": "MIT",
+                "url": "https://opensource.org/licenses/MIT"
+              }
+            }
+          ],
+          "name": "stella-fuzzy-search-core",
+          "purl": "pkg:cargo/stella-fuzzy-search-core@1.1.2",
+          "type": "library",
           "version": "1.1.2"
         }
       ],

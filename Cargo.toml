@@ -1,3 +1,7 @@
+[workspace]
+members = [".", "crates/core"]
+resolver = "3"
+
 [package]
 name = "stella-fuzzy-search"
 version = "1.1.2"
@@ -19,14 +23,15 @@ napi = { version = "3", default-features = false, features = [
   "serde-json",
 ] }
 napi-derive = "3"
-unicode-case-mapping = "1"
-unicode-normalization = "0.1"
-unicode-segmentation = "1"
+stella-fuzzy-search-core = { version = "1.1.2", path = "crates/core" }
 
 [build-dependencies]
 napi-build = "2"
 
-[lints.rust]
+[lints]
+workspace = true
+
+[workspace.lints.rust]
 warnings = { level = "deny", priority = -1 }
 dead_code = "deny"
 future_incompatible = { level = "deny", priority = -1 }
@@ -41,11 +46,11 @@ unused_macros = "deny"
 unused_mut = "deny"
 unused_variables = "deny"
 
-[lints.rustdoc]
+[workspace.lints.rustdoc]
 broken_intra_doc_links = "deny"
 bare_urls = "deny"
 
-[lints.clippy]
+[workspace.lints.clippy]
 all = { level = "deny", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
 cargo = { level = "warn", priority = -1 }

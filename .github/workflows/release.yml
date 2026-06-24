@@ -89,17 +89,17 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
       - run: bun install --frozen-lockfile
       - run: bun run lint
-      - run: cargo clippy --all-targets --all-features -- -Dwarnings
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo fmt --all -- --check
       - name: License audit
         run: |
           cargo install cargo-deny --locked
           cargo deny check
       - name: Docs
-        run: cargo doc --no-deps
+        run: cargo doc --workspace --no-deps
         env:
           RUSTDOCFLAGS: -Dwarnings
-      - run: cargo test --all-targets --all-features
+      - run: cargo test --workspace
       - uses: stella/.github/actions/provenance-check@6c88c6f9ea4beaa132caec7c60f65b1b9b32a74a
         with:
           provenance-version: v0.1.3
