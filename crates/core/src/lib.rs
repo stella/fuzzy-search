@@ -62,7 +62,33 @@ fn get_position(map: &[usize], index: usize) -> Result<usize> {
   map.get(index).copied().ok_or_else(offset_error)
 }
 
-fn get_utf16_offset(map: &[u32], index: usize) -> Result<u32> {
+/// Maps a normalized exclusive end (char index) to an exclusive original-char
+/// end.
+///
+/// Normalization is not 1:1: NFD expansion makes several normalized chars share
+/// one original index, and stripped combining marks make some original chars
+/// produce no normalized char at all. The correct exclusive end is the next
+/// *surviving* original boundary strictly after the last original char the
+/// match covers (`map[end - 1]`) — i.e. the next original char that has its own
+/// normalized form, or the sentinel `orig_len`.
+///
+/// Walking forward to that boundary in one step: `map` is the sorted list of
+/// surviving original indices (plus the sentinel), so `partition_point` finds
+/// the first entry strictly greater than `map[end - 1]`. This skips both the
+/// remainder of an NFD expansion (entries still equal to the last index) and
+/// any stripped combining marks that follow it (which have no entry), so the
+/// span always ends on a real boundary and `replace_all` never orphans a mark.
+fn original_end_position(map: &[usize], end: usize) -> Result<usize> {
+  let Some(last_index) = end.checked_sub(1) else {
+    return get_position(map, end);
+  };
+  let last = get_position(map, last_index)?;
+  let next = map.partition_point(|&orig| orig <= last);
+  get_position(map, next)
+}
+
+/// Bounds-checked lookup into a char-index → offset map (UTF-16 or byte).
+fn get_offset(map: &[u32], index: usize) -> Result<u32> {
   map.get(index).copied().ok_or_else(offset_error)
 }
 
@@ -723,6 +749,24 @@ fn build_utf16_map(chars: &[char]) -> Result<Vec<u32>> {
   Ok(map)
 }
 
+/// Build a char-index → UTF-8 byte offset mapping.
+/// Index `i` gives the byte offset of char `i`;
+/// index `len` is the total byte length.
+///
+/// Scans raw bytes: every byte that is not a UTF-8 continuation byte
+/// (`0b10xxxxxx`) starts a new character, so boundaries fall out of one linear
+/// pass with no decoding.
+fn build_byte_map(haystack: &str, char_count: usize) -> Result<Vec<u32>> {
+  let mut map = Vec::with_capacity(char_count.saturating_add(1));
+  for (index, &byte) in haystack.as_bytes().iter().enumerate() {
+    if (byte & 0xC0) != 0x80 {
+      map.push(usize_to_u32(index)?);
+    }
+  }
+  map.push(usize_to_u32(haystack.len())?);
+  Ok(map)
+}
+
 // ─── FuzzySearch ─────────────────────────────
 
 /// Preprocessed pattern for fuzzy matching.
@@ -878,7 +922,7 @@ impl FuzzySearch {
           return Ok(true);
         }
         let orig_start = get_position(&pos_map, start)?;
-        let orig_end = get_position(&pos_map, end)?;
+        let orig_end = original_end_position(&pos_map, end)?;
         if boundary.is_whole_word(&orig_chars, orig_start, orig_end) {
           return Ok(true);
         }
@@ -907,7 +951,7 @@ impl FuzzySearch {
 
       for (start, end, dist) in matches {
         let orig_start = get_position(&pos_map, start)?;
-        let orig_end = get_position(&pos_map, end)?;
+        let orig_end = original_end_position(&pos_map, end)?;
 
         if self.whole_words
           && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
@@ -915,9 +959,76 @@ impl FuzzySearch {
           continue;
         }
 
-        let utf16_start = get_utf16_offset(&utf16_map, orig_start)?;
-        let utf16_end = get_utf16_offset(&utf16_map, orig_end)?;
+        let utf16_start = get_offset(&utf16_map, orig_start)?;
+        let utf16_end = get_offset(&utf16_map, orig_end)?;
         all.push((usize_to_u32(idx)?, utf16_start, utf16_end, u32::from(dist)));
+      }
+    }
+
+    // Sort by start position, then distance
+    // (prefer lower), then longer match.
+    all.sort_unstable_by(|a, b| {
+      a.1.cmp(&b.1).then(a.3.cmp(&b.3)).then(b.2.cmp(&a.2))
+    });
+
+    // Greedy non-overlapping across all patterns.
+    let mut packed = Vec::with_capacity(all.len().saturating_mul(4));
+    let mut last_end: u32 = 0;
+    for (pat, start, end, dist) in all {
+      if start < last_end {
+        continue;
+      }
+      packed.push(pat);
+      packed.push(start);
+      packed.push(end);
+      packed.push(dist);
+      last_end = end;
+    }
+
+    Ok(packed)
+  }
+
+  /// Like [`find_iter_packed`](Self::find_iter_packed) but emits UTF-8 byte
+  /// offsets instead of UTF-16 code-unit offsets.
+  ///
+  /// The matcher works on chars and already has positions in hand; this maps
+  /// them to byte offsets directly, skipping the UTF-16 conversion
+  /// `find_iter_packed` performs. It is the native unit for Rust consumers that
+  /// slice `&str` directly; UTF-16 consumers (e.g. JavaScript) keep using
+  /// [`find_iter_packed`](Self::find_iter_packed).
+  ///
+  /// The packed layout is identical: `[pattern, start, end, distance]` quads.
+  /// Only `start`/`end` change unit (UTF-8 bytes); `pattern` and `distance` are
+  /// preserved exactly.
+  pub fn find_iter_packed_bytes(&self, haystack: &str) -> Result<Vec<u32>> {
+    let orig_chars: Vec<char> = haystack.chars().collect();
+    let byte_map = build_byte_map(haystack, orig_chars.len())?;
+    let boundary = choose_boundary_mode(haystack, self.unicode_boundaries);
+    let (text_chars, pos_map) = normalize_with_map(
+      haystack,
+      self.normalize_diacritics,
+      self.case_insensitive,
+    );
+
+    let mut all: Vec<(u32, u32, u32, u32)> = Vec::new();
+
+    for (idx, pat) in self.patterns.iter().enumerate() {
+      let ends = self.find_ends(&pat.chars, &text_chars, pat.max_dist);
+      let matches = self.extract(&pat.chars, &text_chars, &ends, pat.max_dist);
+
+      for (start, end, dist) in matches {
+        let orig_start = get_position(&pos_map, start)?;
+        let orig_end = original_end_position(&pos_map, end)?;
+
+        if self.whole_words
+          && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
+        {
+          continue;
+        }
+
+        let byte_start = get_offset(&byte_map, orig_start)?;
+        let byte_end = get_offset(&byte_map, orig_end)?;
+        all.push((usize_to_u32(idx)?, byte_start, byte_end, u32::from(dist)));
       }
     }
 
@@ -979,7 +1090,7 @@ impl FuzzySearch {
 
       for (start, end, dist) in matches {
         let orig_start = get_position(&pos_map, start)?;
-        let orig_end = get_position(&pos_map, end)?;
+        let orig_end = original_end_position(&pos_map, end)?;
 
         if self.whole_words
           && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
@@ -1029,5 +1140,247 @@ impl FuzzySearch {
     }
 
     Ok(result)
+  }
+}
+
+#[cfg(test)]
+#[allow(
+  clippy::unwrap_used,
+  clippy::missing_assert_message,
+  clippy::arithmetic_side_effects,
+  clippy::cast_possible_truncation
+)]
+mod tests {
+  use super::{
+    FuzzySearch, Options, PatternEntry, normalize_with_map,
+    original_end_position,
+  };
+
+  fn matcher(pattern: &str) -> FuzzySearch {
+    FuzzySearch::new(
+      vec![PatternEntry {
+        pattern: String::from(pattern),
+        distance: Some(1),
+      }],
+      Options::default(),
+    )
+    .unwrap()
+  }
+
+  #[test]
+  fn packed_bytes_emit_byte_offsets() {
+    // `ä` is 2 UTF-8 bytes but 1 UTF-16 code unit, so the offset units
+    // diverge. Haystack chars: ä(0) ` `(1) c(2) a(3) t(4), end at 5.
+    //   UTF-16: ä=1 unit, so `cat` spans units [2, 5).
+    //   bytes:  ä=2 bytes, so `cat` spans bytes [3, 6).
+    let ac = matcher("cat");
+    let haystack = "ä cat";
+
+    // Existing packed output is UTF-16: [pattern, start, end, distance].
+    // Distance is 0 (exact match) and must be preserved in both variants.
+    assert_eq!(ac.find_iter_packed(haystack).unwrap(), vec![0, 2, 5, 0]);
+
+    // Byte variant reports byte offsets but keeps pattern and distance.
+    let packed = ac.find_iter_packed_bytes(haystack).unwrap();
+    assert_eq!(packed, vec![0, 3, 6, 0]);
+
+    // The byte offsets index the original `&str` slice as the matched text.
+    let start = usize::try_from(*packed.get(1).unwrap()).unwrap();
+    let end = usize::try_from(*packed.get(2).unwrap()).unwrap();
+    assert_eq!(haystack.get(start..end), Some("cat"));
+  }
+
+  #[test]
+  fn normalized_match_end_rounds_to_original_char_boundary() {
+    // Regression: NFD-decomposing `각` (U+AC01) yields three jamo that all map
+    // back to the single original char. A fuzzy match on the `가` (U+AC00 → two
+    // jamo) prefix ends inside that expansion, so a naive `pos_map[end]`
+    // collapses start == end and returns an empty span. The original-char end
+    // must round up to cover the whole syllable. Affects both the UTF-16 and
+    // byte packed paths, which share the offset derivation.
+    let search = FuzzySearch::new(
+      vec![PatternEntry {
+        pattern: String::from("가"),
+        distance: Some(1),
+      }],
+      Options {
+        normalize_diacritics: true,
+        whole_words: false,
+        ..Options::default()
+      },
+    )
+    .unwrap();
+
+    let haystack = "각";
+    let utf16 = search.find_iter_packed(haystack).unwrap();
+    let bytes = search.find_iter_packed_bytes(haystack).unwrap();
+
+    // Exactly one match, with a non-empty span in both unit systems.
+    assert_eq!(utf16.len(), 4, "expected one packed match (4 fields)");
+    assert_eq!(bytes.len(), 4, "expected one packed match (4 fields)");
+
+    let u_start = *utf16.get(1).unwrap();
+    let u_end = *utf16.get(2).unwrap();
+    assert!(u_end > u_start, "UTF-16 span must be non-empty");
+
+    let b_start = *bytes.get(1).unwrap();
+    let b_end = *bytes.get(2).unwrap();
+    assert!(b_end > b_start, "byte span must be non-empty");
+
+    // The byte span slices back to the whole matched syllable.
+    let start = usize::try_from(b_start).unwrap();
+    let end = usize::try_from(b_end).unwrap();
+    assert_eq!(haystack.get(start..end), Some("각"));
+  }
+
+  #[test]
+  fn normalized_match_end_keeps_trailing_stripped_combining_marks() {
+    // Inverse of the NFD-expansion case: `a\u{0301}` (a + combining acute)
+    // normalizes to `a` because the mark is stripped, so multiple original
+    // chars collapse to one normalized char. A match on the base must still
+    // cover the stripped mark, otherwise `replace_all` leaves the accent
+    // behind. Here `má` (m + a + ´) → normalized `ma`; matching `ma` must
+    // span the original `ma\u{0301}` so the replacement is span-safe.
+    let search = FuzzySearch::new(
+      vec![PatternEntry {
+        pattern: String::from("ma"),
+        distance: Some(1),
+      }],
+      Options {
+        normalize_diacritics: true,
+        whole_words: false,
+        ..Options::default()
+      },
+    )
+    .unwrap();
+
+    let haystack = "ma\u{0301}s";
+
+    // The byte span for the `ma` match includes the trailing combining mark.
+    let bytes = search.find_iter_packed_bytes(haystack).unwrap();
+    let b_start = usize::try_from(*bytes.get(1).unwrap()).unwrap();
+    let b_end = usize::try_from(*bytes.get(2).unwrap()).unwrap();
+    assert_eq!(haystack.get(b_start..b_end), Some("ma\u{0301}"));
+
+    // Replacement is span-safe: the accent is consumed, not left dangling.
+    assert_eq!(
+      search.replace_all(haystack, &[String::from("X")]).unwrap(),
+      "Xs"
+    );
+  }
+
+  #[test]
+  fn normalized_match_end_covers_expansion_then_trailing_mark() {
+    // Compound case: an NFD expansion (Hangul `각` → ㄱㅏㄱ) whose original char
+    // is immediately followed by a stripped combining mark. A match on the `가`
+    // prefix ends inside the expansion, so both single-sided rules stop too
+    // early and leave the accent. The end must skip to the next surviving
+    // boundary (`x`), covering the whole syllable and its trailing mark.
+    let search = FuzzySearch::new(
+      vec![PatternEntry {
+        pattern: String::from("가"),
+        distance: Some(1),
+      }],
+      Options {
+        normalize_diacritics: true,
+        whole_words: false,
+        ..Options::default()
+      },
+    )
+    .unwrap();
+
+    let haystack = "각\u{0301}x";
+
+    let bytes = search.find_iter_packed_bytes(haystack).unwrap();
+    let b_start = usize::try_from(*bytes.get(1).unwrap()).unwrap();
+    let b_end = usize::try_from(*bytes.get(2).unwrap()).unwrap();
+    assert_eq!(haystack.get(b_start..b_end), Some("각\u{0301}"));
+
+    assert_eq!(
+      search.replace_all(haystack, &[String::from("X")]).unwrap(),
+      "Xx"
+    );
+  }
+
+  // Small deterministic xorshift PRNG so the fuzz test is reproducible.
+  struct Rng(u64);
+
+  impl Rng {
+    fn next_u64(&mut self) -> u64 {
+      let mut x = self.0;
+      x ^= x << 13;
+      x ^= x >> 7;
+      x ^= x << 17;
+      self.0 = x;
+      x
+    }
+
+    fn below(&mut self, bound: usize) -> usize {
+      (self.next_u64() % bound as u64) as usize
+    }
+
+    fn boolean(&mut self) -> bool {
+      self.next_u64() & 1 == 1
+    }
+  }
+
+  /// Property fuzz over `original_end_position`: across thousands of random
+  /// original strings (base letters, combining marks, Hangul syllables, spaces)
+  /// and random normalized match ranges, the derived original-char span must
+  /// always land on a real boundary and never orphan a stripped combining mark.
+  ///
+  /// `pos_map` is the source of truth for which original chars survive
+  /// normalization, so the oracle (`expected`) is computed independently of the
+  /// function under test: it is the smallest surviving original index — or the
+  /// sentinel `orig_len` — strictly greater than the last covered original char.
+  #[test]
+  fn fuzz_normalized_end_lands_on_surviving_boundary() {
+    // Mix of: plain bases, combining marks (stripped), precomposed and
+    // Hangul (NFD-expanding), and a space.
+    let alphabet: [char; 8] =
+      ['a', 'b', 'x', ' ', '\u{0301}', '\u{0302}', '각', '가'];
+    let mut rng = Rng(0x9E37_79B9_7F4A_7C15);
+
+    for _ in 0..20_000 {
+      let len = rng.below(8) + 1;
+      let original: String = (0..len)
+        .map(|_| alphabet[rng.below(alphabet.len())])
+        .collect();
+      let (norm, pos_map) = normalize_with_map(&original, true, rng.boolean());
+      if norm.is_empty() {
+        continue;
+      }
+
+      let orig_len = original.chars().count();
+      // Surviving original indices = the entries of pos_map before its sentinel.
+      let surviving = &pos_map[..norm.len()];
+      let survives = |index: usize| surviving.binary_search(&index).is_ok();
+
+      let start = rng.below(norm.len());
+      let end = start + 1 + rng.below(norm.len() - start);
+
+      let orig_start = *pos_map.get(start).unwrap();
+      let orig_end = original_end_position(&pos_map, end).unwrap();
+      let last_covered = *pos_map.get(end - 1).unwrap();
+
+      // Independent oracle: next surviving boundary strictly after last_covered.
+      let expected = (last_covered + 1..=orig_len)
+        .find(|&i| i == orig_len || survives(i))
+        .unwrap();
+
+      assert_eq!(
+        orig_end, expected,
+        "original={original:?} start={start} end={end} map={pos_map:?}"
+      );
+      // Span is non-empty, in range, and covers the last matched char.
+      assert!(orig_start < orig_end, "empty span for {original:?}");
+      assert!(orig_end <= orig_len);
+      assert!(last_covered < orig_end);
+      // Never stops on a stripped combining mark (replace-safety).
+      assert!(
+        orig_end == orig_len || survives(orig_end),
+        "orphaned mark at {orig_end} in {original:?} map={pos_map:?}"
+      );
+    }
   }
 }
