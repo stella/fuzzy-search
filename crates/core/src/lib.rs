@@ -65,17 +65,27 @@ fn get_position(map: &[usize], index: usize) -> Result<usize> {
 /// Maps a normalized exclusive end (char index) to an exclusive original-char
 /// end.
 ///
-/// Reading `map[end]` directly collapses onto the start when `end` lands inside
-/// an NFD expansion of a single original char (e.g. Hangul jamo), where several
-/// normalized chars share one original index — producing an empty span. Round
-/// up to one past the last original char the match actually covers so the span
-/// stays non-empty and whole-original-char aligned. `map` is monotonically
-/// non-decreasing, so `map[end - 1]` is the last original char touched.
+/// Normalization is not 1:1, so neither bound alone is correct: NFD expansion
+/// makes several normalized chars share one original index, while stripped
+/// combining marks make some original chars produce no normalized char. The
+/// exclusive end is the later of two candidates:
+/// - `map[end]` — the next surviving normalized boundary; covers trailing
+///   stripped marks attached to the match (e.g. matching `a` in `a\u{0301}b`
+///   must keep the accent so `replace_all` stays span-safe), and
+/// - `map[end - 1] + 1` — one past the last original char actually covered;
+///   keeps the span non-empty when the next normalized char shares the same
+///   original index (e.g. the `가` prefix of Hangul `각` → ㄱㅏㄱ).
+///
+/// `map` is monotonically non-decreasing, so taking the max never over-covers.
 fn original_end_position(map: &[usize], end: usize) -> Result<usize> {
-  let last = end.checked_sub(1).ok_or_else(offset_error)?;
-  get_position(map, last)?
+  let next_boundary = get_position(map, end)?;
+  let Some(last) = end.checked_sub(1) else {
+    return Ok(next_boundary);
+  };
+  let after_last_covered = get_position(map, last)?
     .checked_add(1)
-    .ok_or_else(offset_error)
+    .ok_or_else(offset_error)?;
+  Ok(next_boundary.max(after_last_covered))
 }
 
 /// Bounds-checked lookup into a char-index → offset map (UTF-16 or byte).
@@ -1214,5 +1224,41 @@ mod tests {
     let start = usize::try_from(b_start).unwrap();
     let end = usize::try_from(b_end).unwrap();
     assert_eq!(haystack.get(start..end), Some("각"));
+  }
+
+  #[test]
+  fn normalized_match_end_keeps_trailing_stripped_combining_marks() {
+    // Inverse of the NFD-expansion case: `a\u{0301}` (a + combining acute)
+    // normalizes to `a` because the mark is stripped, so multiple original
+    // chars collapse to one normalized char. A match on the base must still
+    // cover the stripped mark, otherwise `replace_all` leaves the accent
+    // behind. Here `má` (m + a + ´) → normalized `ma`; matching `ma` must
+    // span the original `ma\u{0301}` so the replacement is span-safe.
+    let search = FuzzySearch::new(
+      vec![PatternEntry {
+        pattern: String::from("ma"),
+        distance: Some(1),
+      }],
+      Options {
+        normalize_diacritics: true,
+        whole_words: false,
+        ..Options::default()
+      },
+    )
+    .unwrap();
+
+    let haystack = "ma\u{0301}s";
+
+    // The byte span for the `ma` match includes the trailing combining mark.
+    let bytes = search.find_iter_packed_bytes(haystack).unwrap();
+    let b_start = usize::try_from(*bytes.get(1).unwrap()).unwrap();
+    let b_end = usize::try_from(*bytes.get(2).unwrap()).unwrap();
+    assert_eq!(haystack.get(b_start..b_end), Some("ma\u{0301}"));
+
+    // Replacement is span-safe: the accent is consumed, not left dangling.
+    assert_eq!(
+      search.replace_all(haystack, &[String::from("X")]).unwrap(),
+      "Xs"
+    );
   }
 }
