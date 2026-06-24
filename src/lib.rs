@@ -16,10 +16,7 @@ fn simple_case_fold(ch: char) -> char {
     _ => unicode_case_mapping::case_folded(ch)
       .and_then(|n| {
         let c = char::from_u32(n.get());
-        debug_assert!(
-          c.is_some(),
-          "case_folded returned invalid code point"
-        );
+        debug_assert!(c.is_some(), "case_folded returned invalid code point");
         c
       })
       .unwrap_or(ch),
@@ -27,17 +24,47 @@ fn simple_case_fold(ch: char) -> char {
 }
 
 /// Convert a caught panic into a napi `Error`.
-fn panic_to_napi_error(
-  payload: Box<dyn std::any::Any + Send>,
-) -> Error {
+fn panic_to_napi_error(payload: &(dyn std::any::Any + Send)) -> Error {
   let msg = payload
     .downcast_ref::<&str>()
     .copied()
-    .or_else(|| {
-      payload.downcast_ref::<String>().map(|s| s.as_str())
-    })
+    .or_else(|| payload.downcast_ref::<String>().map(String::as_str))
     .unwrap_or("unknown panic");
   Error::from_reason(format!("Rust panic: {msg}"))
+}
+
+fn offset_error() -> Error {
+  Error::from_reason(String::from("Computed match offset is out of bounds"))
+}
+
+fn u32_overflow_error() -> Error {
+  Error::from_reason(String::from("Result offset exceeds u32 range"))
+}
+
+fn get_position(map: &[usize], index: usize) -> Result<usize> {
+  map.get(index).copied().ok_or_else(offset_error)
+}
+
+fn get_utf16_offset(map: &[u32], index: usize) -> Result<u32> {
+  map.get(index).copied().ok_or_else(offset_error)
+}
+
+fn usize_to_u32(value: usize) -> Result<u32> {
+  u32::try_from(value).map_err(|_| u32_overflow_error())
+}
+
+fn usize_to_u32_saturating(value: usize) -> u32 {
+  u32::try_from(value).unwrap_or(u32::MAX)
+}
+
+fn distance_to_u8(distance: usize) -> Option<u8> {
+  u8::try_from(distance).ok()
+}
+
+fn expanded_damerau_distance(max_dist: u8, pattern_len: usize) -> u8 {
+  let doubled = usize::from(max_dist).saturating_mul(2);
+  let bounded = doubled.min(pattern_len.saturating_sub(1));
+  u8::try_from(bounded).unwrap_or(u8::MAX)
 }
 
 // ─── NAPI types ──────────────────────────────
@@ -126,20 +153,30 @@ fn is_word_char(ch: char) -> bool {
 }
 
 /// Inline boundary check on char slices.
-fn is_whole_word_inline(
-  chars: &[char],
-  start: usize,
-  end: usize,
-) -> bool {
+fn is_whole_word_inline(chars: &[char], start: usize, end: usize) -> bool {
   if start >= end || end > chars.len() {
     return false;
   }
-  let start_ok = start == 0
-    || !is_word_char(chars[start - 1])
-    || is_cjk(chars[start]);
-  let end_ok = end >= chars.len()
-    || !is_word_char(chars[end])
-    || is_cjk(chars[end - 1]);
+  let Some(current) = chars.get(start).copied() else {
+    return false;
+  };
+  let Some(last) = end
+    .checked_sub(1)
+    .and_then(|index| chars.get(index))
+    .copied()
+  else {
+    return false;
+  };
+  let end_ok = chars
+    .get(end)
+    .is_none_or(|next| !is_word_char(*next) || is_cjk(last));
+  let Some(previous_index) = start.checked_sub(1) else {
+    return end_ok;
+  };
+  let Some(previous) = chars.get(previous_index).copied() else {
+    return false;
+  };
+  let start_ok = !is_word_char(previous) || is_cjk(current);
   start_ok && end_ok
 }
 
@@ -178,21 +215,31 @@ struct CharBoundarySet {
 }
 
 impl CharBoundarySet {
+  const BITS_PER_WORD: usize = 64;
+
   fn new(len: usize) -> Self {
     Self {
-      bits: vec![0u64; len.div_ceil(64)],
+      bits: vec![0u64; len.div_ceil(Self::BITS_PER_WORD)],
     }
   }
 
+  #[allow(clippy::arithmetic_side_effects, clippy::integer_division)]
   fn set(&mut self, pos: usize) {
-    if pos < self.bits.len() * 64 {
-      self.bits[pos / 64] |= 1u64 << (pos % 64);
+    let word = pos / Self::BITS_PER_WORD;
+    let bit = pos % Self::BITS_PER_WORD;
+    if let Some(slot) = self.bits.get_mut(word) {
+      *slot |= 1u64 << bit;
     }
   }
 
+  #[allow(clippy::arithmetic_side_effects, clippy::integer_division)]
   fn contains(&self, pos: usize) -> bool {
-    pos < self.bits.len() * 64
-      && self.bits[pos / 64] & (1u64 << (pos % 64)) != 0
+    let word = pos / Self::BITS_PER_WORD;
+    let bit = pos % Self::BITS_PER_WORD;
+    self
+      .bits
+      .get(word)
+      .is_some_and(|slot| slot & (1u64 << bit) != 0)
   }
 }
 
@@ -202,25 +249,29 @@ fn compute_char_boundaries(text: &str) -> CharBoundarySet {
   use unicode_segmentation::UnicodeSegmentation;
   // Build byte-offset → char-index map.
   let mut byte_to_char: Vec<usize> =
-    Vec::with_capacity(text.len() + 1);
+    Vec::with_capacity(text.len().saturating_add(1));
   let mut char_idx = 0;
   for ch in text.chars() {
     for _ in 0..ch.len_utf8() {
       byte_to_char.push(char_idx);
     }
-    char_idx += 1;
+    char_idx = char_idx.saturating_add(1);
   }
   byte_to_char.push(char_idx); // sentinel
 
-  let mut bs = CharBoundarySet::new(char_idx + 1);
+  let mut bs = CharBoundarySet::new(char_idx.saturating_add(1));
   bs.set(0);
   bs.set(char_idx);
   for (byte_off, word) in text.unicode_word_indices() {
-    let start_char = byte_to_char[byte_off];
-    let end_byte = byte_off + word.len();
-    let end_char = byte_to_char[end_byte];
-    bs.set(start_char);
-    bs.set(end_char);
+    let Some(end_byte) = byte_off.checked_add(word.len()) else {
+      continue;
+    };
+    if let (Some(&start_char), Some(&end_char)) =
+      (byte_to_char.get(byte_off), byte_to_char.get(end_byte))
+    {
+      bs.set(start_char);
+      bs.set(end_char);
+    }
   }
   bs
 }
@@ -232,17 +283,10 @@ enum BoundaryMode {
 }
 
 impl BoundaryMode {
-  fn is_whole_word(
-    &self,
-    chars: &[char],
-    start: usize,
-    end: usize,
-  ) -> bool {
+  fn is_whole_word(&self, chars: &[char], start: usize, end: usize) -> bool {
     match self {
-      BoundaryMode::Inline => {
-        is_whole_word_inline(chars, start, end)
-      }
-      BoundaryMode::Segmenter { bitset } => {
+      Self::Inline => is_whole_word_inline(chars, start, end),
+      Self::Segmenter { bitset } => {
         if start >= end || end > chars.len() {
           return false;
         }
@@ -253,10 +297,7 @@ impl BoundaryMode {
 }
 
 /// Choose boundary mode based on text content.
-fn choose_boundary_mode(
-  text: &str,
-  unicode_boundaries: bool,
-) -> BoundaryMode {
+fn choose_boundary_mode(text: &str, unicode_boundaries: bool) -> BoundaryMode {
   if unicode_boundaries && needs_segmenter(text) {
     BoundaryMode::Segmenter {
       bitset: compute_char_boundaries(text),
@@ -297,19 +338,19 @@ fn normalize_with_map(
   }
 
   let mut norm = Vec::with_capacity(orig_len);
-  let mut map = Vec::with_capacity(orig_len + 1);
+  let mut map = Vec::with_capacity(orig_len.saturating_add(1));
 
   for (orig_idx, &ch) in orig_chars.iter().enumerate() {
     if strip_dia {
       decompose_canonical(ch, |dc| {
         if !is_combining_mark(dc) {
-          if case_insensitive {
-            norm.push(simple_case_fold(dc));
-            map.push(orig_idx);
+          let normalized = if case_insensitive {
+            simple_case_fold(dc)
           } else {
-            norm.push(dc);
-            map.push(orig_idx);
-          }
+            dc
+          };
+          norm.push(normalized);
+          map.push(orig_idx);
         }
       });
     } else {
@@ -334,6 +375,7 @@ fn normalize_with_map(
 // Returns end positions (exclusive, char indices)
 // with their edit distances.
 
+#[allow(clippy::arithmetic_side_effects)]
 fn myers_find_ends(
   pattern: &[char],
   text: &[char],
@@ -352,15 +394,16 @@ fn myers_find_ends(
     *peq.entry(c).or_insert(0) |= 1u64 << i;
   }
 
-  let mask =
-    if m == 64 { u64::MAX } else { (1u64 << m) - 1 };
+  let mask = if m == 64 { u64::MAX } else { (1u64 << m) - 1 };
   let msb = 1u64 << (m - 1);
 
   // PV = positive vertical deltas (all +1 init)
   // MV = negative vertical deltas (all 0 init)
   let mut pv: u64 = mask;
   let mut mv: u64 = 0;
-  let mut score = m as i32;
+  let Ok(mut score) = i32::try_from(m) else {
+    return vec![];
+  };
 
   let mut results = Vec::new();
 
@@ -390,7 +433,12 @@ fn myers_find_ends(
     mv = (ph_shifted & xv) & mask;
 
     if score <= k {
-      results.push((j + 1, score as u8));
+      let Some(end) = j.checked_add(1) else {
+        continue;
+      };
+      if let Ok(distance) = u8::try_from(score) {
+        results.push((end, distance));
+      }
     }
   }
 
@@ -401,6 +449,7 @@ fn myers_find_ends(
 
 /// Standard Levenshtein edit distance on char
 /// slices. O(m × n) time, O(n) space.
+#[allow(clippy::arithmetic_side_effects, clippy::indexing_slicing)]
 fn levenshtein(a: &[char], b: &[char]) -> usize {
   let m = a.len();
   let n = b.len();
@@ -418,9 +467,7 @@ fn levenshtein(a: &[char], b: &[char]) -> usize {
     curr[0] = i;
     for j in 1..=n {
       let cost = usize::from(a[i - 1] != b[j - 1]);
-      curr[j] = (curr[j - 1] + 1)
-        .min(prev[j] + 1)
-        .min(prev[j - 1] + cost);
+      curr[j] = (curr[j - 1] + 1).min(prev[j] + 1).min(prev[j - 1] + cost);
     }
     prev = curr;
   }
@@ -430,6 +477,7 @@ fn levenshtein(a: &[char], b: &[char]) -> usize {
 /// Optimal String Alignment (restricted Damerau-
 /// Levenshtein) on char slices. Counts adjacent
 /// transpositions as a single edit.
+#[allow(clippy::arithmetic_side_effects, clippy::indexing_slicing)]
 fn damerau_levenshtein(a: &[char], b: &[char]) -> usize {
   let m = a.len();
   let n = b.len();
@@ -449,16 +497,10 @@ fn damerau_levenshtein(a: &[char], b: &[char]) -> usize {
     curr[0] = i;
     for j in 1..=n {
       let cost = usize::from(a[i - 1] != b[j - 1]);
-      curr[j] = (curr[j - 1] + 1)
-        .min(prev[j] + 1)
-        .min(prev[j - 1] + cost);
+      curr[j] = (curr[j - 1] + 1).min(prev[j] + 1).min(prev[j - 1] + cost);
       // Transposition: if a[i-1]==b[j-2] and
       // a[i-2]==b[j-1], swapping is 1 edit.
-      if i > 1
-        && j > 1
-        && a[i - 1] == b[j - 2]
-        && a[i - 2] == b[j - 1]
-      {
+      if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1] {
         curr[j] = curr[j].min(prev2[j - 2] + 1);
       }
     }
@@ -469,11 +511,7 @@ fn damerau_levenshtein(a: &[char], b: &[char]) -> usize {
 }
 
 /// Dispatch to the correct distance function.
-fn edit_distance(
-  a: &[char],
-  b: &[char],
-  use_damerau: bool,
-) -> usize {
+fn edit_distance(a: &[char], b: &[char], use_damerau: bool) -> usize {
   if use_damerau {
     damerau_levenshtein(a, b)
   } else {
@@ -500,24 +538,21 @@ fn find_start(
   // `dist` determines the window range (from
   // Myers prefilter). `actual_max` is the real
   // distance threshold for the chosen metric.
-  let k = dist as usize;
-  let max_k = actual_max as usize;
+  let k = usize::from(dist);
+  let max_k = usize::from(actual_max);
 
   // Enforce min_len >= 1 to avoid zero-length
   // matches (e.g. pattern "ab" dist 2 matching "").
   let min_len = m.saturating_sub(k).max(1);
-  let max_len = (m + k).min(end);
+  let max_len = m.saturating_add(k).min(end);
 
   // Try exact pattern length first (most common).
   if end >= m {
-    let start = end - m;
-    let d = edit_distance(
-      pattern,
-      &text[start..end],
-      use_damerau,
-    );
+    let start = end.checked_sub(m)?;
+    let window = text.get(start..end)?;
+    let d = edit_distance(pattern, window, use_damerau);
     if d <= max_k {
-      return Some((start, d as u8));
+      return distance_to_u8(d).map(|distance| (start, distance));
     }
   }
 
@@ -530,17 +565,21 @@ fn find_start(
     if end < len {
       continue;
     }
-    let start = end - len;
-    let d = edit_distance(
-      pattern,
-      &text[start..end],
-      use_damerau,
-    );
+    let Some(start) = end.checked_sub(len) else {
+      continue;
+    };
+    let Some(window) = text.get(start..end) else {
+      continue;
+    };
+    let d = edit_distance(pattern, window, use_damerau);
     if d <= max_k {
+      let Some(distance) = distance_to_u8(d) else {
+        continue;
+      };
       match best {
-        None => best = Some((start, d as u8)),
-        Some((_, bd)) if (d as u8) < bd => {
-          best = Some((start, d as u8));
+        None => best = Some((start, distance)),
+        Some((_, bd)) if distance < bd => {
+          best = Some((start, distance));
         }
         _ => {}
       }
@@ -556,6 +595,7 @@ fn find_start(
 // positions. Returns non-overlapping matches
 // sorted by start position.
 
+#[allow(clippy::arithmetic_side_effects, clippy::indexing_slicing)]
 fn extract_matches(
   pattern: &[char],
   text: &[char],
@@ -585,44 +625,35 @@ fn extract_matches(
     // Window extends end + 2m + k to ensure we
     // catch better matches further ahead (e.g.,
     // an exact match preceded by noisy text).
-    let k = window_dist as usize;
+    let k = usize::from(window_dist);
     let window_bound = end + 2 * m + k;
     let mut best: Option<(usize, usize, u8)> = None;
     let mut best_end_idx = i;
     let mut j = i;
     while j < end_positions.len()
       && end_positions[j].0 <= window_bound
-      && (j == i
-        || end_positions[j].0 == end_positions[j - 1].0 + 1)
+      && (j == i || end_positions[j].0 == end_positions[j - 1].0 + 1)
     {
       let (je, jd) = end_positions[j];
-      if let Some((start, actual_dist)) = find_start(
-        pattern,
-        text,
-        je,
-        jd,
-        actual_max,
-        use_damerau,
-      ) {
-        if start >= last_match_end {
-          let len = je - start;
-          let len_diff = len.abs_diff(m);
-          let is_better = match best {
-            None => true,
-            Some((bs, be, bd)) => {
-              let bl = be - bs;
-              let bl_diff = bl.abs_diff(m);
-              actual_dist < bd
-                || (actual_dist == bd && len_diff < bl_diff)
-                || (actual_dist == bd
-                  && len_diff == bl_diff
-                  && start < bs)
-            }
-          };
-          if is_better {
-            best = Some((start, je, actual_dist));
-            best_end_idx = j;
+      if let Some((start, actual_dist)) =
+        find_start(pattern, text, je, jd, actual_max, use_damerau)
+        && start >= last_match_end
+      {
+        let len = je - start;
+        let len_diff = len.abs_diff(m);
+        let is_better = match best {
+          None => true,
+          Some((bs, be, bd)) => {
+            let bl = be - bs;
+            let bl_diff = bl.abs_diff(m);
+            actual_dist < bd
+              || (actual_dist == bd && len_diff < bl_diff)
+              || (actual_dist == bd && len_diff == bl_diff && start < bs)
           }
+        };
+        if is_better {
+          best = Some((start, je, actual_dist));
+          best_end_idx = j;
         }
       }
       j += 1;
@@ -633,9 +664,7 @@ fn extract_matches(
       last_match_end = be;
       // Skip past this match.
       i = best_end_idx + 1;
-      while i < end_positions.len()
-        && end_positions[i].0 <= be
-      {
+      while i < end_positions.len() && end_positions[i].0 <= be {
         i += 1;
       }
     } else {
@@ -656,16 +685,13 @@ fn extract_matches(
 /// `metric`: `"levenshtein"` (default) or
 /// `"damerau-levenshtein"` (transpositions).
 #[napi(js_name = "distance")]
-pub fn napi_distance(
-  a: String,
-  b: String,
-  metric: Option<Metric>,
-) -> u32 {
+#[allow(clippy::needless_pass_by_value)]
+#[must_use]
+pub fn napi_distance(a: String, b: String, metric: Option<Metric>) -> u32 {
   let ac: Vec<char> = a.chars().collect();
   let bc: Vec<char> = b.chars().collect();
-  let use_damerau =
-    matches!(metric, Some(Metric::DamerauLevenshtein));
-  edit_distance(&ac, &bc, use_damerau) as u32
+  let use_damerau = matches!(metric, Some(Metric::DamerauLevenshtein));
+  usize_to_u32_saturating(edit_distance(&ac, &bc, use_damerau))
 }
 
 // ─── UTF-16 offset mapping ──────────────────
@@ -673,15 +699,18 @@ pub fn napi_distance(
 /// Build a char-index → UTF-16 code unit offset
 /// mapping. Index `i` gives the UTF-16 offset of
 /// char `i`; index `len` is the total length.
-fn build_utf16_map(chars: &[char]) -> Vec<u32> {
-  let mut map = Vec::with_capacity(chars.len() + 1);
+fn build_utf16_map(chars: &[char]) -> Result<Vec<u32>> {
+  let mut map = Vec::with_capacity(chars.len().saturating_add(1));
   let mut utf16_pos: u32 = 0;
   for &ch in chars {
     map.push(utf16_pos);
-    utf16_pos += ch.len_utf16() as u32;
+    let width = usize_to_u32(ch.len_utf16())?;
+    utf16_pos = utf16_pos
+      .checked_add(width)
+      .ok_or_else(u32_overflow_error)?;
   }
   map.push(utf16_pos);
-  map
+  Ok(map)
 }
 
 // ─── FuzzySearch ─────────────────────────────
@@ -701,6 +730,7 @@ struct PatternInfo {
 /// Pattern names are handled in the JS wrapper
 /// (not stored here).
 #[napi]
+#[allow(clippy::struct_excessive_bools)]
 pub struct FuzzySearch {
   patterns: Vec<PatternInfo>,
   normalize_diacritics: bool,
@@ -711,7 +741,7 @@ pub struct FuzzySearch {
   pattern_count: u32,
 }
 
-fn default_options() -> Options {
+const fn default_options() -> Options {
   Options {
     metric: None,
     normalize_diacritics: None,
@@ -722,6 +752,7 @@ fn default_options() -> Options {
 }
 
 #[napi]
+#[allow(clippy::needless_pass_by_value)]
 impl FuzzySearch {
   /// Build a fuzzy matcher from the given
   /// patterns and options.
@@ -730,10 +761,8 @@ impl FuzzySearch {
     patterns: Vec<PatternEntry>,
     options: Option<Options>,
   ) -> Result<Self> {
-    panic::catch_unwind(|| {
-      Self::new_inner(patterns, options)
-    })
-    .unwrap_or_else(|e| Err(panic_to_napi_error(e)))
+    panic::catch_unwind(|| Self::new_inner(patterns, options))
+      .unwrap_or_else(|e| Err(panic_to_napi_error(e.as_ref())))
   }
 
   fn new_inner(
@@ -741,18 +770,12 @@ impl FuzzySearch {
     options: Option<Options>,
   ) -> Result<Self> {
     let opts = options.unwrap_or_else(default_options);
-    let normalize =
-      opts.normalize_diacritics.unwrap_or(false);
-    let case_insensitive =
-      opts.case_insensitive.unwrap_or(false);
+    let normalize = opts.normalize_diacritics.unwrap_or(false);
+    let case_insensitive = opts.case_insensitive.unwrap_or(false);
     let whole_words = opts.whole_words.unwrap_or(true);
-    let unicode_boundaries =
-      opts.unicode_boundaries.unwrap_or(true);
-    let use_damerau = matches!(
-      opts.metric,
-      Some(Metric::DamerauLevenshtein)
-    );
-    let pattern_count = patterns.len() as u32;
+    let unicode_boundaries = opts.unicode_boundaries.unwrap_or(true);
+    let use_damerau = matches!(opts.metric, Some(Metric::DamerauLevenshtein));
+    let pattern_count = usize_to_u32(patterns.len())?;
 
     let mut infos = Vec::with_capacity(patterns.len());
 
@@ -762,15 +785,10 @@ impl FuzzySearch {
       // so no hard upper limit. But distance >=
       // pattern length means nearly everything
       // matches (useless noise).
-      let (chars, _) = normalize_with_map(
-        &p.pattern,
-        normalize,
-        case_insensitive,
-      );
+      let (chars, _) =
+        normalize_with_map(&p.pattern, normalize, case_insensitive);
       if chars.is_empty() {
-        return Err(Error::from_reason(
-          "Empty pattern".to_string(),
-        ));
+        return Err(Error::from_reason("Empty pattern".to_string()));
       }
       if chars.len() > 64 {
         return Err(Error::from_reason(
@@ -781,7 +799,7 @@ impl FuzzySearch {
       // so no hard upper limit. But distance >=
       // pattern length means nearly everything
       // matches (useless noise).
-      if dist as usize >= chars.len() {
+      if usize::from(dist) >= chars.len() {
         return Err(Error::from_reason(format!(
           "Distance {} >= pattern length {} \
            (every substring would match)",
@@ -808,7 +826,8 @@ impl FuzzySearch {
 
   /// Number of patterns in the matcher.
   #[napi(getter)]
-  pub fn pattern_count(&self) -> u32 {
+  #[must_use]
+  pub const fn pattern_count(&self) -> u32 {
     self.pattern_count
   }
 
@@ -816,7 +835,7 @@ impl FuzzySearch {
   /// with expanded distance (2k) as a prefilter
   /// since Levenshtein(a,b) <= 2 * Damerau(a,b).
   /// The actual Damerau distance is computed in
-  /// find_start during verification.
+  /// `find_start` during verification.
   fn find_ends(
     &self,
     pattern: &[char],
@@ -826,16 +845,14 @@ impl FuzzySearch {
     if self.use_damerau {
       // Conservative prefilter: any Damerau-k
       // match has Levenshtein distance <= 2k.
-      let prefilter_dist = (max_dist as usize * 2)
-        .min(pattern.len().saturating_sub(1))
-        as u8;
+      let prefilter_dist = expanded_damerau_distance(max_dist, pattern.len());
       myers_find_ends(pattern, text, prefilter_dist)
     } else {
       myers_find_ends(pattern, text, max_dist)
     }
   }
 
-  /// Dispatch extract_matches with metric.
+  /// Dispatch `extract_matches` with metric.
   fn extract(
     &self,
     pattern: &[char],
@@ -847,8 +864,7 @@ impl FuzzySearch {
     // candidate search, but filter by actual
     // max_dist via the distance function.
     let window_dist = if self.use_damerau {
-      (max_dist as usize * 2)
-        .min(pattern.len().saturating_sub(1)) as u8
+      expanded_damerau_distance(max_dist, pattern.len())
     } else {
       max_dist
     };
@@ -865,12 +881,9 @@ impl FuzzySearch {
   /// Returns `true` if any pattern matches
   /// within its edit distance.
   #[napi]
-  pub fn is_match(&self, haystack: String) -> bool {
+  pub fn is_match(&self, haystack: String) -> Result<bool> {
     let orig_chars: Vec<char> = haystack.chars().collect();
-    let boundary = choose_boundary_mode(
-      &haystack,
-      self.unicode_boundaries,
-    );
+    let boundary = choose_boundary_mode(&haystack, self.unicode_boundaries);
     let (text_chars, pos_map) = normalize_with_map(
       &haystack,
       self.normalize_diacritics,
@@ -878,33 +891,20 @@ impl FuzzySearch {
     );
 
     for pat in &self.patterns {
-      let ends = self.find_ends(
-        &pat.chars,
-        &text_chars,
-        pat.max_dist,
-      );
-      let matches = self.extract(
-        &pat.chars,
-        &text_chars,
-        &ends,
-        pat.max_dist,
-      );
+      let ends = self.find_ends(&pat.chars, &text_chars, pat.max_dist);
+      let matches = self.extract(&pat.chars, &text_chars, &ends, pat.max_dist);
       for (start, end, _) in matches {
         if !self.whole_words {
-          return true;
+          return Ok(true);
         }
-        let orig_start = pos_map[start];
-        let orig_end = pos_map[end];
-        if boundary.is_whole_word(
-          &orig_chars,
-          orig_start,
-          orig_end,
-        ) {
-          return true;
+        let orig_start = get_position(&pos_map, start)?;
+        let orig_end = get_position(&pos_map, end)?;
+        if boundary.is_whole_word(&orig_chars, orig_start, orig_end) {
+          return Ok(true);
         }
       }
     }
-    false
+    Ok(false)
   }
 
   /// Find all fuzzy matches. Returns a packed
@@ -912,16 +912,10 @@ impl FuzzySearch {
   /// distance]` quads. The JS wrapper unpacks
   /// these into `FuzzyMatch` objects.
   #[napi(js_name = "_findIterPacked")]
-  pub fn find_iter_packed(
-    &self,
-    haystack: String,
-  ) -> Uint32Array {
+  pub fn find_iter_packed(&self, haystack: String) -> Result<Uint32Array> {
     let orig_chars: Vec<char> = haystack.chars().collect();
-    let utf16_map = build_utf16_map(&orig_chars);
-    let boundary = choose_boundary_mode(
-      &haystack,
-      self.unicode_boundaries,
-    );
+    let utf16_map = build_utf16_map(&orig_chars)?;
+    let boundary = choose_boundary_mode(&haystack, self.unicode_boundaries);
     let (text_chars, pos_map) = normalize_with_map(
       &haystack,
       self.normalize_diacritics,
@@ -931,40 +925,22 @@ impl FuzzySearch {
     let mut all: Vec<(u32, u32, u32, u32)> = Vec::new();
 
     for (idx, pat) in self.patterns.iter().enumerate() {
-      let ends = self.find_ends(
-        &pat.chars,
-        &text_chars,
-        pat.max_dist,
-      );
-      let matches = self.extract(
-        &pat.chars,
-        &text_chars,
-        &ends,
-        pat.max_dist,
-      );
+      let ends = self.find_ends(&pat.chars, &text_chars, pat.max_dist);
+      let matches = self.extract(&pat.chars, &text_chars, &ends, pat.max_dist);
 
       for (start, end, dist) in matches {
-        let orig_start = pos_map[start];
-        let orig_end = pos_map[end];
+        let orig_start = get_position(&pos_map, start)?;
+        let orig_end = get_position(&pos_map, end)?;
 
         if self.whole_words
-          && !boundary.is_whole_word(
-            &orig_chars,
-            orig_start,
-            orig_end,
-          )
+          && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
         {
           continue;
         }
 
-        let utf16_start = utf16_map[orig_start];
-        let utf16_end = utf16_map[orig_end];
-        all.push((
-          idx as u32,
-          utf16_start,
-          utf16_end,
-          u32::from(dist),
-        ));
+        let utf16_start = get_utf16_offset(&utf16_map, orig_start)?;
+        let utf16_end = get_utf16_offset(&utf16_map, orig_end)?;
+        all.push((usize_to_u32(idx)?, utf16_start, utf16_end, u32::from(dist)));
       }
     }
 
@@ -975,7 +951,7 @@ impl FuzzySearch {
     });
 
     // Greedy non-overlapping across all patterns.
-    let mut packed = Vec::with_capacity(all.len() * 4);
+    let mut packed = Vec::with_capacity(all.len().saturating_mul(4));
     let mut last_end: u32 = 0;
     for (pat, start, end, dist) in all {
       if start < last_end {
@@ -988,7 +964,7 @@ impl FuzzySearch {
       last_end = end;
     }
 
-    Uint32Array::new(packed)
+    Ok(Uint32Array::new(packed))
   }
 
   /// Replace all fuzzy matches.
@@ -999,7 +975,9 @@ impl FuzzySearch {
     haystack: String,
     replacements: Vec<String>,
   ) -> Result<String> {
-    if replacements.len() != self.pattern_count as usize {
+    let expected_replacements =
+      usize::try_from(self.pattern_count).map_err(|_| u32_overflow_error())?;
+    if replacements.len() != expected_replacements {
       return Err(Error::from_reason(format!(
         "Expected {} replacements, got {}",
         self.pattern_count,
@@ -1008,10 +986,7 @@ impl FuzzySearch {
     }
 
     let orig_chars: Vec<char> = haystack.chars().collect();
-    let boundary = choose_boundary_mode(
-      &haystack,
-      self.unicode_boundaries,
-    );
+    let boundary = choose_boundary_mode(&haystack, self.unicode_boundaries);
     let (text_chars, pos_map) = normalize_with_map(
       &haystack,
       self.normalize_diacritics,
@@ -1023,32 +998,19 @@ impl FuzzySearch {
     let mut all: Vec<(usize, usize, u32, u8)> = Vec::new();
 
     for (idx, pat) in self.patterns.iter().enumerate() {
-      let ends = self.find_ends(
-        &pat.chars,
-        &text_chars,
-        pat.max_dist,
-      );
-      let matches = self.extract(
-        &pat.chars,
-        &text_chars,
-        &ends,
-        pat.max_dist,
-      );
+      let ends = self.find_ends(&pat.chars, &text_chars, pat.max_dist);
+      let matches = self.extract(&pat.chars, &text_chars, &ends, pat.max_dist);
 
       for (start, end, dist) in matches {
-        let orig_start = pos_map[start];
-        let orig_end = pos_map[end];
+        let orig_start = get_position(&pos_map, start)?;
+        let orig_end = get_position(&pos_map, end)?;
 
         if self.whole_words
-          && !boundary.is_whole_word(
-            &orig_chars,
-            orig_start,
-            orig_end,
-          )
+          && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
         {
           continue;
         }
-        all.push((orig_start, orig_end, idx as u32, dist));
+        all.push((orig_start, orig_end, usize_to_u32(idx)?, dist));
       }
     }
 
@@ -1067,13 +1029,26 @@ impl FuzzySearch {
       if *start < pos {
         continue; // skip overlapping
       }
-      for &ch in &orig_chars[pos..*start] {
+      let Some(prefix) = orig_chars.get(pos..*start) else {
+        return Err(offset_error());
+      };
+      for &ch in prefix {
         result.push(ch);
       }
-      result.push_str(&replacements[*pat_idx as usize]);
+      let replacement_index =
+        usize::try_from(*pat_idx).map_err(|_| u32_overflow_error())?;
+      let Some(replacement) = replacements.get(replacement_index) else {
+        return Err(Error::from_reason(String::from(
+          "Replacement index is out of bounds",
+        )));
+      };
+      result.push_str(replacement);
       pos = *end;
     }
-    for &ch in &orig_chars[pos..] {
+    let Some(suffix) = orig_chars.get(pos..) else {
+      return Err(offset_error());
+    };
+    for &ch in suffix {
       result.push(ch);
     }
 
