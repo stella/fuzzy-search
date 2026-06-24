@@ -195,6 +195,47 @@ function packageMeta() {
   };
 }
 
+function workspaceCargoTomlPaths() {
+  const paths = [repoPath("Cargo.toml")];
+  const cratesPath = repoPath("crates");
+  if (!fileExists(cratesPath)) {
+    return paths;
+  }
+
+  for (const entry of fs.readdirSync(cratesPath, {
+    withFileTypes: true,
+  })) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const cargoTomlPath = repoPath(
+      "crates",
+      entry.name,
+      "Cargo.toml",
+    );
+    if (fileExists(cargoTomlPath)) {
+      paths.push(cargoTomlPath);
+    }
+  }
+
+  return paths;
+}
+
+function cargoPackageNames(cargoTomlPaths) {
+  return cargoTomlPaths.map((cargoTomlPath) => {
+    const cargoToml = readText(cargoTomlPath);
+    const cargoNameMatch = cargoToml.match(
+      /^name = "([^"]+)"$/m,
+    );
+    if (!cargoNameMatch) {
+      throw new Error(
+        `Missing Cargo package name in ${cargoTomlPath}`,
+      );
+    }
+    return cargoNameMatch[1];
+  });
+}
+
 function platformPackageManifests() {
   return fs
     .readdirSync(repoPath("npm"), {
@@ -270,32 +311,54 @@ function mismatches(expectedVersion) {
     }
   }
 
-  const cargoToml = readText(meta.cargoTomlPath);
-  const cargoTomlMatch = cargoToml.match(
-    /^version = "([^"]+)"$/m,
-  );
-  if (
-    !cargoTomlMatch ||
-    cargoTomlMatch[1] !== expectedVersion
-  ) {
-    results.push(
-      `${meta.cargoTomlPath}: version=${cargoTomlMatch?.[1] ?? "<missing>"}`,
+  const cargoTomlPaths = workspaceCargoTomlPaths();
+  const cargoNames = cargoPackageNames(cargoTomlPaths);
+  for (const cargoTomlPath of cargoTomlPaths) {
+    const cargoToml = readText(cargoTomlPath);
+    const cargoVersionMatch = cargoToml.match(
+      /^version = "([^"]+)"$/m,
     );
+    if (
+      !cargoVersionMatch ||
+      cargoVersionMatch[1] !== expectedVersion
+    ) {
+      results.push(
+        `${cargoTomlPath}: version=${cargoVersionMatch?.[1] ?? "<missing>"}`,
+      );
+    }
+    for (const cargoName of cargoNames) {
+      const dependencyVersion = cargoToml.match(
+        new RegExp(
+          `^${escapeRegex(cargoName)} = \\{[^\\n]*version = "([^"]+)"`,
+          "m",
+        ),
+      );
+      if (
+        dependencyVersion &&
+        dependencyVersion[1] !== expectedVersion
+      ) {
+        results.push(
+          `${cargoTomlPath}: dependencies.${cargoName}.version=${dependencyVersion[1]}`,
+        );
+      }
+    }
   }
 
   const cargoLock = readText(meta.cargoLockPath);
-  const cargoLockMatch = cargoLock.match(
-    new RegExp(
-      `\\[\\[package\\]\\]\\nname = "${meta.cargoName}"\\nversion = "([^"]+)"`,
-    ),
-  );
-  if (
-    !cargoLockMatch ||
-    cargoLockMatch[1] !== expectedVersion
-  ) {
-    results.push(
-      `${meta.cargoLockPath}: version=${cargoLockMatch?.[1] ?? "<missing>"}`,
+  for (const cargoName of cargoNames) {
+    const cargoLockMatch = cargoLock.match(
+      new RegExp(
+        `\\[\\[package\\]\\]\\nname = "${escapeRegex(cargoName)}"\\nversion = "([^"]+)"`,
+      ),
     );
+    if (
+      !cargoLockMatch ||
+      cargoLockMatch[1] !== expectedVersion
+    ) {
+      results.push(
+        `${meta.cargoLockPath}: ${cargoName}.version=${cargoLockMatch?.[1] ?? "<missing>"}`,
+      );
+    }
   }
 
   const bunLock = readText(meta.bunLockPath);
@@ -339,7 +402,9 @@ function mismatches(expectedVersion) {
     );
     const expectedPurls = new Set([
       ...npmPurlCandidates(meta.root.name, expectedVersion),
-      `pkg:cargo/${meta.cargoName}@${expectedVersion}`,
+      ...cargoNames.map(
+        (cargoName) => `pkg:cargo/${cargoName}@${expectedVersion}`,
+      ),
     ]);
     const hasRootNpmComponent = npmPurlPrefixes(
       meta.root.name,
@@ -357,14 +422,16 @@ function mismatches(expectedVersion) {
         `${meta.provenanceSbomPath}: npm purl not updated to ${expectedVersion}`,
       );
     }
-    if (
-      !provenanceSbom.includes(
-        `pkg:cargo/${meta.cargoName}@${expectedVersion}`,
-      )
-    ) {
-      results.push(
-        `${meta.provenanceSbomPath}: cargo purl not updated to ${expectedVersion}`,
-      );
+    for (const cargoName of cargoNames) {
+      if (
+        !provenanceSbom.includes(
+          `pkg:cargo/${cargoName}@${expectedVersion}`,
+        )
+      ) {
+        results.push(
+          `${meta.provenanceSbomPath}: ${cargoName} cargo purl not updated to ${expectedVersion}`,
+        );
+      }
     }
 
     const sbomVersionDrift = [];
@@ -420,24 +487,40 @@ function syncVersion(nextVersion) {
     writeJson(manifestPath, manifest);
   }
 
-  let cargoToml = readText(meta.cargoTomlPath);
-  cargoToml = replaceRequired(
-    cargoToml,
-    /^version = "([^"]+)"$/m,
-    `version = "${nextVersion}"`,
-    meta.cargoTomlPath,
-  );
-  writeText(meta.cargoTomlPath, cargoToml);
+  const cargoTomlPaths = workspaceCargoTomlPaths();
+  const cargoNames = cargoPackageNames(cargoTomlPaths);
+  for (const cargoTomlPath of cargoTomlPaths) {
+    let cargoToml = readText(cargoTomlPath);
+    cargoToml = replaceRequired(
+      cargoToml,
+      /^version = "([^"]+)"$/m,
+      `version = "${nextVersion}"`,
+      cargoTomlPath,
+    );
+    for (const cargoName of cargoNames) {
+      cargoToml = replaceIfPresent(
+        cargoToml,
+        new RegExp(
+          `^(${escapeRegex(cargoName)} = \\{[^\\n]*version = ")[^"]+(")`,
+          "m",
+        ),
+        `$1${nextVersion}$2`,
+      );
+    }
+    writeText(cargoTomlPath, cargoToml);
+  }
 
   let cargoLock = readText(meta.cargoLockPath);
-  cargoLock = replaceRequired(
-    cargoLock,
-    new RegExp(
-      `(\\[\\[package\\]\\]\\nname = "${meta.cargoName}"\\nversion = ")[^"]+(")`,
-    ),
-    `$1${nextVersion}$2`,
-    meta.cargoLockPath,
-  );
+  for (const cargoName of cargoNames) {
+    cargoLock = replaceRequired(
+      cargoLock,
+      new RegExp(
+        `(\\[\\[package\\]\\]\\nname = "${escapeRegex(cargoName)}"\\nversion = ")[^"]+(")`,
+      ),
+      `$1${nextVersion}$2`,
+      meta.cargoLockPath,
+    );
+  }
   writeText(meta.cargoLockPath, cargoLock);
 
   if (fileExists(meta.indexCjsPath)) {
@@ -463,18 +546,22 @@ function syncVersion(nextVersion) {
         `${prefix}${nextVersion}`,
       );
     }
-    provenanceSbom = replaceRequired(
-      provenanceSbom,
-      new RegExp(
-        `pkg:cargo/${meta.cargoName}@[^"\\s<]+`,
-        "g",
-      ),
-      `pkg:cargo/${meta.cargoName}@${nextVersion}`,
-      meta.provenanceSbomPath,
-    );
+    for (const cargoName of cargoNames) {
+      provenanceSbom = replaceRequired(
+        provenanceSbom,
+        new RegExp(
+          `pkg:cargo/${escapeRegex(cargoName)}@[^"\\s<]+`,
+          "g",
+        ),
+        `pkg:cargo/${cargoName}@${nextVersion}`,
+        meta.provenanceSbomPath,
+      );
+    }
     for (const purl of [
       ...npmPurlCandidates(meta.root.name, nextVersion),
-      `pkg:cargo/${meta.cargoName}@${nextVersion}`,
+      ...cargoNames.map(
+        (cargoName) => `pkg:cargo/${cargoName}@${nextVersion}`,
+      ),
     ]) {
       provenanceSbom = replaceSbomVersionForPurl(
         provenanceSbom,
@@ -482,14 +569,16 @@ function syncVersion(nextVersion) {
         nextVersion,
       );
     }
-    provenanceSbom = replaceIfPresent(
-      provenanceSbom,
-      new RegExp(
-        `("purl": "pkg:cargo/${escapeRegex(meta.cargoName)}@${escapeRegex(nextVersion)}",\\n\\s+"type": "[^"]+",\\n\\s+"version": ")[^"]+(")`,
-        "g",
-      ),
-      `$1${nextVersion}$2`,
-    );
+    for (const cargoName of cargoNames) {
+      provenanceSbom = replaceIfPresent(
+        provenanceSbom,
+        new RegExp(
+          `("purl": "pkg:cargo/${escapeRegex(cargoName)}@${escapeRegex(nextVersion)}",\\n\\s+"type": "[^"]+",\\n\\s+"version": ")[^"]+(")`,
+          "g",
+        ),
+        `$1${nextVersion}$2`,
+      );
+    }
     writeText(meta.provenanceSbomPath, provenanceSbom);
   }
 }

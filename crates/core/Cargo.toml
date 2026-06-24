@@ -1,0 +1,18 @@
+[package]
+name = "stella-fuzzy-search-core"
+version = "1.1.2"
+edition = "2024"
+description = "Approximate substring matching core"
+license = "MIT"
+publish = false
+repository = "https://github.com/stella/fuzzy-search"
+keywords = ["fuzzy-search", "levenshtein", "search", "text"]
+categories = ["text-processing"]
+
+[dependencies]
+unicode-case-mapping = "1"
+unicode-normalization = "0.1"
+unicode-segmentation = "1"
+
+[lints]
+workspace = true
