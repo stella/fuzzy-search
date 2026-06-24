@@ -727,15 +727,18 @@ fn build_utf16_map(chars: &[char]) -> Result<Vec<u32>> {
 /// Build a char-index → UTF-8 byte offset mapping.
 /// Index `i` gives the byte offset of char `i`;
 /// index `len` is the total byte length.
-fn build_byte_map(chars: &[char]) -> Result<Vec<u32>> {
-  let mut map = Vec::with_capacity(chars.len().saturating_add(1));
-  let mut byte_pos: u32 = 0;
-  for &ch in chars {
-    map.push(byte_pos);
-    let width = usize_to_u32(ch.len_utf8())?;
-    byte_pos = byte_pos.checked_add(width).ok_or_else(u32_overflow_error)?;
+///
+/// Scans raw bytes: every byte that is not a UTF-8 continuation byte
+/// (`0b10xxxxxx`) starts a new character, so boundaries fall out of one linear
+/// pass with no decoding.
+fn build_byte_map(haystack: &str, char_count: usize) -> Result<Vec<u32>> {
+  let mut map = Vec::with_capacity(char_count.saturating_add(1));
+  for (index, &byte) in haystack.as_bytes().iter().enumerate() {
+    if (byte & 0xC0) != 0x80 {
+      map.push(usize_to_u32(index)?);
+    }
   }
-  map.push(byte_pos);
+  map.push(usize_to_u32(haystack.len())?);
   Ok(map)
 }
 
@@ -974,7 +977,7 @@ impl FuzzySearch {
   /// preserved exactly.
   pub fn find_iter_packed_bytes(&self, haystack: &str) -> Result<Vec<u32>> {
     let orig_chars: Vec<char> = haystack.chars().collect();
-    let byte_map = build_byte_map(&orig_chars)?;
+    let byte_map = build_byte_map(haystack, orig_chars.len())?;
     let boundary = choose_boundary_mode(haystack, self.unicode_boundaries);
     let (text_chars, pos_map) = normalize_with_map(
       haystack,
