@@ -9,6 +9,7 @@ on:
       - "**/package.json"
       - "Cargo.toml"
       - "src/**"
+      - "crates/**"
       - "wasm/**"
       - "*.js"
       - "*.cjs"
