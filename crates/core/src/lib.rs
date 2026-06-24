@@ -62,7 +62,8 @@ fn get_position(map: &[usize], index: usize) -> Result<usize> {
   map.get(index).copied().ok_or_else(offset_error)
 }
 
-fn get_utf16_offset(map: &[u32], index: usize) -> Result<u32> {
+/// Bounds-checked lookup into a char-index → offset map (UTF-16 or byte).
+fn get_offset(map: &[u32], index: usize) -> Result<u32> {
   map.get(index).copied().ok_or_else(offset_error)
 }
 
@@ -723,6 +724,21 @@ fn build_utf16_map(chars: &[char]) -> Result<Vec<u32>> {
   Ok(map)
 }
 
+/// Build a char-index → UTF-8 byte offset mapping.
+/// Index `i` gives the byte offset of char `i`;
+/// index `len` is the total byte length.
+fn build_byte_map(chars: &[char]) -> Result<Vec<u32>> {
+  let mut map = Vec::with_capacity(chars.len().saturating_add(1));
+  let mut byte_pos: u32 = 0;
+  for &ch in chars {
+    map.push(byte_pos);
+    let width = usize_to_u32(ch.len_utf8())?;
+    byte_pos = byte_pos.checked_add(width).ok_or_else(u32_overflow_error)?;
+  }
+  map.push(byte_pos);
+  Ok(map)
+}
+
 // ─── FuzzySearch ─────────────────────────────
 
 /// Preprocessed pattern for fuzzy matching.
@@ -915,9 +931,76 @@ impl FuzzySearch {
           continue;
         }
 
-        let utf16_start = get_utf16_offset(&utf16_map, orig_start)?;
-        let utf16_end = get_utf16_offset(&utf16_map, orig_end)?;
+        let utf16_start = get_offset(&utf16_map, orig_start)?;
+        let utf16_end = get_offset(&utf16_map, orig_end)?;
         all.push((usize_to_u32(idx)?, utf16_start, utf16_end, u32::from(dist)));
+      }
+    }
+
+    // Sort by start position, then distance
+    // (prefer lower), then longer match.
+    all.sort_unstable_by(|a, b| {
+      a.1.cmp(&b.1).then(a.3.cmp(&b.3)).then(b.2.cmp(&a.2))
+    });
+
+    // Greedy non-overlapping across all patterns.
+    let mut packed = Vec::with_capacity(all.len().saturating_mul(4));
+    let mut last_end: u32 = 0;
+    for (pat, start, end, dist) in all {
+      if start < last_end {
+        continue;
+      }
+      packed.push(pat);
+      packed.push(start);
+      packed.push(end);
+      packed.push(dist);
+      last_end = end;
+    }
+
+    Ok(packed)
+  }
+
+  /// Like [`find_iter_packed`](Self::find_iter_packed) but emits UTF-8 byte
+  /// offsets instead of UTF-16 code-unit offsets.
+  ///
+  /// The matcher works on chars and already has positions in hand; this maps
+  /// them to byte offsets directly, skipping the UTF-16 conversion
+  /// `find_iter_packed` performs. It is the native unit for Rust consumers that
+  /// slice `&str` directly; UTF-16 consumers (e.g. JavaScript) keep using
+  /// [`find_iter_packed`](Self::find_iter_packed).
+  ///
+  /// The packed layout is identical: `[pattern, start, end, distance]` quads.
+  /// Only `start`/`end` change unit (UTF-8 bytes); `pattern` and `distance` are
+  /// preserved exactly.
+  pub fn find_iter_packed_bytes(&self, haystack: &str) -> Result<Vec<u32>> {
+    let orig_chars: Vec<char> = haystack.chars().collect();
+    let byte_map = build_byte_map(&orig_chars)?;
+    let boundary = choose_boundary_mode(haystack, self.unicode_boundaries);
+    let (text_chars, pos_map) = normalize_with_map(
+      haystack,
+      self.normalize_diacritics,
+      self.case_insensitive,
+    );
+
+    let mut all: Vec<(u32, u32, u32, u32)> = Vec::new();
+
+    for (idx, pat) in self.patterns.iter().enumerate() {
+      let ends = self.find_ends(&pat.chars, &text_chars, pat.max_dist);
+      let matches = self.extract(&pat.chars, &text_chars, &ends, pat.max_dist);
+
+      for (start, end, dist) in matches {
+        let orig_start = get_position(&pos_map, start)?;
+        let orig_end = get_position(&pos_map, end)?;
+
+        if self.whole_words
+          && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
+        {
+          continue;
+        }
+
+        let byte_start = get_offset(&byte_map, orig_start)?;
+        let byte_end = get_offset(&byte_map, orig_end)?;
+        all.push((usize_to_u32(idx)?, byte_start, byte_end, u32::from(dist)));
       }
     }
 
@@ -1029,5 +1112,45 @@ impl FuzzySearch {
     }
 
     Ok(result)
+  }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::missing_assert_message)]
+mod tests {
+  use super::{FuzzySearch, Options, PatternEntry};
+
+  fn matcher(pattern: &str) -> FuzzySearch {
+    FuzzySearch::new(
+      vec![PatternEntry {
+        pattern: String::from(pattern),
+        distance: Some(1),
+      }],
+      Options::default(),
+    )
+    .unwrap()
+  }
+
+  #[test]
+  fn packed_bytes_emit_byte_offsets() {
+    // `ä` is 2 UTF-8 bytes but 1 UTF-16 code unit, so the offset units
+    // diverge. Haystack chars: ä(0) ` `(1) c(2) a(3) t(4), end at 5.
+    //   UTF-16: ä=1 unit, so `cat` spans units [2, 5).
+    //   bytes:  ä=2 bytes, so `cat` spans bytes [3, 6).
+    let ac = matcher("cat");
+    let haystack = "ä cat";
+
+    // Existing packed output is UTF-16: [pattern, start, end, distance].
+    // Distance is 0 (exact match) and must be preserved in both variants.
+    assert_eq!(ac.find_iter_packed(haystack).unwrap(), vec![0, 2, 5, 0]);
+
+    // Byte variant reports byte offsets but keeps pattern and distance.
+    let packed = ac.find_iter_packed_bytes(haystack).unwrap();
+    assert_eq!(packed, vec![0, 3, 6, 0]);
+
+    // The byte offsets index the original `&str` slice as the matched text.
+    let start = usize::try_from(*packed.get(1).unwrap()).unwrap();
+    let end = usize::try_from(*packed.get(2).unwrap()).unwrap();
+    assert_eq!(haystack.get(start..end), Some("cat"));
   }
 }
