@@ -51,6 +51,8 @@
     "test:runtime:node": "node scripts/runtime-smoke.mjs",
     "version:sync": "node scripts/version-sync.mjs sync",
     "version:check": "node scripts/version-sync.mjs check",
+    "changeset": "changeset",
+    "changeset:version": "changeset version && node scripts/version-sync.mjs sync",
     "release:prepare": "node scripts/prepare-release-package.mjs",
     "release:check": "node scripts/check-release-tarballs.mjs",
     "format": "oxfmt . \"!provenance/**\" \"!.ai/**\" \"!.agents/**\" \"!.claude/**\" \"!AGENTS.md\" \"!CLAUDE.md\" \"!GEMINI.md\" && cargo fmt --all",
@@ -68,6 +70,8 @@
     "sync-ai:check": "bash scripts/sync-ai-skills.sh --check"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^2.31.0",
     "@emnapi/core": "^1.11.1",
     "@emnapi/runtime": "^1.11.1",
     "@napi-rs/cli": "^3.7.2",
@@ -98,5 +102,6 @@
   },
   "engines": {
     "node": ">= 18"
-  }
+  },
+  "packageManager": "bun@1.3.12"
 }

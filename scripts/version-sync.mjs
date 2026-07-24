@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -403,7 +404,8 @@ function mismatches(expectedVersion) {
     const expectedPurls = new Set([
       ...npmPurlCandidates(meta.root.name, expectedVersion),
       ...cargoNames.map(
-        (cargoName) => `pkg:cargo/${cargoName}@${expectedVersion}`,
+        (cargoName) =>
+          `pkg:cargo/${cargoName}@${expectedVersion}`,
       ),
     ]);
     const hasRootNpmComponent = npmPurlPrefixes(
@@ -510,18 +512,20 @@ function syncVersion(nextVersion) {
     writeText(cargoTomlPath, cargoToml);
   }
 
-  let cargoLock = readText(meta.cargoLockPath);
   for (const cargoName of cargoNames) {
-    cargoLock = replaceRequired(
-      cargoLock,
-      new RegExp(
-        `(\\[\\[package\\]\\]\\nname = "${escapeRegex(cargoName)}"\\nversion = ")[^"]+(")`,
-      ),
-      `$1${nextVersion}$2`,
-      meta.cargoLockPath,
+    execFileSync(
+      "cargo",
+      ["update", "-p", cargoName, "--precise", nextVersion],
+      { stdio: "inherit" },
     );
   }
-  writeText(meta.cargoLockPath, cargoLock);
+  execFileSync(
+    "cargo",
+    ["metadata", "--no-deps", "--format-version", "1"],
+    {
+      stdio: "ignore",
+    },
+  );
 
   if (fileExists(meta.indexCjsPath)) {
     let indexCjs = readText(meta.indexCjsPath);
@@ -560,7 +564,8 @@ function syncVersion(nextVersion) {
     for (const purl of [
       ...npmPurlCandidates(meta.root.name, nextVersion),
       ...cargoNames.map(
-        (cargoName) => `pkg:cargo/${cargoName}@${nextVersion}`,
+        (cargoName) =>
+          `pkg:cargo/${cargoName}@${nextVersion}`,
       ),
     ]) {
       provenanceSbom = replaceSbomVersionForPurl(

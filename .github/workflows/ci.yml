@@ -100,6 +100,47 @@ jobs:
             echo "::notice::Fork PR without 'run-ci' label — CI skipped."
           fi
 
+  changeset:
+    name: Changeset
+    if: >-
+      github.event_name == 'pull_request'
+      && needs.trust-check.outputs.trusted == 'true'
+    needs: [trust-check]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: stella/.github/.github/actions/changeset-policy@f04837a7311b8efa997e572eb7f7d4a61d9c728b # v1.2.0
+        with:
+          release-paths: |
+            src/**
+            crates/core/src/**
+            Cargo.toml
+            crates/core/Cargo.toml
+            package.json
+            wasm/package.json
+            index.cjs
+            tsdown.config.ts
+          generated-paths: |
+            CHANGELOG.md
+            VERSION
+            Cargo.toml
+            crates/core/Cargo.toml
+            Cargo.lock
+            bun.lock
+            package.json
+            wasm/package.json
+            npm/*/package.json
+            index.cjs
+            provenance/THIRD-PARTY-NOTICES.txt
+            provenance/report.json
+            provenance/sbom.cdx.json
+          package-files: package.json
+
   napi-ci:
     if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (needs.trust-check.result == 'success' || needs.trust-check.result == 'skipped') }}
     needs: [check-changes, trust-check]
