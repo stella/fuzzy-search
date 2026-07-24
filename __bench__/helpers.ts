@@ -1,5 +1,6 @@
 import { distance as fastLev } from "fastest-levenshtein";
 import Fuse from "fuse.js";
+
 const fuzzball = require("fuzzball");
 
 import { FuzzySearch } from "../src/index";

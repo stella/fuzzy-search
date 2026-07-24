@@ -350,9 +350,9 @@ if (bible) {
     "5 names dist 4, wholeWords",
     verify(
       "bible-d4",
-      BIBLE_PATTERNS.map((p) => ({
-        ...p,
+      BIBLE_PATTERNS.map(({ pattern }) => ({
         distance: 4,
+        pattern,
       })),
       bible,
     ),
