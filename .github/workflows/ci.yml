@@ -34,8 +34,8 @@ jobs:
       build-changed: ${{ steps.filter.outputs.build }}
       provenance-changed: ${{ steps.filter.outputs.provenance }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           filters: |
@@ -207,7 +207,7 @@ jobs:
       - name: Skip when Hawk is not required
         if: needs.check-changes.outputs.rust-changed != 'true'
         run: echo "No trusted Rust changes; Hawk skipped."
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: needs.check-changes.outputs.rust-changed == 'true'
         with:
           persist-credentials: false
