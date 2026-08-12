@@ -525,6 +525,14 @@ function requireNative() {
 
 nativeBinding = requireNative()
 
+const setErrorCause = (error, cause) => {
+  Object.defineProperty(error, 'cause', {
+    configurable: true,
+    value: cause,
+    writable: true,
+  })
+}
+
 // NAPI_RS_FORCE_WASI is a tri-state flag:
 //   unset / any other value → native binding preferred, WASI is only a fallback
 //   'true'                   → force WASI fallback even if native loaded
@@ -555,7 +563,7 @@ if (!nativeBinding || forceWasi) {
         if (!wasiBindingError) {
           wasiBindingError = err
         } else {
-          wasiBindingError.cause = err
+          setErrorCause(wasiBindingError, err)
         }
         loadErrors.push(err)
       }
@@ -563,7 +571,7 @@ if (!nativeBinding || forceWasi) {
   }
   if (process.env.NAPI_RS_FORCE_WASI === 'error' && !wasiBinding) {
     const error = new Error('WASI binding not found and NAPI_RS_FORCE_WASI is set to error')
-    error.cause = wasiBindingError
+    setErrorCause(error, wasiBindingError)
     throw error
   }
 }
@@ -577,10 +585,10 @@ if (!nativeBinding) {
     )
     // assign instead of the `new Error(message, { cause })` options form,
     // which Node < 16.9 silently ignores
-    error.cause = loadErrors.reduce((err, cur) => {
-      cur.cause = err
+    setErrorCause(error, loadErrors.reduce((err, cur) => {
+      setErrorCause(cur, err)
       return cur
-    })
+    }))
     throw error
   }
   throw new Error(`Failed to load native binding`)
