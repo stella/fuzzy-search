@@ -155,3 +155,31 @@ jobs:
       property-test-command: bun run test:props
       install-command: bun install --frozen-lockfile
     secrets: inherit
+
+  core-package:
+    name: Core crate package
+    if: >-
+      always()
+      && !cancelled()
+      && needs.check-changes.result == 'success'
+      && (github.event_name != 'pull_request'
+          || needs.trust-check.outputs.trusted == 'true')
+    needs: [check-changes, trust-check]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+      - name: Verify publication boundary
+        run: |
+          set -euo pipefail
+          cmp LICENSE crates/core/LICENSE
+          cargo metadata --format-version 1 --no-deps | jq -e '
+            (.packages[] | select(.name == "stella-fuzzy-search").publish) == []
+            and (.packages[] | select(.name == "stella-fuzzy-search-core").publish) == ["crates-io"]
+          '
+      - name: Verify crates.io package
+        run: cargo publish --dry-run --locked --package stella-fuzzy-search-core
