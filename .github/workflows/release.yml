@@ -370,6 +370,7 @@ jobs:
       && (github.event_name == 'push'
           || (inputs.publish_to_npm && github.ref == 'refs/heads/main'))
     runs-on: ubuntu-latest
+    environment: crates-io
     permissions:
       contents: read
       id-token: write
