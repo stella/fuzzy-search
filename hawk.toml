@@ -1,0 +1,12 @@
+# Hawk cannot observe Node.js or WebAssembly consumers of these libraries.
+# The rust:hawk script preserves public APIs and denies restricted visibility.
+
+[[production]]
+package = "stella-fuzzy-search"
+lib = "stella_fuzzy_search"
+reason = "N-API library consumed through generated Node.js bindings"
+
+[[production]]
+package = "stella-fuzzy-search-core"
+lib = "stella_fuzzy_search_core"
+reason = "Downstream-facing library audited only for restricted visibility"

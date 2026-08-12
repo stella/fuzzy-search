@@ -49,6 +49,7 @@
     "test:props": "bun test __test__/properties.spec.ts",
     "test:runtime:bun": "bun scripts/runtime-smoke.mjs",
     "test:runtime:node": "node scripts/runtime-smoke.mjs",
+    "rust:hawk": "cargo +1.97.1 hawk check --manifest-path Cargo.toml --target-dir target/hawk -D warnings -A hawk::dead_public -A hawk::unnecessary_public -D hawk::unnecessary_restricted_visibility -D hawk::unnecessary_crate_visibility",
     "version:sync": "node scripts/version-sync.mjs sync",
     "version:check": "node scripts/version-sync.mjs check",
     "changeset": "changeset",
