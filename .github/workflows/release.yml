@@ -46,7 +46,7 @@ jobs:
       github.event_name != 'workflow_dispatch'
       || inputs.publish_to_npm != true
       || github.ref == 'refs/heads/main'
-    uses: stella/.github/.github/workflows/npm-version-preflight.yml@1cf2d8c99d478e37c653dbe25816bfe5b26157ce
+    uses: stella/.github/.github/workflows/npm-version-preflight.yml@9a6f0b6dd423b9c368c63d9466b1aebbe6984ba3
     with:
       package-files: |
         package.json
@@ -100,7 +100,7 @@ jobs:
         env:
           RUSTDOCFLAGS: -Dwarnings
       - run: cargo test --workspace
-      - uses: stella/.github/actions/provenance-check@6c88c6f9ea4beaa132caec7c60f65b1b9b32a74a
+      - uses: stella/.github/actions/provenance-check@9a6f0b6dd423b9c368c63d9466b1aebbe6984ba3
         with:
           provenance-version: v0.1.3
       - run: bun run build
@@ -325,7 +325,7 @@ jobs:
       needs.preflight.outputs.already-released != 'true'
       && (github.event_name == 'push'
           || (inputs.publish_to_npm && github.ref == 'refs/heads/main'))
-    uses: stella/.github/.github/workflows/npm-version-finalize.yml@1cf2d8c99d478e37c653dbe25816bfe5b26157ce
+    uses: stella/.github/.github/workflows/npm-version-finalize.yml@9a6f0b6dd423b9c368c63d9466b1aebbe6984ba3
     with:
       package-files: |
         package.json
