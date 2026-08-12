@@ -2490,6 +2490,10 @@
         {
           "name": "SrcFile",
           "value": "node_modules/@quansync/fs/package.json"
+        },
+        {
+          "name": "ImportedModules",
+          "value": "fs"
         }
       ],
       "purl": "pkg:npm/%40quansync/fs@1.0.0",
@@ -2550,6 +2554,10 @@
         {
           "name": "SrcFile",
           "value": "node_modules/vite/package.json"
+        },
+        {
+          "name": "ImportedModules",
+          "value": "vite,Plugin,vite/Plugin,UserConfig,vite/UserConfig"
         }
       ],
       "purl": "pkg:npm/vite@8.2.1",
