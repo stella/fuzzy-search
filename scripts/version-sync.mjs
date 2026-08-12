@@ -316,6 +316,9 @@ function mismatches(expectedVersion) {
   const cargoNames = cargoPackageNames(cargoTomlPaths);
   for (const cargoTomlPath of cargoTomlPaths) {
     const cargoToml = readText(cargoTomlPath);
+    const currentCargoName = cargoToml.match(
+      /^name = "([^"]+)"$/m,
+    )?.[1];
     const cargoVersionMatch = cargoToml.match(
       /^version = "([^"]+)"$/m,
     );
@@ -325,6 +328,22 @@ function mismatches(expectedVersion) {
     ) {
       results.push(
         `${cargoTomlPath}: version=${cargoVersionMatch?.[1] ?? "<missing>"}`,
+      );
+    }
+    if (
+      currentCargoName === meta.cargoName &&
+      !/^publish = false$/m.test(cargoToml)
+    ) {
+      results.push(
+        `${cargoTomlPath}: NAPI root must remain private`,
+      );
+    }
+    if (
+      currentCargoName === "stella-fuzzy-search-core" &&
+      !/^publish = \["crates-io"\]$/m.test(cargoToml)
+    ) {
+      results.push(
+        `${cargoTomlPath}: core must publish only to crates.io`,
       );
     }
     for (const cargoName of cargoNames) {

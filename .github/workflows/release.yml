@@ -5,6 +5,7 @@ env:
   BUN_VERSION: "1.3.12"
   CDXGEN_VERSION: "12.1.5"
   CARGO_INCREMENTAL: 0
+  RUST_TOOLCHAIN: "1.97.1"
 
 on:
   push:
@@ -13,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       publish_to_npm:
-        description: Publish the current VERSION to npm after verification
+        description: Publish the current VERSION to crates.io and npm after verification
         required: true
         default: false
         type: boolean
@@ -37,7 +38,7 @@ jobs:
       contents: read
     steps:
       - run: |
-          echo "::error::Manual npm publishing must run from main."
+          echo "::error::Manual publishing must run from main."
           exit 1
 
   preflight:
@@ -63,10 +64,37 @@ jobs:
         ${{ github.event_name == 'push'
             || (inputs.publish_to_npm && github.ref == 'refs/heads/main') }}
 
+  core-preflight:
+    name: Core crate preflight
+    if: >-
+      github.event_name != 'workflow_dispatch'
+      || inputs.publish_to_npm != true
+      || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      already-released: ${{ steps.preflight.outputs.already-released }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - name: Check crates.io version
+        id: preflight
+        run: node scripts/crate-release.mjs preflight
+
   verify:
     name: Verify
-    needs: preflight
-    if: needs.preflight.outputs.already-released != 'true'
+    needs: [preflight, core-preflight]
+    if: >-
+      needs.preflight.outputs.already-released != 'true'
+      || needs.core-preflight.outputs.already-released != 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -78,7 +106,7 @@ jobs:
       - run: node scripts/version-sync.mjs check
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
-          toolchain: stable
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
           components: clippy, rustfmt
           targets: wasm32-wasip1-threads
       - uses: Swatinem/rust-cache@a45951ff880207c249adf57334cf2e9bd81d6e1e # v2
@@ -100,6 +128,7 @@ jobs:
         env:
           RUSTDOCFLAGS: -Dwarnings
       - run: cargo test --workspace
+      - run: cargo publish --dry-run --locked --package stella-fuzzy-search-core
       - uses: stella/.github/actions/provenance-check@9a6f0b6dd423b9c368c63d9466b1aebbe6984ba3
         with:
           provenance-version: v0.1.3
@@ -139,7 +168,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
-          toolchain: stable
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
           targets: ${{ matrix.settings.target }}
       - uses: Swatinem/rust-cache@a45951ff880207c249adf57334cf2e9bd81d6e1e # v2
         with:
@@ -225,6 +254,9 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
@@ -281,12 +313,20 @@ jobs:
             printf '%s\n' "${aux_tarballs[@]}"
             echo EOF
           } >> "$GITHUB_OUTPUT"
+      - name: Package core crate
+        id: core-package
+        run: |
+          set -euo pipefail
+          cargo package --locked --package stella-fuzzy-search-core
+          core_crate="target/package/stella-fuzzy-search-core-$(cat VERSION).crate"
+          cp "$core_crate" release-artifacts/
+          echo "crate=release-artifacts/$(basename "$core_crate")" >> "$GITHUB_OUTPUT"
       - name: Generate release checksums
         run: |
           set -euo pipefail
           (
             cd release-artifacts
-            sha256sum -- ./*.tgz > SHA256SUMS
+            sha256sum -- ./*.crate ./*.tgz > SHA256SUMS
           )
       - name: Generate attestation SBOM
         run: >
@@ -306,6 +346,10 @@ jobs:
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: ${{ steps.pack.outputs.aux_tarballs }}
+      - name: Attest core crate
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
+        with:
+          subject-path: ${{ steps.core-package.outputs.crate }}
       - name: Stage provenance release assets
         run: |
           set -euo pipefail
@@ -318,11 +362,51 @@ jobs:
           path: release-artifacts
           if-no-files-found: error
 
+  publish-core:
+    name: Publish core crate
+    needs: [core-preflight, verify]
+    if: >-
+      needs.core-preflight.outputs.already-released != 'true'
+      && (github.event_name == 'push'
+          || (inputs.publish_to_npm && github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - name: Recheck crates.io version
+        id: preflight
+        run: node scripts/crate-release.mjs preflight
+      - name: Authenticate to crates.io
+        if: steps.preflight.outputs.already-released != 'true'
+        id: crates-io-auth
+        uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+      - name: Publish core crate
+        if: steps.preflight.outputs.already-released != 'true'
+        run: cargo publish --locked --package stella-fuzzy-search-core
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-io-auth.outputs.token }}
+      - name: Verify published crate
+        run: node scripts/crate-release.mjs verify
+
   finalize:
     name: Finalize
-    needs: [preflight, pack]
+    needs: [preflight, pack, publish-core]
     if: >-
-      needs.preflight.outputs.already-released != 'true'
+      always()
+      && needs.pack.result == 'success'
+      && (needs.publish-core.result == 'success'
+          || needs.publish-core.result == 'skipped')
+      && needs.preflight.outputs.already-released != 'true'
       && (github.event_name == 'push'
           || (inputs.publish_to_npm && github.ref == 'refs/heads/main'))
     uses: stella/.github/.github/workflows/npm-version-finalize.yml@9a6f0b6dd423b9c368c63d9466b1aebbe6984ba3
