@@ -96,23 +96,20 @@ pub fn napi_distance(a: String, b: String, metric: Option<Metric>) -> u32 {
 }
 
 fn resolve_options(options: Option<Options>) -> core::Options {
-  let opts = options.unwrap_or(Options {
-    metric: None,
-    normalize_diacritics: None,
-    unicode_boundaries: None,
-    whole_words: None,
-    case_insensitive: None,
-  });
-  core::Options {
-    metric: match opts.metric {
+  let Some(opts) = options else {
+    return core::Options::builder().build();
+  };
+
+  core::Options::builder()
+    .metric(match opts.metric {
       Some(Metric::DamerauLevenshtein) => core::Metric::DamerauLevenshtein,
       Some(Metric::Levenshtein) | None => core::Metric::Levenshtein,
-    },
-    normalize_diacritics: opts.normalize_diacritics.unwrap_or(false),
-    unicode_boundaries: opts.unicode_boundaries.unwrap_or(true),
-    whole_words: opts.whole_words.unwrap_or(true),
-    case_insensitive: opts.case_insensitive.unwrap_or(false),
-  }
+    })
+    .normalize_diacritics(opts.normalize_diacritics.unwrap_or(false))
+    .unicode_boundaries(opts.unicode_boundaries.unwrap_or(true))
+    .whole_words(opts.whole_words.unwrap_or(true))
+    .case_insensitive(opts.case_insensitive.unwrap_or(false))
+    .build()
 }
 
 fn resolve_patterns(patterns: Vec<PatternEntry>) -> Vec<core::PatternEntry> {
