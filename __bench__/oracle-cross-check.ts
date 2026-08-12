@@ -287,7 +287,10 @@ if (bible) {
   printResult(
     crossCheck(
       "Levenshtein dist 2",
-      BIBLE.map(({ pattern }) => ({ distance: 2, pattern })),
+      BIBLE.map(({ pattern }) => ({
+        distance: 2,
+        pattern,
+      })),
       bible,
     ),
   );
@@ -299,7 +302,10 @@ if (bible) {
   printResult(
     crossCheck(
       "Damerau dist 2",
-      BIBLE.map(({ pattern }) => ({ distance: 2, pattern })),
+      BIBLE.map(({ pattern }) => ({
+        distance: 2,
+        pattern,
+      })),
       bible,
       { metric: "damerau-levenshtein" },
     ),
