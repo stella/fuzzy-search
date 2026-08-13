@@ -86,7 +86,10 @@ const apiUrl = (version) =>
   `https://crates.io/api/v1/crates/${CRATE_NAME}/${version}`;
 
 const request = (url) =>
-  fetch(url, { headers: { "user-agent": USER_AGENT } });
+  fetch(url, {
+    headers: { "user-agent": USER_AGENT },
+    signal: AbortSignal.timeout(30_000),
+  });
 
 const publishedVersion = async (version) => {
   const response = await request(apiUrl(version));

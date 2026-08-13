@@ -13,6 +13,33 @@ type LoaderScenario = {
   packageWasi?: boolean;
 };
 
+type LoaderResult = {
+  causeEnumerable?: boolean;
+  causePresent?: boolean;
+  error?: string;
+  source?: string;
+};
+
+const isOptionalBoolean = (value: unknown) =>
+  value === undefined || typeof value === "boolean";
+
+const isOptionalString = (value: unknown) =>
+  value === undefined || typeof value === "string";
+
+const isLoaderResult = (value: unknown): value is LoaderResult => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const result = Object.fromEntries(Object.entries(value));
+  return (
+    isOptionalBoolean(result.causeEnumerable) &&
+    isOptionalBoolean(result.causePresent) &&
+    isOptionalString(result.error) &&
+    isOptionalString(result.source)
+  );
+};
+
 const loadBinding = (scenario: LoaderScenario) => {
   const script = `
     const Module = require("node:module");
@@ -66,12 +93,11 @@ const loadBinding = (scenario: LoaderScenario) => {
   );
 
   expect(result.status).toBe(0);
-  return JSON.parse(result.stdout) as {
-    causeEnumerable?: boolean;
-    causePresent?: boolean;
-    error?: string;
-    source?: string;
-  };
+  const parsed: unknown = JSON.parse(result.stdout);
+  if (!isLoaderResult(parsed)) {
+    throw new Error(`Unexpected loader result: ${result.stdout}`);
+  }
+  return parsed;
 };
 
 describe("generated loader WASI selection", () => {

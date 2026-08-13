@@ -362,11 +362,54 @@ jobs:
           path: release-artifacts
           if-no-files-found: error
 
+  core-recovery-artifact:
+    name: Attest core crate recovery artifact
+    needs: [preflight, core-preflight, verify]
+    if: >-
+      needs.preflight.outputs.already-released == 'true'
+      && needs.core-preflight.outputs.already-released != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - name: Package core crate
+        id: package
+        run: |
+          set -euo pipefail
+          cargo package --locked --package stella-fuzzy-search-core
+          crate="target/package/stella-fuzzy-search-core-$(cat VERSION).crate"
+          echo "crate=${crate}" >> "$GITHUB_OUTPUT"
+      - name: Attest core crate
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ steps.package.outputs.crate }}
+
   publish-core:
     name: Publish core crate
-    needs: [core-preflight, verify]
+    needs:
+      [
+        preflight,
+        core-preflight,
+        verify,
+        pack,
+        core-recovery-artifact,
+      ]
     if: >-
-      needs.core-preflight.outputs.already-released != 'true'
+      always()
+      && needs.verify.result == 'success'
+      && needs.core-preflight.outputs.already-released != 'true'
+      && ((needs.preflight.outputs.already-released != 'true'
+           && needs.pack.result == 'success')
+          || (needs.preflight.outputs.already-released == 'true'
+              && needs.core-recovery-artifact.result == 'success'))
       && (github.event_name == 'push'
           || (inputs.publish_to_npm && github.ref == 'refs/heads/main'))
     runs-on: ubuntu-latest
