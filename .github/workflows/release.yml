@@ -128,10 +128,10 @@ jobs:
         env:
           RUSTDOCFLAGS: -Dwarnings
       - run: cargo test --workspace
-      - run: cargo publish --dry-run --locked --package stella-fuzzy-search-core
       - uses: stella/.github/actions/provenance-check@9a6f0b6dd423b9c368c63d9466b1aebbe6984ba3
         with:
           provenance-version: v0.1.3
+      - run: cargo publish --dry-run --locked --package stella-fuzzy-search-core
       - run: bun run build
       - run: bun run build:js
       - run: bun test
