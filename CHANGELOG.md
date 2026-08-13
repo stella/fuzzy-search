@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.4
+
+### Patch Changes
+
+- [#106](https://github.com/stella/fuzzy-search/pull/106) [`e5230d9`](https://github.com/stella/fuzzy-search/commit/e5230d99861ad3334c4cb2aa7f3201fe47253ed7) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Refresh dependencies and expose a compile-time checked Rust options builder.
+
 ## 1.1.2
 
 ### Features
