@@ -63,6 +63,31 @@ function replaceIfPresent(content, matcher, replacement) {
     : content;
 }
 
+export const resolveVersion = ({
+  command,
+  explicitVersion,
+  packageVersion,
+  tag,
+  versionFileVersion,
+}) =>
+  explicitVersion ??
+  tag?.replace(/^v/, "") ??
+  (command === "sync" ? packageVersion : versionFileVersion);
+
+export const replaceLoaderVersion = ({
+  content,
+  filePath,
+  sourceVersion,
+  targetVersion,
+}) => {
+  if (!content.includes(sourceVersion)) {
+    throw new Error(
+      `Expected ${filePath} to contain ${sourceVersion}`,
+    );
+  }
+  return content.replaceAll(sourceVersion, targetVersion);
+};
+
 function encodedScopedPackageName(name) {
   if (!name.startsWith("@")) {
     return name;
@@ -473,7 +498,7 @@ function mismatches(expectedVersion) {
 function syncVersion(nextVersion) {
   const meta = packageMeta();
   const platforms = platformPackageManifests();
-  const previousVersion = meta.root.version;
+  const previousVersion = readVersion();
 
   writeText(repoPath("VERSION"), `${nextVersion}\n`);
   meta.root.version = nextVersion;
@@ -547,16 +572,12 @@ function syncVersion(nextVersion) {
   );
 
   if (fileExists(meta.indexCjsPath)) {
-    let indexCjs = readText(meta.indexCjsPath);
-    if (!indexCjs.includes(previousVersion)) {
-      throw new Error(
-        `Expected ${meta.indexCjsPath} to contain ${previousVersion}`,
-      );
-    }
-    indexCjs = indexCjs.replaceAll(
-      previousVersion,
-      nextVersion,
-    );
+    const indexCjs = replaceLoaderVersion({
+      content: readText(meta.indexCjsPath),
+      filePath: meta.indexCjsPath,
+      sourceVersion: previousVersion,
+      targetVersion: nextVersion,
+    });
     writeText(meta.indexCjsPath, indexCjs);
   }
 
@@ -645,10 +666,13 @@ function main() {
     process.exit(1);
   }
 
-  const version =
-    args.get("version") ??
-    args.get("tag")?.replace(/^v/, "") ??
-    readVersion();
+  const version = resolveVersion({
+    command,
+    explicitVersion: args.get("version"),
+    packageVersion: packageMeta().root.version,
+    tag: args.get("tag"),
+    versionFileVersion: readVersion(),
+  });
 
   if (command === "sync") {
     syncVersion(version);
@@ -668,4 +692,9 @@ function main() {
   }
 }
 
-main();
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  main();
+}
