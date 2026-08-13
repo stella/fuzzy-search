@@ -12,10 +12,9 @@ let matcher = FuzzySearch::new(
     pattern: "Gaislerová".into(),
     distance: Some(1),
   }],
-  Options {
-    normalize_diacritics: true,
-    ..Options::default()
-  },
+  Options::builder()
+    .normalize_diacritics(true)
+    .build(),
 )?;
 
 assert!(matcher.is_match("Smlouva s Gais1erová")?);

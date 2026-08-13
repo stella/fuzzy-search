@@ -135,31 +135,30 @@ pub enum Metric {
 }
 
 /// Options for constructing a `FuzzySearch`.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(bon::Builder, Debug, Clone, Copy, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Options {
   /// Distance metric.
+  #[builder(default = Metric::Levenshtein)]
   pub metric: Metric,
   /// Strip diacritics before matching (NFD
   /// decompose + remove combining marks).
+  #[builder(default)]
   pub normalize_diacritics: bool,
   /// Use Unicode word boundaries.
+  #[builder(default = true)]
   pub unicode_boundaries: bool,
   /// Only match whole words. Default: `true`.
+  #[builder(default = true)]
   pub whole_words: bool,
   /// Case-insensitive matching. Default: `false`.
+  #[builder(default)]
   pub case_insensitive: bool,
 }
 
 impl Default for Options {
   fn default() -> Self {
-    Self {
-      metric: Metric::Levenshtein,
-      normalize_diacritics: false,
-      unicode_boundaries: true,
-      whole_words: true,
-      case_insensitive: false,
-    }
+    Self::builder().build()
   }
 }
 

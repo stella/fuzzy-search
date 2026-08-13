@@ -14,6 +14,7 @@ keywords = ["fuzzy-search", "levenshtein", "search", "text"]
 categories = ["text-processing"]
 
 [dependencies]
+bon = "3.9.3"
 unicode-case-mapping = "1"
 unicode-normalization = "0.1"
 unicode-segmentation = "1"

@@ -74,18 +74,16 @@ const platformPackageNames = new Set(
   platforms.map((manifest) => manifest.name),
 );
 const sourceOptionalDependencies = Object.fromEntries(
-  Object.entries(sourceRoot.optionalDependencies ?? {}).filter(
-    ([name]) => !platformPackageNames.has(name),
+  Object.entries(
+    sourceRoot.optionalDependencies ?? {},
+  ).filter(([name]) => !platformPackageNames.has(name)),
+);
+const expectedOptionalDependencies = sortObject({
+  ...sourceOptionalDependencies,
+  ...Object.fromEntries(
+    platforms.map((manifest) => [manifest.name, version]),
   ),
-);
-const expectedOptionalDependencies = sortObject(
-  {
-    ...sourceOptionalDependencies,
-    ...Object.fromEntries(
-      platforms.map((manifest) => [manifest.name, version]),
-    ),
-  },
-);
+});
 
 const root = packageFromTarball(rootTarball);
 if (root.name !== sourceRoot.name) {
