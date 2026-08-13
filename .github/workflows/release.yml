@@ -266,7 +266,7 @@ jobs:
         with:
           path: artifacts
       - name: Prepare npm packages
-        run: bun x @napi-rs/cli artifacts
+        run: bun run artifacts
       - name: Move artifacts
         shell: bash
         run: |
