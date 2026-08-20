@@ -3,6 +3,7 @@
 # less than 5 days ago to mitigate supply chain attacks.
 minimumReleaseAge = 432_000
 minimumReleaseAgeExcludes = [
+  "bun-types@1.4.0", # quarantine-expires: 2026-08-25T14:11:33.785Z
   "@stll/typescript-config",
   "@stll/oxlint-config",
   "@stll/fuzzy-search-darwin-x64",
