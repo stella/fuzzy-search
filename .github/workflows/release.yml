@@ -47,7 +47,7 @@ jobs:
       github.event_name != 'workflow_dispatch'
       || inputs.publish_to_npm != true
       || github.ref == 'refs/heads/main'
-    uses: stella/.github/.github/workflows/npm-version-preflight.yml@48aacae31829ce15216a6b766b03a92fd2e84da3
+    uses: stella/.github/.github/workflows/npm-version-preflight.yml@7198083e27bdd963cacc0b7d70ca54fe3ec83393
     with:
       package-files: |
         package.json
@@ -128,7 +128,7 @@ jobs:
         env:
           RUSTDOCFLAGS: -Dwarnings
       - run: cargo test --workspace
-      - uses: stella/.github/actions/provenance-check@48aacae31829ce15216a6b766b03a92fd2e84da3
+      - uses: stella/.github/actions/provenance-check@7198083e27bdd963cacc0b7d70ca54fe3ec83393
         with:
           provenance-version: v0.1.3
       - run: cargo publish --dry-run --locked --package stella-fuzzy-search-core
