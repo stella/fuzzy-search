@@ -99,6 +99,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22.21.1"
@@ -111,9 +114,6 @@ jobs:
       - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
         with:
           shared-key: release-verify
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: "1.4.0"
       - run: bun install --frozen-lockfile
       - run: bun run lint
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -166,6 +166,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22.21.1"
@@ -176,9 +179,6 @@ jobs:
       - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
         with:
           shared-key: release-build-${{ matrix.settings.target }}
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: "1.4.0"
       - run: bun install --frozen-lockfile
       - name: Build native
         if: >-
@@ -221,7 +221,7 @@ jobs:
           persist-credentials: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version: "1.4.0"
+          bun-version-file: package.json
       - run: bun install --frozen-lockfile
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -256,12 +256,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22.21.1"
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: "1.4.0"
       - run: bun install --frozen-lockfile
       - name: Install SBOM generator
         # This fixed CLI generates release metadata without receiving publish credentials.
@@ -364,17 +364,15 @@ jobs:
 
   publish-core:
     name: Publish core crate
-    needs: [preflight, core-preflight, verify, pack, attest]
+    needs: [preflight, core-preflight, verify]
     if: >-
       github.ref == 'refs/heads/main' && (
-        always()
+        needs.preflight.result == 'success'
+        && needs.core-preflight.result == 'success'
         && needs.verify.result == 'success'
-        && (needs.preflight.outputs.already-released == 'true'
-            || (needs.pack.result == 'success'
-                && needs.attest.result == 'success'))
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@06d3be1f42585ac33635102120f917bb74f9ecab
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@437d9d78c38114a15c368daed7d3d1b36fd6b8fc
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
@@ -437,15 +435,14 @@ jobs:
     needs: [preflight, pack, attest, publish-core, assemble-release]
     if: >-
       github.ref == 'refs/heads/main' && (
-        always()
-        && needs.pack.result == 'success'
+        needs.pack.result == 'success'
         && needs.attest.result == 'success'
         && needs.publish-core.result == 'success'
         && needs.assemble-release.result == 'success'
         && needs.preflight.outputs.already-released != 'true'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/npm-version-finalize.yml@06d3be1f42585ac33635102120f917bb74f9ecab
+    uses: stella/.github/.github/workflows/npm-version-finalize.yml@437d9d78c38114a15c368daed7d3d1b36fd6b8fc
     with:
       package-files: |
         package.json
