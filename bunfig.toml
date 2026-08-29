@@ -3,12 +3,11 @@
 # less than 5 days ago to mitigate supply chain attacks.
 minimumReleaseAge = 432_000
 minimumReleaseAgeExcludes = [
-  "bun-types@1.4.0", # quarantine-expires: 2026-08-25T14:11:33.785Z
-  "@stll/typescript-config",
-  "@stll/oxlint-config",
-  "@stll/fuzzy-search-darwin-x64",
-  "@stll/fuzzy-search-darwin-arm64",
-  "@stll/fuzzy-search-linux-x64-gnu",
-  "@stll/fuzzy-search-linux-arm64-gnu",
-  "@stll/fuzzy-search-wasm32-wasi",
+  "@stll/typescript-config", # quarantine-excluded-since: 2026-05-31T22:16:56.000Z
+  "@stll/oxlint-config", # quarantine-excluded-since: 2026-05-31T22:16:56.000Z
+  "@stll/fuzzy-search-darwin-x64", # quarantine-excluded-since: 2026-04-17T06:59:57.000Z
+  "@stll/fuzzy-search-darwin-arm64", # quarantine-excluded-since: 2026-04-17T06:59:57.000Z
+  "@stll/fuzzy-search-linux-x64-gnu", # quarantine-excluded-since: 2026-04-17T06:59:57.000Z
+  "@stll/fuzzy-search-linux-arm64-gnu", # quarantine-excluded-since: 2026-04-17T06:59:57.000Z
+  "@stll/fuzzy-search-wasm32-wasi", # quarantine-excluded-since: 2026-04-17T06:59:57.000Z
 ]
