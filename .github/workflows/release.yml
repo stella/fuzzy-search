@@ -364,11 +364,36 @@ jobs:
 
   publish-core:
     name: Publish core crate
+    needs: [preflight, core-preflight, verify, pack, attest]
+    if: >-
+      github.ref == 'refs/heads/main' && (
+        needs.preflight.result == 'success'
+        && needs.preflight.outputs.already-released != 'true'
+        && needs.core-preflight.result == 'success'
+        && needs.verify.result == 'success'
+        && needs.pack.result == 'success'
+        && needs.attest.result == 'success'
+        && (github.event_name == 'push'
+            || inputs.publish_to_npm))
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@437d9d78c38114a15c368daed7d3d1b36fd6b8fc
+    with:
+      crate-name: stella-fuzzy-search-core
+      manifest-path: crates/core/Cargo.toml
+      rust-toolchain: "1.97.1"
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+
+  recover-core:
+    name: Recover core crate publication
     needs: [preflight, core-preflight, verify]
     if: >-
       github.ref == 'refs/heads/main' && (
         needs.preflight.result == 'success'
+        && needs.preflight.outputs.already-released == 'true'
         && needs.core-preflight.result == 'success'
+        && needs.core-preflight.outputs.already-released != 'true'
         && needs.verify.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))

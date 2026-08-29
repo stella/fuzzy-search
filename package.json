@@ -45,7 +45,7 @@
     "universal": "napi universal",
     "build:js": "node scripts/ensure-wasm-artifact.mjs && tsdown && node scripts/fix-napi-loader.mjs && node scripts/check-wasm-compat.mjs",
     "prepublishOnly": "napi prepublish -t npm && tsdown && node scripts/fix-napi-loader.mjs",
-    "test": "bun test __test__/index.spec.ts",
+    "test": "bun test __test__/index.spec.ts scripts/release-workflow.test.mjs",
     "test:props": "bun test __test__/properties.spec.ts",
     "test:runtime:bun": "bun scripts/runtime-smoke.mjs",
     "test:runtime:node": "node scripts/runtime-smoke.mjs",
