@@ -50,7 +50,7 @@
       "version": "2.13.1"
     },
     {
-      "bom-ref": "pkg:cargo/bon-macros@3.9.3",
+      "bom-ref": "pkg:cargo/bon-macros@3.10.0",
       "evidence": {
         "identity": [
           {
@@ -71,7 +71,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "6dee98b0db6a962de883bf5d20362dee4d7ca0d12fe39a7c6c73c844e1cd7c1f"
+          "content": "d4654961ad0494e4774c5c60b4cb4cd0ae9b9d92d039d901638b1dba97ebebf5"
         }
       ],
       "licenses": [
@@ -93,12 +93,12 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/bon-macros@3.9.3",
+      "purl": "pkg:cargo/bon-macros@3.10.0",
       "type": "library",
-      "version": "3.9.3"
+      "version": "3.10.0"
     },
     {
-      "bom-ref": "pkg:cargo/bon@3.9.3",
+      "bom-ref": "pkg:cargo/bon@3.10.0",
       "evidence": {
         "identity": [
           {
@@ -119,7 +119,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "a602c73c7b0148ec6d12af6fd5cc7a46e2eacc8878271a999abac56eed12f561"
+          "content": "9e3fac94a66da67200398458a25412bcc3f9b6443b5119a6cad9cf3ccfcd8cc6"
         }
       ],
       "licenses": [
@@ -141,9 +141,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/bon@3.9.3",
+      "purl": "pkg:cargo/bon@3.10.0",
       "type": "library",
-      "version": "3.9.3"
+      "version": "3.10.0"
     },
     {
       "bom-ref": "pkg:cargo/cfg-if@1.0.4",
@@ -285,7 +285,7 @@
       "version": "1.0.13"
     },
     {
-      "bom-ref": "pkg:cargo/darling@0.23.0",
+      "bom-ref": "pkg:cargo/darling@0.24.1",
       "evidence": {
         "identity": [
           {
@@ -306,7 +306,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "25ae13da2f202d56bd7f91c25fba009e7717a1e4a1cc98a76d844b65ae912e9d"
+          "content": "ed17f5901b6630b993ca003def43f2f8ef4014fc13b047b57aad617ff32bc2ec"
         }
       ],
       "licenses": [
@@ -323,12 +323,12 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/darling@0.23.0",
+      "purl": "pkg:cargo/darling@0.24.1",
       "type": "library",
-      "version": "0.23.0"
+      "version": "0.24.1"
     },
     {
-      "bom-ref": "pkg:cargo/darling_core@0.23.0",
+      "bom-ref": "pkg:cargo/darling_core@0.24.1",
       "evidence": {
         "identity": [
           {
@@ -349,7 +349,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "9865a50f7c335f53564bb694ef660825eb8610e0a53d3e11bf1b0d3df31e03b0"
+          "content": "6837e2cf7485aaae18f86181d2f0e9a7ed297a025e220aeabf63fdebd3a2ddff"
         }
       ],
       "licenses": [
@@ -366,12 +366,12 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/darling_core@0.23.0",
+      "purl": "pkg:cargo/darling_core@0.24.1",
       "type": "library",
-      "version": "0.23.0"
+      "version": "0.24.1"
     },
     {
-      "bom-ref": "pkg:cargo/darling_macro@0.23.0",
+      "bom-ref": "pkg:cargo/darling_macro@0.24.1",
       "evidence": {
         "identity": [
           {
@@ -392,7 +392,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "ac3984ec7bd6cfa798e62b4a642426a5be0e68f9401cfc2a01e3fa9ea2fcdb8d"
+          "content": "2ac7135c3ef02b2f7833bbeb1be5ba7f966dcde8a87c6b87f65a778d71a02785"
         }
       ],
       "licenses": [
@@ -409,9 +409,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/darling_macro@0.23.0",
+      "purl": "pkg:cargo/darling_macro@0.24.1",
       "type": "library",
-      "version": "0.23.0"
+      "version": "0.24.1"
     },
     {
       "bom-ref": "pkg:cargo/futures-channel@0.3.34",
@@ -1339,7 +1339,7 @@
       "version": "0.2.17"
     },
     {
-      "bom-ref": "pkg:cargo/prettyplease@0.2.37",
+      "bom-ref": "pkg:cargo/prettyplease@0.3.0",
       "evidence": {
         "identity": [
           {
@@ -1360,7 +1360,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b"
+          "content": "2bfe0f4c752e450fc2faf62654f1c134747922825d5b04ca717b8874f41a40c0"
         }
       ],
       "licenses": [
@@ -1382,9 +1382,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/prettyplease@0.2.37",
+      "purl": "pkg:cargo/prettyplease@0.3.0",
       "type": "library",
-      "version": "0.2.37"
+      "version": "0.3.0"
     },
     {
       "bom-ref": "pkg:cargo/proc-macro2@1.0.107",
@@ -1529,54 +1529,6 @@
       "purl": "pkg:cargo/rustc-hash@2.1.3",
       "type": "library",
       "version": "2.1.3"
-    },
-    {
-      "bom-ref": "pkg:cargo/rustversion@1.0.23",
-      "evidence": {
-        "identity": [
-          {
-            "concludedValue": "Cargo.lock",
-            "confidence": 0.6,
-            "field": "purl",
-            "methods": [
-              {
-                "confidence": 0.6,
-                "technique": "manifest-analysis",
-                "value": "Cargo.lock"
-              }
-            ]
-          }
-        ]
-      },
-      "group": "",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0"
-          }
-        },
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "name": "rustversion",
-      "properties": [
-        {
-          "name": "SrcFile",
-          "value": "Cargo.lock"
-        }
-      ],
-      "purl": "pkg:cargo/rustversion@1.0.23",
-      "type": "library",
-      "version": "1.0.23"
     },
     {
       "bom-ref": "pkg:cargo/semver@1.0.28",
@@ -2574,22 +2526,20 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/bon-macros@3.9.3",
-        "pkg:cargo/rustversion@1.0.23"
+        "pkg:cargo/bon-macros@3.10.0"
       ],
-      "ref": "pkg:cargo/bon@3.9.3"
+      "ref": "pkg:cargo/bon@3.10.0"
     },
     {
       "dependsOn": [
-        "pkg:cargo/darling@0.23.0",
+        "pkg:cargo/darling@0.24.1",
         "pkg:cargo/ident_case@1.0.1",
-        "pkg:cargo/prettyplease@0.2.37",
+        "pkg:cargo/prettyplease@0.3.0",
         "pkg:cargo/proc-macro2@1.0.107",
         "pkg:cargo/quote@1.0.47",
-        "pkg:cargo/rustversion@1.0.23",
-        "pkg:cargo/syn@2.0.119"
+        "pkg:cargo/syn@3.0.3"
       ],
-      "ref": "pkg:cargo/bon-macros@3.9.3"
+      "ref": "pkg:cargo/bon-macros@3.10.0"
     },
     {
       "dependsOn": [],
@@ -2607,10 +2557,10 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/darling_core@0.23.0",
-        "pkg:cargo/darling_macro@0.23.0"
+        "pkg:cargo/darling_core@0.24.1",
+        "pkg:cargo/darling_macro@0.24.1"
       ],
-      "ref": "pkg:cargo/darling@0.23.0"
+      "ref": "pkg:cargo/darling@0.24.1"
     },
     {
       "dependsOn": [
@@ -2618,17 +2568,17 @@
         "pkg:cargo/proc-macro2@1.0.107",
         "pkg:cargo/quote@1.0.47",
         "pkg:cargo/strsim@0.11.1",
-        "pkg:cargo/syn@2.0.119"
+        "pkg:cargo/syn@3.0.3"
       ],
-      "ref": "pkg:cargo/darling_core@0.23.0"
+      "ref": "pkg:cargo/darling_core@0.24.1"
     },
     {
       "dependsOn": [
-        "pkg:cargo/darling_core@0.23.0",
+        "pkg:cargo/darling_core@0.24.1",
         "pkg:cargo/quote@1.0.47",
-        "pkg:cargo/syn@2.0.119"
+        "pkg:cargo/syn@3.0.3"
       ],
-      "ref": "pkg:cargo/darling_macro@0.23.0"
+      "ref": "pkg:cargo/darling_macro@0.24.1"
     },
     {
       "dependsOn": [
@@ -2770,9 +2720,9 @@
     {
       "dependsOn": [
         "pkg:cargo/proc-macro2@1.0.107",
-        "pkg:cargo/syn@2.0.119"
+        "pkg:cargo/syn@3.0.3"
       ],
-      "ref": "pkg:cargo/prettyplease@0.2.37"
+      "ref": "pkg:cargo/prettyplease@0.3.0"
     },
     {
       "dependsOn": [
@@ -2789,10 +2739,6 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/rustc-hash@2.1.3"
-    },
-    {
-      "dependsOn": [],
-      "ref": "pkg:cargo/rustversion@1.0.23"
     },
     {
       "dependsOn": [],
@@ -2843,7 +2789,7 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/bon@3.9.3",
+        "pkg:cargo/bon@3.10.0",
         "pkg:cargo/unicode-case-mapping@1.0.0",
         "pkg:cargo/unicode-normalization@0.1.25",
         "pkg:cargo/unicode-segmentation@1.13.3"
