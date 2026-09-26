@@ -123,7 +123,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: stella/.github/.github/actions/changeset-policy@5628b97fb3c560c0d961baa60c272c598eddcab5 # v1.7.0
+      - uses: stella/.github/.github/actions/changeset-policy@2ac805220ed86dcaa154e332e0f3dbbc7b0e8024 # v1.7.1
         with:
           release-paths: |
             src/**
@@ -153,7 +153,7 @@ jobs:
   napi-ci:
     if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (needs.trust-check.result == 'success' || needs.trust-check.result == 'skipped') }}
     needs: [check-changes, trust-check]
-    uses: stella/.github/.github/workflows/rust-napi-ci.yml@5628b97fb3c560c0d961baa60c272c598eddcab5 # v1.7.0
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@2ac805220ed86dcaa154e332e0f3dbbc7b0e8024 # v1.7.1
     with:
       node-version: "22"
       trusted: ${{ (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') && 'true' || 'false' }}
