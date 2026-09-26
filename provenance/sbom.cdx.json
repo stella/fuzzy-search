@@ -1200,7 +1200,7 @@
       "version": "3.3.0"
     },
     {
-      "bom-ref": "pkg:cargo/napi@3.9.2",
+      "bom-ref": "pkg:cargo/napi@3.11.0",
       "evidence": {
         "identity": [
           {
@@ -1221,7 +1221,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "26d3c7dd60231116a47854321c9ac8df6f13435d11aa3a59d8533a76e07a3730"
+          "content": "de33522036981030a75c231829566bc63414e08101a6f5ff4ac6cef19c8e0941"
         }
       ],
       "licenses": [
@@ -1238,9 +1238,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/napi@3.9.2",
+      "purl": "pkg:cargo/napi@3.11.0",
       "type": "library",
-      "version": "3.9.2"
+      "version": "3.11.0"
     },
     {
       "bom-ref": "pkg:cargo/nohash-hasher@0.2.0",
@@ -2726,7 +2726,7 @@
         "pkg:cargo/serde@1.0.229",
         "pkg:cargo/serde_json@1.0.151"
       ],
-      "ref": "pkg:cargo/napi@3.9.2"
+      "ref": "pkg:cargo/napi@3.11.0"
     },
     {
       "dependsOn": [],
@@ -2836,7 +2836,7 @@
       "dependsOn": [
         "pkg:cargo/napi-build@2.3.2",
         "pkg:cargo/napi-derive@3.5.6",
-        "pkg:cargo/napi@3.9.2",
+        "pkg:cargo/napi@3.11.0",
         "pkg:cargo/stella-fuzzy-search-core@1.1.4"
       ],
       "ref": "pkg:cargo/stella-fuzzy-search@1.1.4"
