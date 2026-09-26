@@ -18,7 +18,7 @@ categories = ["text-processing"]
 crate-type = ["cdylib"]
 
 [dependencies]
-napi = { version = "=3.9.2", default-features = false, features = [
+napi = { version = "=3.11.0", default-features = false, features = [
   "napi9",
   "serde-json",
 ] }
