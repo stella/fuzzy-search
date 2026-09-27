@@ -26,7 +26,9 @@ const isOptionalBoolean = (value: unknown) =>
 const isOptionalString = (value: unknown) =>
   value === undefined || typeof value === "string";
 
-const isLoaderResult = (value: unknown): value is LoaderResult => {
+const isLoaderResult = (
+  value: unknown,
+): value is LoaderResult => {
   if (typeof value !== "object" || value === null) {
     return false;
   }
@@ -45,6 +47,22 @@ const loadBinding = (scenario: LoaderScenario) => {
     const Module = require("node:module");
     const scenario = JSON.parse(process.argv[1]);
     const originalLoad = Module._load;
+    const originalResolveFilename = Module._resolveFilename;
+    const missing = (message) =>
+      Object.assign(new Error(message), { code: "MODULE_NOT_FOUND" });
+    // The loader resolves each WASI candidate (and a local candidate's .wasm
+    // artifact) before requiring it, so resolution must follow the scenario.
+    Module._resolveFilename = (request, ...rest) => {
+      if (/^\\.\\/fuzzy-search\\.(wasi\\.cjs|wasm32-wasi(\\.debug)?\\.wasm)$/.test(request)) {
+        if (scenario.localWasi) return request;
+        throw missing("local WASI unavailable");
+      }
+      if (request.startsWith("@stll/fuzzy-search-wasm32-wasi")) {
+        if (scenario.packageWasi) return request;
+        throw missing("package WASI unavailable");
+      }
+      return originalResolveFilename(request, ...rest);
+    };
     const bindings = {
       localWasi: { source: "local-wasi" },
       native: { source: "native" },
@@ -95,7 +113,9 @@ const loadBinding = (scenario: LoaderScenario) => {
   expect(result.status).toBe(0);
   const parsed: unknown = JSON.parse(result.stdout);
   if (!isLoaderResult(parsed)) {
-    throw new Error(`Unexpected loader result: ${result.stdout}`);
+    throw new Error(
+      `Unexpected loader result: ${result.stdout}`,
+    );
   }
   return parsed;
 };
@@ -119,11 +139,21 @@ describe("generated loader WASI selection", () => {
     });
   });
 
-  test("true selects the packaged WASI candidate last", () => {
+  test("true prefers the local WASI candidate", () => {
     expect(
       loadBinding({
         forceWasi: "true",
         localWasi: true,
+        native: true,
+        packageWasi: true,
+      }),
+    ).toEqual({ source: "local-wasi" });
+  });
+
+  test("true selects the packaged WASI candidate without a local one", () => {
+    expect(
+      loadBinding({
+        forceWasi: "true",
         native: true,
         packageWasi: true,
       }),
@@ -152,6 +182,8 @@ describe("generated loader WASI selection", () => {
 
     expect(result.causePresent).toBe(true);
     expect(result.causeEnumerable).toBe(false);
-    expect(result.error).toContain("Cannot find native binding");
+    expect(result.error).toContain(
+      "Cannot find native binding",
+    );
   });
 });
