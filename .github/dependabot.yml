@@ -4,16 +4,18 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "saturday"
-      time: "09:00"
+      interval: "daily"
+      time: "03:00"
       timezone: "Europe/Prague"
     cooldown:
       default-days: 5
     groups:
-      actions:
+      minor-and-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
     labels:
       - "📦 dependencies"
     commit-message:
@@ -24,9 +26,8 @@ updates:
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "saturday"
-      time: "09:00"
+      interval: "daily"
+      time: "03:00"
       timezone: "Europe/Prague"
     cooldown:
       default-days: 5
@@ -36,37 +37,52 @@ updates:
       prefix: "chore"
     reviewers:
       - "jan-kubica"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "bun"
     directories:
       - "/"
       - "/wasm"
     schedule:
-      interval: "weekly"
-      day: "saturday"
-      time: "09:00"
+      interval: "daily"
+      time: "03:00"
       timezone: "Europe/Prague"
     cooldown:
       default-days: 5
     open-pull-requests-limit: 10
     groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
       napi:
         patterns:
           - "@napi-rs/*"
           - "napi*"
+        update-types:
+          - "major"
       emnapi:
         patterns:
           - "@emnapi/*"
           - "emnapi"
           - "@napi-rs/wasm-runtime"
           - "@tybys/wasm-util"
+        update-types:
+          - "major"
       oxc:
         patterns:
           - "oxlint"
           - "oxfmt"
-      misc:
-        patterns:
-          - "*"
+        update-types:
+          - "major"
     labels:
       - "📦 dependencies"
     commit-message:
