@@ -306,13 +306,13 @@ describe("whole words", () => {
       ["a putinov b", 2, 9, 2],
       ["xxputin", 0, 7, 2],
     ] as const;
-    for (const [hay, start, end, distance] of cases) {
+    for (const [hay, start, end, dist] of cases) {
       const matches = fs.findIter(hay);
       expect(matches).toHaveLength(1);
       expect(matches[0]).toMatchObject({
         start,
         end,
-        distance,
+        distance: dist,
         text: hay.slice(start, end),
       });
     }
@@ -346,10 +346,13 @@ describe("whole words", () => {
       ["putinov", "putin", 0],
       ["xxputin", "putin", 0],
     ] as const;
-    for (const [hay, text, distance] of cases) {
+    for (const [hay, text, dist] of cases) {
       const matches = fs.findIter(hay);
       expect(matches).toHaveLength(1);
-      expect(matches[0]).toMatchObject({ text, distance });
+      expect(matches[0]).toMatchObject({
+        text,
+        distance: dist,
+      });
     }
   });
 });
