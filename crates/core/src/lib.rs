@@ -563,6 +563,66 @@ fn edit_distance(a: &[char], b: &[char], use_damerau: bool) -> usize {
 // window lengths [m-k, m+k] and computing
 // Levenshtein distance for each.
 
+/// Normalized haystack plus what is needed to map
+/// spans back to the original text.
+struct Haystack {
+  orig_chars: Vec<char>,
+  text_chars: Vec<char>,
+  pos_map: Vec<usize>,
+  boundary: BoundaryMode,
+}
+
+impl Haystack {
+  fn new(haystack: &str, search: &FuzzySearch) -> Self {
+    let (text_chars, pos_map) = normalize_with_map(
+      haystack,
+      search.normalize_diacritics,
+      search.case_insensitive,
+    );
+    Self {
+      orig_chars: haystack.chars().collect(),
+      text_chars,
+      pos_map,
+      boundary: choose_boundary_mode(haystack, search.unicode_boundaries),
+    }
+  }
+
+  /// Maps a normalized `[start, end)` span to
+  /// original char indices.
+  fn original_span(&self, start: usize, end: usize) -> Result<(usize, usize)> {
+    Ok((
+      get_position(&self.pos_map, start)?,
+      original_end_position(&self.pos_map, end)?,
+    ))
+  }
+}
+
+/// Which windows `find_start` may return.
+#[derive(Clone, Copy)]
+enum Alignment<'a> {
+  /// Any window within the distance budget.
+  Any,
+  /// Only windows spanning whole words of the
+  /// original text.
+  WholeWord(&'a Haystack),
+}
+
+impl Alignment<'_> {
+  fn accepts(self, start: usize, end: usize) -> Result<bool> {
+    match self {
+      Self::Any => Ok(true),
+      Self::WholeWord(haystack) => {
+        let (orig_start, orig_end) = haystack.original_span(start, end)?;
+        Ok(haystack.boundary.is_whole_word(
+          &haystack.orig_chars,
+          orig_start,
+          orig_end,
+        ))
+      }
+    }
+  }
+}
+
 fn find_start(
   pattern: &[char],
   text: &[char],
@@ -570,12 +630,19 @@ fn find_start(
   dist: u8,
   actual_max: u8,
   use_damerau: bool,
-) -> Option<(usize, u8)> {
+  alignment: Alignment<'_>,
+) -> Result<Option<(usize, u8)>> {
   let m = pattern.len();
   // `dist` determines the window range (from
   // Myers prefilter). `actual_max` is the real
   // distance threshold for the chosen metric.
-  let k = usize::from(dist);
+  // A whole-word window may be worse than the
+  // best window ending here, so its length can
+  // differ from `m` by up to `actual_max`.
+  let k = match alignment {
+    Alignment::Any => usize::from(dist),
+    Alignment::WholeWord(_) => usize::from(dist.max(actual_max)),
+  };
   let max_k = usize::from(actual_max);
 
   // Enforce min_len >= 1 to avoid zero-length
@@ -584,12 +651,13 @@ fn find_start(
   let max_len = m.saturating_add(k).min(end);
 
   // Try exact pattern length first (most common).
-  if end >= m {
-    let start = end.checked_sub(m)?;
-    let window = text.get(start..end)?;
+  if let Some(start) = end.checked_sub(m)
+    && let Some(window) = text.get(start..end)
+    && alignment.accepts(start, end)?
+  {
     let d = edit_distance(pattern, window, use_damerau);
     if d <= max_k {
-      return distance_to_u8(d).map(|distance| (start, distance));
+      return Ok(distance_to_u8(d).map(|distance| (start, distance)));
     }
   }
 
@@ -608,6 +676,9 @@ fn find_start(
     let Some(window) = text.get(start..end) else {
       continue;
     };
+    if !alignment.accepts(start, end)? {
+      continue;
+    }
     let d = edit_distance(pattern, window, use_damerau);
     if d <= max_k {
       let Some(distance) = distance_to_u8(d) else {
@@ -622,7 +693,7 @@ fn find_start(
       }
     }
   }
-  best
+  Ok(best)
 }
 
 // ─── Match region extraction ─────────────────
@@ -640,9 +711,10 @@ fn extract_matches(
   window_dist: u8,
   actual_max: u8,
   use_damerau: bool,
-) -> Vec<(usize, usize, u8)> {
+  alignment: Alignment<'_>,
+) -> Result<Vec<(usize, usize, u8)>> {
   if end_positions.is_empty() {
-    return vec![];
+    return Ok(vec![]);
   }
 
   // Greedy left-to-right. For each end position,
@@ -673,7 +745,7 @@ fn extract_matches(
     {
       let (je, jd) = end_positions[j];
       if let Some((start, actual_dist)) =
-        find_start(pattern, text, je, jd, actual_max, use_damerau)
+        find_start(pattern, text, je, jd, actual_max, use_damerau, alignment)?
         && start >= last_match_end
       {
         let len = je - start;
@@ -709,7 +781,7 @@ fn extract_matches(
     }
   }
 
-  matches
+  Ok(matches)
 }
 
 // ─── Standalone distance function ────────────
@@ -876,14 +948,19 @@ impl FuzzySearch {
     }
   }
 
-  /// Dispatch `extract_matches` with metric.
-  fn extract(
+  /// Matches of one pattern as original-char
+  /// `(start, end, distance)` spans. With
+  /// `whole_words`, only whole-word windows are
+  /// candidates, so a non-whole-word window never
+  /// displaces an overlapping whole-word one.
+  fn pattern_matches(
     &self,
-    pattern: &[char],
-    text: &[char],
-    ends: &[(usize, u8)],
-    max_dist: u8,
-  ) -> Vec<(usize, usize, u8)> {
+    pat: &PatternInfo,
+    haystack: &Haystack,
+  ) -> Result<Vec<(usize, usize, u8)>> {
+    let pattern = pat.chars.as_slice();
+    let max_dist = pat.max_dist;
+    let ends = self.find_ends(pattern, &haystack.text_chars, max_dist);
     // For Damerau: use expanded window for
     // candidate search, but filter by actual
     // max_dist via the distance function.
@@ -892,39 +969,36 @@ impl FuzzySearch {
     } else {
       max_dist
     };
-    extract_matches(
+    let alignment = if self.whole_words {
+      Alignment::WholeWord(haystack)
+    } else {
+      Alignment::Any
+    };
+    let matches = extract_matches(
       pattern,
-      text,
-      ends,
+      &haystack.text_chars,
+      &ends,
       window_dist,
       max_dist,
       self.use_damerau,
-    )
+      alignment,
+    )?;
+    matches
+      .into_iter()
+      .map(|(start, end, dist)| {
+        let (orig_start, orig_end) = haystack.original_span(start, end)?;
+        Ok((orig_start, orig_end, dist))
+      })
+      .collect()
   }
 
   /// Returns `true` if any pattern matches
   /// within its edit distance.
   pub fn is_match(&self, haystack: &str) -> Result<bool> {
-    let orig_chars: Vec<char> = haystack.chars().collect();
-    let boundary = choose_boundary_mode(haystack, self.unicode_boundaries);
-    let (text_chars, pos_map) = normalize_with_map(
-      haystack,
-      self.normalize_diacritics,
-      self.case_insensitive,
-    );
-
+    let prepared = Haystack::new(haystack, self);
     for pat in &self.patterns {
-      let ends = self.find_ends(&pat.chars, &text_chars, pat.max_dist);
-      let matches = self.extract(&pat.chars, &text_chars, &ends, pat.max_dist);
-      for (start, end, _) in matches {
-        if !self.whole_words {
-          return Ok(true);
-        }
-        let orig_start = get_position(&pos_map, start)?;
-        let orig_end = original_end_position(&pos_map, end)?;
-        if boundary.is_whole_word(&orig_chars, orig_start, orig_end) {
-          return Ok(true);
-        }
+      if !self.pattern_matches(pat, &prepared)?.is_empty() {
+        return Ok(true);
       }
     }
     Ok(false)
@@ -933,31 +1007,15 @@ impl FuzzySearch {
   /// Returns packed `[pattern, start, end,
   /// distance]` quads using UTF-16 offsets.
   pub fn find_iter_packed(&self, haystack: &str) -> Result<Vec<u32>> {
-    let orig_chars: Vec<char> = haystack.chars().collect();
-    let utf16_map = build_utf16_map(&orig_chars)?;
-    let boundary = choose_boundary_mode(haystack, self.unicode_boundaries);
-    let (text_chars, pos_map) = normalize_with_map(
-      haystack,
-      self.normalize_diacritics,
-      self.case_insensitive,
-    );
+    let prepared = Haystack::new(haystack, self);
+    let utf16_map = build_utf16_map(&prepared.orig_chars)?;
 
     let mut all: Vec<(u32, u32, u32, u32)> = Vec::new();
 
     for (idx, pat) in self.patterns.iter().enumerate() {
-      let ends = self.find_ends(&pat.chars, &text_chars, pat.max_dist);
-      let matches = self.extract(&pat.chars, &text_chars, &ends, pat.max_dist);
-
-      for (start, end, dist) in matches {
-        let orig_start = get_position(&pos_map, start)?;
-        let orig_end = original_end_position(&pos_map, end)?;
-
-        if self.whole_words
-          && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
-        {
-          continue;
-        }
-
+      for (orig_start, orig_end, dist) in
+        self.pattern_matches(pat, &prepared)?
+      {
         let utf16_start = get_offset(&utf16_map, orig_start)?;
         let utf16_end = get_offset(&utf16_map, orig_end)?;
         all.push((usize_to_u32(idx)?, utf16_start, utf16_end, u32::from(dist)));
@@ -1000,31 +1058,15 @@ impl FuzzySearch {
   /// Only `start`/`end` change unit (UTF-8 bytes); `pattern` and `distance` are
   /// preserved exactly.
   pub fn find_iter_packed_bytes(&self, haystack: &str) -> Result<Vec<u32>> {
-    let orig_chars: Vec<char> = haystack.chars().collect();
-    let byte_map = build_byte_map(haystack, orig_chars.len())?;
-    let boundary = choose_boundary_mode(haystack, self.unicode_boundaries);
-    let (text_chars, pos_map) = normalize_with_map(
-      haystack,
-      self.normalize_diacritics,
-      self.case_insensitive,
-    );
+    let prepared = Haystack::new(haystack, self);
+    let byte_map = build_byte_map(haystack, prepared.orig_chars.len())?;
 
     let mut all: Vec<(u32, u32, u32, u32)> = Vec::new();
 
     for (idx, pat) in self.patterns.iter().enumerate() {
-      let ends = self.find_ends(&pat.chars, &text_chars, pat.max_dist);
-      let matches = self.extract(&pat.chars, &text_chars, &ends, pat.max_dist);
-
-      for (start, end, dist) in matches {
-        let orig_start = get_position(&pos_map, start)?;
-        let orig_end = original_end_position(&pos_map, end)?;
-
-        if self.whole_words
-          && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
-        {
-          continue;
-        }
-
+      for (orig_start, orig_end, dist) in
+        self.pattern_matches(pat, &prepared)?
+      {
         let byte_start = get_offset(&byte_map, orig_start)?;
         let byte_end = get_offset(&byte_map, orig_end)?;
         all.push((usize_to_u32(idx)?, byte_start, byte_end, u32::from(dist)));
@@ -1071,31 +1113,17 @@ impl FuzzySearch {
       )));
     }
 
-    let orig_chars: Vec<char> = haystack.chars().collect();
-    let boundary = choose_boundary_mode(haystack, self.unicode_boundaries);
-    let (text_chars, pos_map) = normalize_with_map(
-      haystack,
-      self.normalize_diacritics,
-      self.case_insensitive,
-    );
+    let prepared = Haystack::new(haystack, self);
+    let orig_chars = &prepared.orig_chars;
 
     // Collect all matches across patterns.
     // (start, end, pat_idx, distance)
     let mut all: Vec<(usize, usize, u32, u8)> = Vec::new();
 
     for (idx, pat) in self.patterns.iter().enumerate() {
-      let ends = self.find_ends(&pat.chars, &text_chars, pat.max_dist);
-      let matches = self.extract(&pat.chars, &text_chars, &ends, pat.max_dist);
-
-      for (start, end, dist) in matches {
-        let orig_start = get_position(&pos_map, start)?;
-        let orig_end = original_end_position(&pos_map, end)?;
-
-        if self.whole_words
-          && !boundary.is_whole_word(&orig_chars, orig_start, orig_end)
-        {
-          continue;
-        }
+      for (orig_start, orig_end, dist) in
+        self.pattern_matches(pat, &prepared)?
+      {
         all.push((orig_start, orig_end, usize_to_u32(idx)?, dist));
       }
     }
@@ -1153,8 +1181,8 @@ impl FuzzySearch {
 )]
 mod tests {
   use super::{
-    FuzzySearch, Options, PatternEntry, normalize_with_map,
-    original_end_position,
+    FuzzySearch, Metric, Options, PatternEntry, edit_distance,
+    is_whole_word_inline, normalize_with_map, original_end_position,
   };
 
   fn matcher(pattern: &str) -> FuzzySearch {
@@ -1301,6 +1329,196 @@ mod tests {
       search.replace_all(haystack, &[String::from("X")]).unwrap(),
       "Xx"
     );
+  }
+
+  fn matcher_with(
+    pattern: &str,
+    distance: u8,
+    options: Options,
+  ) -> FuzzySearch {
+    FuzzySearch::new(
+      vec![PatternEntry {
+        pattern: String::from(pattern),
+        distance: Some(distance),
+      }],
+      options,
+    )
+    .unwrap()
+  }
+
+  #[test]
+  fn whole_word_match_beside_a_shorter_overlapping_candidate() {
+    let search = matcher_with("putin", 2, Options::default());
+
+    // The exact-length window `uttin` is not whole-word; `puttin` (distance 1)
+    // is.
+    assert_eq!(search.find_iter_packed("puttin").unwrap(), vec![0, 0, 6, 1]);
+    // The distance-0 prefix `putin` is not whole-word; `putinov` (distance 2)
+    // is.
+    assert_eq!(
+      search.find_iter_packed("putinov").unwrap(),
+      vec![0, 0, 7, 2]
+    );
+    assert_eq!(
+      search.find_iter_packed("a putinov b").unwrap(),
+      vec![0, 2, 9, 2]
+    );
+    // Leading insertions: the distance-0 suffix is not whole-word.
+    assert_eq!(
+      search.find_iter_packed("xxputin").unwrap(),
+      vec![0, 0, 7, 2]
+    );
+    assert_eq!(
+      search.find_iter_packed_bytes("é xxputin").unwrap(),
+      vec![0, 3, 10, 2]
+    );
+
+    assert!(search.is_match("puttin").unwrap());
+    assert!(search.is_match("putinov").unwrap());
+    assert_eq!(
+      search
+        .replace_all("a putinov b puttin", &[String::from("X")])
+        .unwrap(),
+      "a X b X"
+    );
+    // Beyond the budget there is still no whole-word match.
+    assert!(!search.is_match("putinovo").unwrap());
+  }
+
+  #[test]
+  fn whole_word_match_with_normalized_diacritics() {
+    let search = matcher_with(
+      "putin",
+      2,
+      Options {
+        normalize_diacritics: true,
+        ..Options::default()
+      },
+    );
+
+    // Precomposed and decomposed accents; offsets stay in original UTF-16
+    // units and cover the trailing combining mark.
+    assert_eq!(
+      search.find_iter_packed("a pútinov").unwrap(),
+      vec![0, 2, 9, 2]
+    );
+    assert_eq!(
+      search.find_iter_packed("a pu\u{0301}tinov").unwrap(),
+      vec![0, 2, 10, 2]
+    );
+    assert_eq!(
+      search.find_iter_packed("puttín\u{0301}").unwrap(),
+      vec![0, 0, 7, 1]
+    );
+    assert_eq!(
+      search
+        .replace_all("a pu\u{0301}tinov b", &[String::from("X")])
+        .unwrap(),
+      "a X b"
+    );
+  }
+
+  #[test]
+  fn whole_word_match_with_damerau_metric() {
+    let search = matcher_with(
+      "putin",
+      2,
+      Options {
+        metric: Metric::DamerauLevenshtein,
+        ..Options::default()
+      },
+    );
+    assert_eq!(
+      search.find_iter_packed("putinov").unwrap(),
+      vec![0, 0, 7, 2]
+    );
+    assert_eq!(search.find_iter_packed("uptinx").unwrap(), vec![0, 0, 6, 2]);
+  }
+
+  #[test]
+  fn substring_mode_keeps_its_candidate_selection() {
+    let search = matcher_with(
+      "putin",
+      2,
+      Options {
+        whole_words: false,
+        ..Options::default()
+      },
+    );
+    assert_eq!(search.find_iter_packed("puttin").unwrap(), vec![0, 0, 5, 2]);
+    assert_eq!(
+      search.find_iter_packed("putinov").unwrap(),
+      vec![0, 0, 5, 0]
+    );
+    assert_eq!(
+      search.find_iter_packed("xxputin").unwrap(),
+      vec![0, 2, 7, 0]
+    );
+    assert_eq!(
+      search
+        .replace_all("a putinov b", &[String::from("X")])
+        .unwrap(),
+      "a Xov b"
+    );
+  }
+
+  /// Whole-word completeness and soundness: `is_match` is true exactly when
+  /// some whole-word window of the haystack is within the distance budget.
+  #[test]
+  fn fuzz_whole_word_is_match_agrees_with_brute_force() {
+    let alphabet: [char; 7] = ['a', 'b', 'c', 'd', ' ', '.', 'a'];
+    let mut rng = Rng(0x2545_F491_4F6C_DD1D);
+
+    for iteration in 0..20_000 {
+      let use_damerau = iteration % 2 == 1;
+      let pattern_len = rng.below(4) + 2;
+      let pattern: Vec<char> =
+        (0..pattern_len).map(|_| alphabet[rng.below(4)]).collect();
+      let max_dist = u8::try_from(rng.below(pattern_len.min(3)) + 1)
+        .unwrap()
+        .min(u8::try_from(pattern_len - 1).unwrap());
+      let text_len = rng.below(12) + 1;
+      let text: Vec<char> = (0..text_len)
+        .map(|_| alphabet[rng.below(alphabet.len())])
+        .collect();
+
+      let pattern_str: String = pattern.iter().collect();
+      let text_str: String = text.iter().collect();
+      let search = matcher_with(
+        &pattern_str,
+        max_dist,
+        Options {
+          metric: if use_damerau {
+            Metric::DamerauLevenshtein
+          } else {
+            Metric::Levenshtein
+          },
+          unicode_boundaries: false,
+          ..Options::default()
+        },
+      );
+
+      let expected = (0..text_len).any(|start| {
+        (start + 1..=text_len).any(|end| {
+          is_whole_word_inline(&text, start, end)
+            && edit_distance(&pattern, &text[start..end], use_damerau)
+              <= usize::from(max_dist)
+        })
+      });
+
+      assert_eq!(
+        search.is_match(&text_str).unwrap(),
+        expected,
+        "pattern={pattern_str:?} k={max_dist} damerau={use_damerau} \
+         text={text_str:?}"
+      );
+      assert_eq!(
+        !search.find_iter_packed(&text_str).unwrap().is_empty(),
+        expected,
+        "pattern={pattern_str:?} k={max_dist} damerau={use_damerau} \
+         text={text_str:?}"
+      );
+    }
   }
 
   // Small deterministic xorshift PRNG so the fuzz test is reproducible.

@@ -295,6 +295,66 @@ describe("whole words", () => {
     expect(fs.isMatch("京ab")).toBe(false);
     expect(fs.isMatch("京a b")).toBe(true);
   });
+
+  test("keeps whole words beside overlapping hits", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "putin", distance: 2 }],
+      { wholeWords: true },
+    );
+    const cases = [
+      ["puttin", 0, 6, 1],
+      ["a putinov b", 2, 9, 2],
+      ["xxputin", 0, 7, 2],
+    ] as const;
+    for (const [hay, start, end, dist] of cases) {
+      const matches = fs.findIter(hay);
+      expect(matches).toHaveLength(1);
+      expect(matches[0]).toMatchObject({
+        start,
+        end,
+        distance: dist,
+        text: hay.slice(start, end),
+      });
+    }
+    expect(fs.isMatch("putinovo")).toBe(false);
+    const hay = "a putinov b puttin";
+    expect(fs.replaceAll(hay, ["X"])).toBe("a X b X");
+  });
+
+  test("whole words with normalized diacritics", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "putin", distance: 2 }],
+      { wholeWords: true, normalizeDiacritics: true },
+    );
+    const matches = fs.findIter("a pu\u0301tinov b");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      start: 2,
+      end: 10,
+      distance: 2,
+      text: "pu\u0301tinov",
+    });
+  });
+
+  test("substring mode keeps its selection", () => {
+    const fs = new FuzzySearch(
+      [{ pattern: "putin", distance: 2 }],
+      { wholeWords: false },
+    );
+    const cases = [
+      ["puttin", "putti", 2],
+      ["putinov", "putin", 0],
+      ["xxputin", "putin", 0],
+    ] as const;
+    for (const [hay, text, dist] of cases) {
+      const matches = fs.findIter(hay);
+      expect(matches).toHaveLength(1);
+      expect(matches[0]).toMatchObject({
+        text,
+        distance: dist,
+      });
+    }
+  });
 });
 
 // ─── Unicode ─────────────────────────────────
