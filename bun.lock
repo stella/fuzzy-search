@@ -7,15 +7,15 @@
       "devDependencies": {
         "@changesets/changelog-github": "^1.0.1",
         "@changesets/cli": "^3.0.3",
-        "@emnapi/core": "1.11.3",
-        "@emnapi/runtime": "1.11.3",
+        "@emnapi/core": "2.0.0-alpha.5",
+        "@emnapi/runtime": "2.0.0-alpha.5",
         "@napi-rs/cli": "3.10.4",
         "@stll/oxlint-config": "0.7.0",
         "@stll/typescript-config": "0.6.0",
         "@tybys/wasm-util": "0.10.4",
         "@types/node": "^26.6.2",
         "bun-types": "1.4.2",
-        "emnapi": "1.11.3",
+        "emnapi": "2.0.0-alpha.5",
         "fast-check": "^4.10.2",
         "oxfmt": "0.70.0",
         "oxlint": "1.85.0",
@@ -27,7 +27,7 @@
     },
   },
   "overrides": {
-    "emnapi": "1.11.3",
+    "emnapi": "2.0.0-alpha.5",
   },
   "packages": {
     "@changesets/apply-release-plan": ["@changesets/apply-release-plan@8.1.1", "", { "dependencies": { "@changesets/config": "^4.0.1", "@changesets/format": "^0.1.2", "@changesets/git": "^4.0.1", "@changesets/should-skip-package": "^1.0.0", "@changesets/types": "^7.0.0", "import-meta-resolve": "^4.2.0", "jsonc-parser": "^3.3.1", "semver": "^7.8.1" } }, "sha512-nk2Hbq3M9NeHMdaIRBDvawKrQJzXB9sGyBUE5yWnIKtvdcNCPj75zBekJYr0gTT2ecJH3eFeTrc8eisPImcv0Q=="],
@@ -68,11 +68,11 @@
 
     "@clack/prompts": ["@clack/prompts@1.8.1", "", { "dependencies": { "@clack/core": "1.5.1", "fast-string-width": "^3.0.2", "fast-wrap-ansi": "^0.2.0", "sisteransi": "^1.0.5" } }, "sha512-dlT1m5e/0yUL0kRNcQn7yGLVThkgbB0Ga/1AmfDDC/8ik6AIiSf2QLQO2zPYvefsHP0aFgxO93cVLCCfDp7kzQ=="],
 
-    "@emnapi/core": ["@emnapi/core@1.11.3", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.3", "tslib": "^2.4.0" } }, "sha512-zLpS5asjEb7lq8jYLq37N6XKaE41DIexlY1rF/z4/tIl3wo13Sqm28fRyfIsKZD+NZ8mM5RoKkpW/rBcuoSZSg=="],
+    "@emnapi/core": ["@emnapi/core@2.0.0-alpha.5", "", { "dependencies": { "@emnapi/wasi-threads": "2.1.0", "tslib": "^2.4.0" } }, "sha512-DbeLFquQJyYGwM3LzPdjvb4IRmAAQuTzEmqUGtIAYxlAO4ArfUZ7WMytLWDSsCAYm6MZJNeojaawQQiFrFVehg=="],
 
-    "@emnapi/runtime": ["@emnapi/runtime@1.11.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA=="],
+    "@emnapi/runtime": ["@emnapi/runtime@2.0.0-alpha.5", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-SS4jUXRklsrPKTEtW92WHdneh9QBrZGmRyeYEac2ktLN3ie1wd/BrkBbk4DqPWKhjSFfrR8NClXwMlfZ73m60A=="],
 
-    "@emnapi/wasi-threads": ["@emnapi/wasi-threads@1.2.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-ELEBe8PsLvvJ6QMr0zLt8ffvOHW/dc1m3CEzNMg7aJUv3bMaoDtw2TXyDAwkYBuroxxuHEwhRTLJSe5sya547g=="],
+    "@emnapi/wasi-threads": ["@emnapi/wasi-threads@2.1.0", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-DM18NXgQ5coifswrwhFgrqeW/UiFRaLj0aLKU0cp0FoYjEfP/hj/yUeF+Hz754ViG+jQmG2HIeDCUeQsPnRwOA=="],
 
     "@inquirer/ansi": ["@inquirer/ansi@2.0.8", "", {}, "sha512-WpQM+Ti6Z40EFwwt+uL2p4UabT+W179zHp6HhLVOzfbwnVn05IPO/eXIZXGNqcT1jbQ15SujNLzQ39k4QPPxBQ=="],
 
@@ -492,7 +492,7 @@
 
     "dts-resolver": ["dts-resolver@3.0.0", "", { "peerDependencies": { "oxc-resolver": ">=11.0.0" }, "optionalPeers": ["oxc-resolver"] }, "sha512-1T1f+z+4tl9XD+m+0HBgWoL/nm0bOIffyWaUuUSBlFg/86IWvfx+wjNaO/ybU0AJzG9/Mi5hBUgGV6zCmWEN7Q=="],
 
-    "emnapi": ["emnapi@1.11.3", "", { "peerDependencies": { "node-addon-api": ">= 6.1.0" }, "optionalPeers": ["node-addon-api"] }, "sha512-+/ZS90YK/rYfVOHtGLHkGffVsnmD/MAKaBHio+Y4XAtg75RLr4cveV/w0jTkUdLM1CcAlaRgG76mpIemWAlk0A=="],
+    "emnapi": ["emnapi@2.0.0-alpha.5", "", { "peerDependencies": { "node-addon-api": ">= 6.1.0" }, "optionalPeers": ["node-addon-api"] }, "sha512-E8LRA0oYT1KKPLMLtwWF1BNrXSpNNnOBlu1PU4m5wmBh8cNvrhm28UreTvfwJ2gg60ruyfylk4uCaJUXVhvSSg=="],
 
     "empathic": ["empathic@2.1.0", "", {}, "sha512-AnfC1ATldl49/cvZdLPDjBfrRNwbDO05aibiOtzQu3qtlbJtomNLhF30HEtn/7iBz50dlMECqATo3fG0LrdEgw=="],
 
