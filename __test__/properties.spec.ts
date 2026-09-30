@@ -7,14 +7,19 @@
  * properties that unit tests would never cover.
  *
  * Run manually: bun test __test__/properties.spec.ts
- * NOT run in CI (too slow for the default matrix).
+ * PR CI uses a fixed seed; main and manual runs explore random seeds.
  */
 import { describe, expect, test } from "bun:test";
 import fc from "fast-check";
 
 import { FuzzySearch } from "../src/index";
 
-const PARAMS = { numRuns: 1000 };
+const PARAMS = {
+  numRuns: 1000,
+  ...(process.env.GITHUB_EVENT_NAME === "pull_request"
+    ? { seed: -530956778 }
+    : {}),
+};
 
 // ─── Generators ──────────────────────────────
 
@@ -1076,51 +1081,60 @@ describe("property: distance 3", () => {
   });
 });
 
-// ─── Property 20: wholeWords ⊆ no-wholeWords ─
+// ─── Property 20: wholeWords candidate validity ─
 //
-// Every match found with wholeWords: true must
-// also be found (as a valid fuzzy match) when
-// wholeWords is false. wholeWords only filters;
-// it never creates new matches.
+// Boundaries filter candidates before greedy selection (#146), so restricted
+// results need not be a subset of unrestricted selected results. Compare each
+// returned span with the distance oracle, not another greedy selection.
 
-describe("property: wholeWords subset", () => {
-  test("wholeWords matches ⊆ no-wholeWords matches", () => {
-    fc.assert(
-      fc.property(
-        fc.array(
-          fc.string({
-            minLength: 3,
-            maxLength: 8,
-          }),
-          { minLength: 1, maxLength: 5 },
-        ),
-        fc.string({
-          minLength: 0,
-          maxLength: 80,
-        }),
-        maxDist,
-        (pats, hay, k) => {
-          const ww = buildFS(pats, k, true).findIter(hay);
-          const noWw = buildFS(pats, k, false).findIter(
-            hay,
-          );
+describe("property: wholeWords candidate validity", () => {
+  const candidateValidity = fc.property(
+    fc.array(fc.string({ minLength: 3, maxLength: 8 }), {
+      minLength: 1,
+      maxLength: 5,
+    }),
+    fc.string({ minLength: 0, maxLength: 80 }),
+    maxDist,
+    (pats, hay, k) => {
+      const matches = buildFS(pats, k, true).findIter(hay);
+      let previousEnd = 0;
+      for (const m of matches) {
+        const distance = levenshtein(
+          pats[m.pattern]!,
+          m.text,
+        );
+        expect(distance).toBeLessThanOrEqual(k);
+        expect(m.distance).toBe(distance);
+        expect(m.start).toBeGreaterThanOrEqual(previousEnd);
+        expect(m.end).toBeGreaterThan(m.start);
+        expect(m.text).toBe(hay.slice(m.start, m.end));
+        const before = hay[m.start - 1];
+        const after = hay[m.end];
+        if (before) {
+          expect(
+            !isWordChar(before) || isCjk(m.text[0]!),
+          ).toBe(true);
+        }
+        if (after) {
+          expect(
+            !isWordChar(after) || isCjk(m.text.at(-1)!),
+          ).toBe(true);
+        }
+        previousEnd = m.end;
+      }
+    },
+  );
 
-          // Every wholeWords match must be
-          // verifiable by the naive oracle
-          // (it IS a valid fuzzy match).
-          for (const m of ww) {
-            const d = levenshtein(pats[m.pattern]!, m.text);
-            expect(d).toBeLessThanOrEqual(k);
-          }
+  test("wholeWords returns valid non-overlapping candidates at word boundaries", () => {
+    fc.assert(candidateValidity, PARAMS);
+  });
 
-          // wholeWords count <= no-wholeWords.
-          expect(ww.length).toBeLessThanOrEqual(
-            noWw.length,
-          );
-        },
-      ),
-      PARAMS,
-    );
+  test("replays seed -530956778 with the candidate invariant", () => {
+    fc.assert(candidateValidity, {
+      numRuns: 1000,
+      seed: -530956778,
+      path: "740:1:3:1:1:1:1:5:3:5:3:3:7:10:0:11:13:4:9:9",
+    });
   });
 });
 
