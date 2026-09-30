@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.5
+
+### Patch Changes
+
+- [#155](https://github.com/stella/fuzzy-search/pull/155) [`bd7f484`](https://github.com/stella/fuzzy-search/commit/bd7f484cafc4d8148ecc30006a17099fccf4ff0c) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Load the native binding with a static import so bundlers that compile to a single executable include it.
+
+- [#146](https://github.com/stella/fuzzy-search/pull/146) [`3418ed3`](https://github.com/stella/fuzzy-search/commit/3418ed3d44488968cdb47acbf1414a8c6b12466f) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Keep whole-word matches that overlap a closer non-whole-word candidate.
+
 ## 1.1.4
 
 ### Patch Changes
