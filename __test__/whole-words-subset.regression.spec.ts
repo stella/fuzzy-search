@@ -14,10 +14,19 @@ test("wholeWords subset: replay seed -530956778", () => {
       fc.string({ minLength: 0, maxLength: 80 }),
       fc.constantFrom(1, 2),
       (patterns, haystack, distance) => {
-        const entries = patterns.map((pattern) => ({ pattern, distance }));
-        const wholeWords = new FuzzySearch(entries, { wholeWords: true }).findIter(haystack);
-        const unrestricted = new FuzzySearch(entries, { wholeWords: false }).findIter(haystack);
-        expect(wholeWords.length).toBeLessThanOrEqual(unrestricted.length);
+        const entries = patterns.map((pattern) => ({
+          pattern,
+          distance,
+        }));
+        const wholeWords = new FuzzySearch(entries, {
+          wholeWords: true,
+        }).findIter(haystack);
+        const unrestricted = new FuzzySearch(entries, {
+          wholeWords: false,
+        }).findIter(haystack);
+        expect(wholeWords.length).toBeLessThanOrEqual(
+          unrestricted.length,
+        );
       },
     ),
     {

@@ -53,6 +53,7 @@ jobs:
               - 'deny.toml'
               - '.github/workflows/ci.yml'
             build:
+              - '__test__/**'
               - '.github/workflows/**'
               - 'VERSION'
               - 'src/**'
