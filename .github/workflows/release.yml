@@ -375,7 +375,7 @@ jobs:
         && needs.attest.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@d472da77482cfdfca478e88b224e16e59e43d49a
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@92c44f95faa3687d5766a9a63e79a340dbe3ef6a
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
@@ -397,7 +397,7 @@ jobs:
         && needs.verify.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@d472da77482cfdfca478e88b224e16e59e43d49a
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@92c44f95faa3687d5766a9a63e79a340dbe3ef6a
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
@@ -474,7 +474,7 @@ jobs:
         && needs.preflight.outputs.already-released != 'true'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/npm-version-finalize.yml@d472da77482cfdfca478e88b224e16e59e43d49a
+    uses: stella/.github/.github/workflows/npm-version-finalize.yml@92c44f95faa3687d5766a9a63e79a340dbe3ef6a
     with:
       package-files: |
         package.json
@@ -493,5 +493,5 @@ jobs:
       contents: write
       id-token: write
     secrets:
-      RELEASE_APP_ID: ${{ secrets.RELEASE_APP_ID }}
-      RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      RELEASE_APP_ID: ${{ secrets.CHANGELOG_APP_ID }}
+      RELEASE_APP_PRIVATE_KEY: ${{ secrets.CHANGELOG_APP_PRIVATE_KEY }}
