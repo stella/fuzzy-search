@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 const workflow = readFileSync(
   new URL("../.github/workflows/release.yml", import.meta.url),
   "utf8",
-);
+).replaceAll("\r\n", "\n");
 
 const readJob = (name) => {
   const marker = `  ${name}:\n`;
