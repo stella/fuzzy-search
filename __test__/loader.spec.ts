@@ -182,17 +182,23 @@ describe("generated loader WASI selection", () => {
     results = loadBindings();
   });
 
-  for (const forceWasi of [
+  const nativeScenarioNames = [
     "unset",
     "false",
     "0",
     "1",
-  ] as const) {
+  ] as const satisfies readonly (keyof typeof scenarios)[];
+  const declareNativeBindingTest = (
+    forceWasi: (typeof nativeScenarioNames)[number],
+  ) => {
     test(`${forceWasi} keeps the native binding`, () => {
       expect(results[forceWasi]).toEqual({
         source: "native",
       });
     });
+  };
+  for (const forceWasi of nativeScenarioNames) {
+    declareNativeBindingTest(forceWasi);
   }
 
   test("true retains native when WASI is unavailable", () => {
