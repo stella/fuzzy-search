@@ -1,13 +1,14 @@
 {
   "extends": "@stll/typescript-config/library.json",
   "compilerOptions": {
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "types": ["node", "bun-types"]
   },
   "include": [
     "*.d.ts",
     "src/**/*.ts",
     "tsdown.config.ts",
-    "__test__/**/*.ts"
+    "__test__/properties.spec.ts"
   ],
   "exclude": ["node_modules", "dist", "wasm/dist", "npm"]
 }

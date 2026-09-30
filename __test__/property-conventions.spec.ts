@@ -1,3 +1,4 @@
+import { Transpiler } from "bun";
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -7,7 +8,7 @@ import seeds from "./property-seeds.json";
 const root = import.meta.dir;
 const entry = path.join(root, "properties.spec.ts");
 const helper = path.join(root, "property-testing.ts");
-const transpiler = new Bun.Transpiler({ loader: "ts" });
+const transpiler = new Transpiler({ loader: "ts" });
 
 const filesUnder = (directory: string): string[] => {
   const files: string[] = [];
@@ -51,7 +52,6 @@ const importsFrom = (source: string, module: string) => {
     .filter(
       (match) =>
         match[2] === module &&
-        match.index !== undefined &&
         /^\s*import\b/u.test(code.slice(match.index)),
     )
     .map((match) => match[1] ?? "");
@@ -101,11 +101,10 @@ const callsFor = (
         )
           continue;
         const callee =
-          local.imported === "default"
+          local.imported === "default" ||
+          local.imported === "namespace"
             ? `${local.name}\\s*\\.\\s*${name}`
-            : local.imported === "namespace"
-              ? `${local.name}\\s*\\.\\s*${name}`
-              : local.name;
+            : local.name;
         if (
           new RegExp(`\\b${callee}\\s*\\(`, "u").test(code)
         ) {
@@ -144,7 +143,6 @@ const helperIds = (source: string) => {
     );
     for (const match of code.matchAll(pattern)) {
       const start = match.index;
-      if (start === undefined) continue;
       const literal = source
         .slice(start)
         .match(
@@ -156,16 +154,17 @@ const helperIds = (source: string) => {
   return ids;
 };
 
-const helperCallCount = (source: string) =>
-  helperBindings(source).reduce((count, binding) => {
+const helperCallCount = (source: string) => {
+  let count = 0;
+  for (const binding of helperBindings(source)) {
     const pattern = new RegExp(
       `\\b${binding.replaceAll(".", "\\s*\\.\\s*")}\\s*\\(`,
       "gu",
     );
-    return (
-      count + [...codeOnly(source).matchAll(pattern)].length
-    );
-  }, 0);
+    count += [...codeOnly(source).matchAll(pattern)].length;
+  }
+  return count;
+};
 
 const resolveImport = (from: string, specifier: string) => {
   const base = path.resolve(path.dirname(from), specifier);
