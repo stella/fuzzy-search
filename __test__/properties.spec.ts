@@ -7,19 +7,26 @@
  * properties that unit tests would never cover.
  *
  * Run manually: bun test __test__/properties.spec.ts
- * PR CI uses a fixed seed; main and manual runs explore random seeds.
+ * Every tier uses deterministic generated runs plus pinned counterexample replay.
  */
-import { describe, expect, test } from "bun:test";
+import {
+  describe,
+  expect,
+  setDefaultTimeout,
+  test,
+} from "bun:test";
 import fc from "fast-check";
 
 import { FuzzySearch } from "../src/index";
+import {
+  assertProperty,
+  propertyTestTimeout,
+} from "./property-testing";
+import "./property-testing.spec";
+import "./property-conventions.spec";
+import "./unicode.properties";
 
-const PARAMS = {
-  numRuns: 1000,
-  ...(process.env.GITHUB_EVENT_NAME === "pull_request"
-    ? { seed: -530956778 }
-    : {}),
-};
+setDefaultTimeout(propertyTestTimeout(10_000));
 
 // ─── Generators ──────────────────────────────
 
@@ -258,7 +265,8 @@ function buildFS(
 
 describe("property: text field", () => {
   test("slice(start, end) === text for every match", () => {
-    fc.assert(
+    assertProperty(
+      "slice-start-end-text-for-every-match",
       fc.property(
         patterns,
         haystack,
@@ -270,7 +278,6 @@ describe("property: text field", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -279,7 +286,8 @@ describe("property: text field", () => {
 
 describe("property: non-overlapping", () => {
   test("no two consecutive matches overlap", () => {
-    fc.assert(
+    assertProperty(
+      "no-two-consecutive-matches-overlap",
       fc.property(
         patterns,
         haystack,
@@ -295,7 +303,6 @@ describe("property: non-overlapping", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -304,7 +311,8 @@ describe("property: non-overlapping", () => {
 
 describe("property: monotonic offsets", () => {
   test("ascending start order, start < end", () => {
-    fc.assert(
+    assertProperty(
+      "ascending-start-order-start-end",
       fc.property(
         patterns,
         haystack,
@@ -323,7 +331,6 @@ describe("property: monotonic offsets", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -332,7 +339,8 @@ describe("property: monotonic offsets", () => {
 
 describe("property: distance bound", () => {
   test("distance <= max for every match", () => {
-    fc.assert(
+    assertProperty(
+      "distance-max-for-every-match",
       fc.property(
         patterns,
         haystack,
@@ -346,7 +354,6 @@ describe("property: distance bound", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -360,7 +367,8 @@ describe("property: distance bound", () => {
 
 describe("property: distance correctness", () => {
   test("distance equals levenshtein(pattern, text)", () => {
-    fc.assert(
+    assertProperty(
+      "distance-equals-levenshtein-pattern-text",
       fc.property(
         patterns,
         haystack,
@@ -377,7 +385,6 @@ describe("property: distance correctness", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -393,7 +400,8 @@ describe("property: distance correctness", () => {
 
 describe("property: oracle vs findIter", () => {
   test("every findIter match is valid (exists in oracle region)", () => {
-    fc.assert(
+    assertProperty(
+      "every-finditer-match-is-valid-exists-in-oracle-region",
       fc.property(
         patterns,
         haystack,
@@ -411,12 +419,12 @@ describe("property: oracle vs findIter", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 
   test("oracle matches are a superset of findIter positions", () => {
-    fc.assert(
+    assertProperty(
+      "oracle-matches-are-a-superset-of-finditer-positions",
       fc.property(
         // Use shorter inputs for oracle perf
         fc.array(
@@ -444,12 +452,12 @@ describe("property: oracle vs findIter", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 
   test("findIter finds all oracle-identified regions", () => {
-    fc.assert(
+    assertProperty(
+      "finditer-finds-all-oracle-identified-regions",
       fc.property(
         // Small inputs so oracle is fast enough
         fc.array(
@@ -511,7 +519,6 @@ describe("property: oracle vs findIter", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -520,7 +527,8 @@ describe("property: oracle vs findIter", () => {
 
 describe("property: wholeWords boundaries", () => {
   test("every wholeWords match is at word boundaries", () => {
-    fc.assert(
+    assertProperty(
+      "every-wholewords-match-is-at-word-boundaries",
       fc.property(
         patterns,
         haystack,
@@ -545,7 +553,6 @@ describe("property: wholeWords boundaries", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -567,7 +574,8 @@ describe("property: exact match always found", () => {
         ..."abcdefghijklmnopqrstuvwxyz0123456789".split(""),
       ),
     });
-    fc.assert(
+    assertProperty(
+      "pattern-surrounded-by-spaces-is-found",
       fc.property(
         fc.array(wordPattern, {
           minLength: 1,
@@ -593,7 +601,6 @@ describe("property: exact match always found", () => {
           expect(found).toBe(true);
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -602,7 +609,8 @@ describe("property: exact match always found", () => {
 
 describe("property: replaceAll ↔ findIter", () => {
   test("replaceAll matches findIter-based reconstruction", () => {
-    fc.assert(
+    assertProperty(
+      "replaceall-matches-finditer-based-reconstruction",
       fc.property(
         patterns,
         haystack,
@@ -625,7 +633,6 @@ describe("property: replaceAll ↔ findIter", () => {
           expect(result).toBe(expected);
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -634,7 +641,8 @@ describe("property: replaceAll ↔ findIter", () => {
 
 describe("property: isMatch ↔ findIter", () => {
   test("isMatch agrees with findIter length > 0", () => {
-    fc.assert(
+    assertProperty(
+      "ismatch-agrees-with-finditer-length-0",
       fc.property(
         patterns,
         haystack,
@@ -646,7 +654,6 @@ describe("property: isMatch ↔ findIter", () => {
           );
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -655,7 +662,8 @@ describe("property: isMatch ↔ findIter", () => {
 
 describe("property: distance 0 correctness", () => {
   test("distance 0 matches are exact substrings", () => {
-    fc.assert(
+    assertProperty(
+      "distance-0-matches-are-exact-substrings",
       fc.property(patterns, haystack, (pats, hay) => {
         const fs = buildFS(pats, 0, false);
         for (const m of fs.findIter(hay)) {
@@ -663,7 +671,6 @@ describe("property: distance 0 correctness", () => {
           expect(m.text).toBe(pats[m.pattern]!);
         }
       }),
-      PARAMS,
     );
   });
 });
@@ -676,7 +683,8 @@ describe("property: distance 0 correctness", () => {
 
 describe("property: levenshtein oracle on every match", () => {
   test("oracle distance equals reported distance", () => {
-    fc.assert(
+    assertProperty(
+      "oracle-distance-equals-reported-distance",
       fc.property(
         patterns,
         haystack,
@@ -692,7 +700,6 @@ describe("property: levenshtein oracle on every match", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -704,7 +711,8 @@ describe("property: levenshtein oracle on every match", () => {
 
 describe("property: single vs multi-pattern", () => {
   test("multi-pattern match implies single-pattern match", () => {
-    fc.assert(
+    assertProperty(
+      "multi-pattern-match-implies-single-pattern-match",
       fc.property(
         fc.array(
           fc.string({
@@ -730,7 +738,6 @@ describe("property: single vs multi-pattern", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -746,7 +753,8 @@ describe("property: single vs multi-pattern", () => {
 
 describe("property: strict oracle (single pattern)", () => {
   test("every library match exists in oracle", () => {
-    fc.assert(
+    assertProperty(
+      "every-library-match-exists-in-oracle",
       fc.property(
         // Patterns at least 2 chars longer than
         // distance (avoids pathological cases
@@ -785,12 +793,12 @@ describe("property: strict oracle (single pattern)", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 
   test("every oracle match is covered by library", () => {
-    fc.assert(
+    assertProperty(
+      "every-oracle-match-is-covered-by-library",
       fc.property(
         fc.string({ minLength: 4, maxLength: 8 }),
         fc.string({
@@ -835,7 +843,6 @@ describe("property: strict oracle (single pattern)", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -864,7 +871,8 @@ describe("property: normalization idempotence", () => {
         ..."abcdefghijklmnopqrstuvwxyz".split(""),
       ),
     });
-    fc.assert(
+    assertProperty(
+      "ascii-text-norm-vs-no-norm-produce-same-matches",
       fc.property(
         fc.array(asciiPat, {
           minLength: 1,
@@ -893,7 +901,6 @@ describe("property: normalization idempotence", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -927,7 +934,8 @@ describe("property: diacritics normalization oracle", () => {
       maxLength: 10,
       unit: czChar,
     });
-    fc.assert(
+    assertProperty(
+      "norm-matches-have-correct-normalized-distance",
       fc.property(
         fc.array(czPat, {
           minLength: 1,
@@ -958,7 +966,6 @@ describe("property: diacritics normalization oracle", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -967,7 +974,8 @@ describe("property: diacritics normalization oracle", () => {
 
 describe("property: case insensitive oracle", () => {
   test("CI matches have correct lowered distance", () => {
-    fc.assert(
+    assertProperty(
+      "ci-matches-have-correct-lowered-distance",
       fc.property(
         fc.array(
           fc.string({
@@ -1000,7 +1008,6 @@ describe("property: case insensitive oracle", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1013,7 +1020,8 @@ describe("property: case insensitive oracle", () => {
 
 describe("property: overlapping prefix patterns", () => {
   test("prefix chain: every match is valid", () => {
-    fc.assert(
+    assertProperty(
+      "prefix-chain-every-match-is-valid",
       fc.property(
         // Generate a base word and build prefix chain
         fc.string({
@@ -1045,7 +1053,6 @@ describe("property: overlapping prefix patterns", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1054,7 +1061,8 @@ describe("property: overlapping prefix patterns", () => {
 
 describe("property: distance 3", () => {
   test("distance 3 matches are all valid", () => {
-    fc.assert(
+    assertProperty(
+      "distance-3-matches-are-all-valid",
       fc.property(
         fc.array(
           fc.string({
@@ -1076,7 +1084,6 @@ describe("property: distance 3", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1126,15 +1133,10 @@ describe("property: wholeWords candidate validity", () => {
   );
 
   test("wholeWords returns valid non-overlapping candidates at word boundaries", () => {
-    fc.assert(candidateValidity, PARAMS);
-  });
-
-  test("replays seed -530956778 with the candidate invariant", () => {
-    fc.assert(candidateValidity, {
-      numRuns: 1000,
-      seed: -530956778,
-      path: "740:1:3:1:1:1:1:5:3:5:3:3:7:10:0:11:13:4:9:9",
-    });
+    assertProperty(
+      "whole-words-candidate-validity",
+      candidateValidity,
+    );
   });
 });
 
@@ -1146,7 +1148,8 @@ describe("property: wholeWords candidate validity", () => {
 
 describe("property: distance monotonicity", () => {
   test("dist k matches are reachable at dist k+1", () => {
-    fc.assert(
+    assertProperty(
+      "dist-k-matches-are-reachable-at-dist-k-1",
       fc.property(
         fc.array(
           fc.string({
@@ -1185,7 +1188,6 @@ describe("property: distance monotonicity", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1198,7 +1200,8 @@ describe("property: distance monotonicity", () => {
 
 describe("property: pattern index correctness", () => {
   test("m.pattern indexes the correct pattern", () => {
-    fc.assert(
+    assertProperty(
+      "m-pattern-indexes-the-correct-pattern",
       fc.property(
         fc.array(
           fc.string({
@@ -1225,7 +1228,6 @@ describe("property: pattern index correctness", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1238,7 +1240,8 @@ describe("property: pattern index correctness", () => {
 
 describe("property: determinism", () => {
   test("same input always produces same output", () => {
-    fc.assert(
+    assertProperty(
+      "same-input-always-produces-same-output",
       fc.property(
         patterns,
         haystack,
@@ -1256,7 +1259,6 @@ describe("property: determinism", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1281,7 +1283,8 @@ describe("property: supplementary plane offsets", () => {
       maxLength: 6,
       unit: fc.constantFrom(..."abcdefgh".split("")),
     });
-    fc.assert(
+    assertProperty(
+      "emoji-text-offsets-are-correct",
       fc.property(
         fc.array(emojiPat, {
           minLength: 1,
@@ -1297,7 +1300,6 @@ describe("property: supplementary plane offsets", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1310,7 +1312,8 @@ describe("property: supplementary plane offsets", () => {
 
 describe("property: mixed distances per pattern", () => {
   test("each match respects its own max distance", () => {
-    fc.assert(
+    assertProperty(
+      "each-match-respects-its-own-max-distance",
       fc.property(
         fc.array(
           fc.record({
@@ -1344,7 +1347,6 @@ describe("property: mixed distances per pattern", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1372,7 +1374,8 @@ describe("property: all features combined", () => {
       maxLength: 8,
       unit: czChar,
     });
-    fc.assert(
+    assertProperty(
+      "norm-ci-wholewords-all-matches-valid",
       fc.property(
         fc.array(czPat, {
           minLength: 1,
@@ -1418,7 +1421,6 @@ describe("property: all features combined", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1430,7 +1432,8 @@ describe("property: all features combined", () => {
 
 describe("property: no false negatives on exact", () => {
   test("exact substring always found (no wholeWords)", () => {
-    fc.assert(
+    assertProperty(
+      "exact-substring-always-found-no-wholewords",
       fc.property(
         fc.string({
           minLength: 3,
@@ -1465,7 +1468,6 @@ describe("property: no false negatives on exact", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1516,7 +1518,8 @@ function damerauLev(a: string, b: string): number {
 
 describe("property: Damerau distance oracle", () => {
   test("every Damerau match has correct OSA distance", () => {
-    fc.assert(
+    assertProperty(
+      "every-damerau-match-has-correct-osa-distance",
       fc.property(
         fc.array(
           fc.string({
@@ -1548,7 +1551,6 @@ describe("property: Damerau distance oracle", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1561,7 +1563,8 @@ describe("property: Damerau distance oracle", () => {
 
 describe("property: Damerau finds transpositions", () => {
   test("Damerau finds >= Levenshtein matches", () => {
-    fc.assert(
+    assertProperty(
+      "damerau-finds-levenshtein-matches",
       fc.property(
         fc.array(
           fc.string({
@@ -1599,7 +1602,6 @@ describe("property: Damerau finds transpositions", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1647,7 +1649,8 @@ describe("property: cartesian options × distance", () => {
       maxLength: 60,
       unit: czChar,
     });
-    fc.assert(
+    assertProperty(
+      "all-16-combos-every-match-is-valid",
       fc.property(
         fc.array(czPat, {
           minLength: 1,
@@ -1716,7 +1719,6 @@ describe("property: cartesian options × distance", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1728,7 +1730,8 @@ describe("property: cartesian options × distance", () => {
 
 describe("property: duplicate patterns", () => {
   test("duplicated patterns produce valid matches", () => {
-    fc.assert(
+    assertProperty(
+      "duplicated-patterns-produce-valid-matches",
       fc.property(
         fc.string({
           minLength: 3,
@@ -1753,7 +1756,6 @@ describe("property: duplicate patterns", () => {
           expect(dMatches.length).toBe(sMatches.length);
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1768,7 +1770,8 @@ describe("property: duplicate patterns", () => {
 
 describe("property: substring patterns", () => {
   test("contained patterns produce valid matches", () => {
-    fc.assert(
+    assertProperty(
+      "contained-patterns-produce-valid-matches",
       fc.property(
         fc.string({
           minLength: 4,
@@ -1803,7 +1806,6 @@ describe("property: substring patterns", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1822,7 +1824,8 @@ describe("property: long patterns", () => {
         ..."abcdefghijklmnopqrstuvwxyz".split(""),
       ),
     });
-    fc.assert(
+    assertProperty(
+      "patterns-50-63-chars-matches-valid",
       fc.property(
         longPat,
         fc.string({
@@ -1842,7 +1845,6 @@ describe("property: long patterns", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1854,7 +1856,8 @@ describe("property: long patterns", () => {
 
 describe("property: high distance (4-5)", () => {
   test("distance 4-5: all matches valid", () => {
-    fc.assert(
+    assertProperty(
+      "distance-4-5-all-matches-valid",
       fc.property(
         fc.string({
           minLength: 8,
@@ -1878,7 +1881,6 @@ describe("property: high distance (4-5)", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1904,7 +1906,8 @@ describe("property: CJK text", () => {
       maxLength: 60,
       unit: cjkChar,
     });
-    fc.assert(
+    assertProperty(
+      "cjk-latin-mix-matches-valid",
       fc.property(
         fc.array(cjkPat, {
           minLength: 1,
@@ -1920,7 +1923,6 @@ describe("property: CJK text", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1929,7 +1931,8 @@ describe("property: CJK text", () => {
 
 describe("property: score in [0, 1]", () => {
   test("every match has score in [0, 1]", () => {
-    fc.assert(
+    assertProperty(
+      "every-match-has-score-in-0-1",
       fc.property(
         patterns,
         haystack,
@@ -1942,12 +1945,12 @@ describe("property: score in [0, 1]", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 
   test("score = 1 iff distance = 0", () => {
-    fc.assert(
+    assertProperty(
+      "score-1-iff-distance-0",
       fc.property(
         patterns,
         haystack,
@@ -1963,7 +1966,6 @@ describe("property: score in [0, 1]", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -1972,7 +1974,8 @@ describe("property: score in [0, 1]", () => {
 
 describe("property: kBest cap", () => {
   test("kBest=N never returns more than N matches", () => {
-    fc.assert(
+    assertProperty(
+      "kbest-n-never-returns-more-than-n-matches",
       fc.property(
         patterns,
         haystack,
@@ -1997,12 +2000,12 @@ describe("property: kBest cap", () => {
           expect(matches.length).toBeLessThanOrEqual(kBest);
         },
       ),
-      PARAMS,
     );
   });
 
   test("kBest output is sorted by score descending", () => {
-    fc.assert(
+    assertProperty(
+      "kbest-output-is-sorted-by-score-descending",
       fc.property(
         patterns,
         haystack,
@@ -2029,7 +2032,6 @@ describe("property: kBest cap", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
@@ -2038,7 +2040,8 @@ describe("property: kBest cap", () => {
 
 describe("property: minScore filter", () => {
   test("every returned match has score >= minScore", () => {
-    fc.assert(
+    assertProperty(
+      "every-returned-match-has-score-minscore",
       fc.property(
         patterns,
         haystack,
@@ -2068,12 +2071,12 @@ describe("property: minScore filter", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 
   test("minScore filtered set is a subset of unfiltered", () => {
-    fc.assert(
+    assertProperty(
+      "minscore-filtered-set-is-a-subset-of-unfiltered",
       fc.property(
         patterns,
         haystack,
@@ -2119,7 +2122,6 @@ describe("property: minScore filter", () => {
           }
         },
       ),
-      PARAMS,
     );
   });
 });
