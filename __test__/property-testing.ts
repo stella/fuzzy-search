@@ -28,16 +28,24 @@ const integerEnv = (
   return Number(raw);
 };
 
+type PropertyTestEnvironment = Readonly<
+  Record<string, string | undefined> & {
+    PROPERTY_TEST_NUM_RUNS_FACTOR?: string | undefined;
+    PROPERTY_TEST_SEED?: string | undefined;
+    PROPERTY_TEST_PATH?: string | undefined;
+  }
+>;
+
 type PropertyConfigOptions<T> = {
   params?: Omit<fc.Parameters<T>, "seed" | "path">;
-  env?: Readonly<Record<string, string | undefined>>;
+  env?: PropertyTestEnvironment;
 };
 
 const runFactor = (
-  env: Readonly<Record<string, string | undefined>>,
+  env: PropertyTestEnvironment,
 ): number => {
   const factor = integerEnv(
-    env["PROPERTY_TEST_NUM_RUNS_FACTOR"],
+    env.PROPERTY_TEST_NUM_RUNS_FACTOR,
     1,
   );
   if (factor < 1) {
@@ -66,7 +74,7 @@ export const propertyConfig = <T>({
 }: PropertyConfigOptions<T> = {}): fc.Parameters<T> => {
   const factor = runFactor(env);
   const seed = integerEnv(
-    env["PROPERTY_TEST_SEED"],
+    env.PROPERTY_TEST_SEED,
     FIXED_SEED,
   );
   if (seed < -2_147_483_648 || seed > 2_147_483_647) {
@@ -74,7 +82,7 @@ export const propertyConfig = <T>({
       "Property test seed must fit a signed 32-bit integer.",
     );
   }
-  const path = env["PROPERTY_TEST_PATH"];
+  const path = env.PROPERTY_TEST_PATH;
   if (path !== undefined && !/^\d+(?::\d+)*$/u.test(path)) {
     throw new PropertyTestConfigError(
       "Property test replay path needs colon-separated integers.",
@@ -100,9 +108,9 @@ export const assertProperty = <T>(
   property: fc.IProperty<T>,
   params?: Omit<fc.Parameters<T>, "seed" | "path">,
 ): void => {
-  const config = propertyConfig({
-    ...(params === undefined ? {} : { params }),
-  });
+  const config = propertyConfig(
+    params === undefined ? {} : { params },
+  );
   const pinned =
     Object.entries(seeds).find(
       ([key]) => key === id,

@@ -8,7 +8,7 @@
     "*.d.ts",
     "src/**/*.ts",
     "tsdown.config.ts",
-    "__test__/properties.spec.ts"
+    "__test__/*propert*.ts"
   ],
   "exclude": ["node_modules", "dist", "wasm/dist", "npm"]
 }

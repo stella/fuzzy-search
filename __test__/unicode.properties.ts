@@ -255,10 +255,12 @@ describe("Unicode matching contracts", () => {
               distance: match.distance,
             })),
           ).toEqual(
-            canonical.map(({ text, distance: d }) => ({
-              text,
-              distance: d,
-            })),
+            canonical.map(
+              ({ text: matchedText, distance: d }) => ({
+                text: matchedText,
+                distance: d,
+              }),
+            ),
           );
           expect(actual.length).toBe(2);
           assertSpans(actual, haystack);
@@ -281,7 +283,10 @@ describe("Unicode matching contracts", () => {
             { wholeWords: false },
           ).findIter(haystack);
           expect(
-            found.some(({ text }) => text === "needle"),
+            found.some(
+              ({ text: matchedText }) =>
+                matchedText === "needle",
+            ),
           ).toBe(true);
           expect(performance.now() - started).toBeLessThan(
             2000,
