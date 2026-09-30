@@ -457,7 +457,14 @@ jobs:
 
   finalize:
     name: Finalize
-    needs: [preflight, pack, attest, publish-core, assemble-release]
+    needs:
+      [
+        preflight,
+        pack,
+        attest,
+        publish-core,
+        assemble-release,
+      ]
     if: >-
       github.ref == 'refs/heads/main' && (
         needs.pack.result == 'success'
@@ -485,6 +492,7 @@ jobs:
       update-changelog: false
     permissions:
       contents: write
+      pull-requests: write
       id-token: write
     secrets:
       RELEASE_APP_ID: ${{ secrets.RELEASE_APP_ID }}
