@@ -6,6 +6,7 @@
   ],
   "main": "fuzzy-search.wasi.cjs",
   "files": [
+    "NOTICE",
     "fuzzy-search.wasm32-wasi.wasm",
     "fuzzy-search.wasi.cjs",
     "fuzzy-search.wasi-browser.js",

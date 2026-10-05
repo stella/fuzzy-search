@@ -6,6 +6,7 @@
   ],
   "main": "fuzzy-search.darwin-x64.node",
   "files": [
+    "NOTICE",
     "fuzzy-search.darwin-x64.node"
   ],
   "description": "Approximate substring matching for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",

@@ -21,6 +21,7 @@
     "url": "git+https://github.com/stella/fuzzy-search.git"
   },
   "files": [
+    "NOTICE",
     "dist"
   ],
   "type": "module",

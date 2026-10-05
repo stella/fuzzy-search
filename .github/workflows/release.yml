@@ -294,6 +294,10 @@ jobs:
           set -euo pipefail
           mkdir -p release-artifacts
 
+          for pkg in npm/* wasm; do
+            cp LICENSE NOTICE "$pkg/"
+          done
+
           root_json="$(npm pack --json --ignore-scripts --pack-destination release-artifacts)"
           root_file="$(echo "$root_json" | jq -r '.[0].filename')"
           root_tarball="release-artifacts/$root_file"
