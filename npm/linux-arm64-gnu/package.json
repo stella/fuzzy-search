@@ -6,6 +6,7 @@
   ],
   "main": "fuzzy-search.linux-arm64-gnu.node",
   "files": [
+    "NOTICE",
     "fuzzy-search.linux-arm64-gnu.node"
   ],
   "description": "Approximate substring matching for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
@@ -19,7 +20,7 @@
     "rust"
   ],
   "homepage": "https://github.com/stella/fuzzy-search#readme",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "engines": {
     "node": ">= 18"
   },

@@ -15,12 +15,13 @@
   "bugs": {
     "url": "https://github.com/stella/fuzzy-search/issues"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/stella/fuzzy-search.git"
   },
   "files": [
+    "NOTICE",
     "dist",
     "index.cjs"
   ],

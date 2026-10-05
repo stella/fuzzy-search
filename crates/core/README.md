@@ -26,4 +26,4 @@ live in the [repository](https://github.com/stella/fuzzy-search).
 
 ## License
 
-MIT
+Apache-2.0
