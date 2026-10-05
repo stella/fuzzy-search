@@ -7,6 +7,7 @@ This file is a generated inventory of detected third-party components and declar
 Some licenses may require additional attribution text or redistribution steps.
 
 Project: root
+- @quansync/fs 1.0.0 — MIT
 - bitflags 2.13.1 — Apache-2.0 OR MIT
 - bon 3.9.3 — Apache-2.0 OR MIT
 - bon-macros 3.9.3 — Apache-2.0 OR MIT
