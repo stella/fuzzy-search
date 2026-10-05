@@ -2440,66 +2440,6 @@
     {
       "authors": [
         {
-          "name": "Kevin Deng <sxzz@sxzz.moe>"
-        }
-      ],
-      "bom-ref": "pkg:npm/@quansync/fs@1.0.0",
-      "description": "Filesystem utilities for Quansync",
-      "evidence": {
-        "identity": [
-          {
-            "concludedValue": "node_modules/@quansync/fs/package.json",
-            "confidence": 0.7,
-            "field": "purl",
-            "methods": [
-              {
-                "confidence": 0.7,
-                "technique": "manifest-analysis",
-                "value": "node_modules/@quansync/fs/package.json"
-              }
-            ]
-          }
-        ],
-        "occurrences": [
-          {
-            "location": "index.cjs#6"
-          }
-        ]
-      },
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/quansync-dev/fs#readme"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/quansync-dev/fs.git"
-        }
-      ],
-      "group": "@quansync",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-          }
-        }
-      ],
-      "name": "fs",
-      "properties": [
-        {
-          "name": "SrcFile",
-          "value": "node_modules/@quansync/fs/package.json"
-        }
-      ],
-      "purl": "pkg:npm/%40quansync/fs@1.0.0",
-      "scope": "required",
-      "type": "library",
-      "version": "1.0.0"
-    },
-    {
-      "authors": [
-        {
           "name": "Evan You"
         }
       ],
@@ -2924,8 +2864,8 @@
           "licenses": [
             {
               "license": {
-                "id": "MIT",
-                "url": "https://opensource.org/licenses/MIT"
+                "id": "Apache-2.0",
+                "url": "https://opensource.org/licenses/Apache-2.0"
               }
             }
           ],
@@ -2950,8 +2890,8 @@
           "licenses": [
             {
               "license": {
-                "id": "MIT",
-                "url": "https://opensource.org/licenses/MIT"
+                "id": "Apache-2.0",
+                "url": "https://opensource.org/licenses/Apache-2.0"
               }
             }
           ],
@@ -2976,8 +2916,8 @@
       "licenses": [
         {
           "license": {
-            "id": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
+            "id": "Apache-2.0",
+            "url": "https://opensource.org/licenses/Apache-2.0"
           }
         }
       ],
