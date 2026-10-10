@@ -10,7 +10,7 @@
         "@emnapi/core": "1.11.1",
         "@emnapi/runtime": "1.11.1",
         "@napi-rs/cli": "3.7.2",
-        "@stll/oxlint-config": "0.8.0",
+        "@stll/oxlint-config": "0.9.1",
         "@stll/typescript-config": "0.6.0",
         "@tybys/wasm-util": "0.10.2",
         "@types/node": "^26.2.0",
@@ -364,7 +364,7 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0", "", {}, "sha512-aKs/3GSWyV0mrhNmt/96/Z3yczC3yvrzYATCiCXQebBsGyYzjNdUphRVLeJQ67ySKVXRfMxt2lm12pmXvbPFQQ=="],
 
-    "@stll/oxlint-config": ["@stll/oxlint-config@0.8.0", "", { "peerDependencies": { "oxlint": ">=1.80.0 <2", "oxlint-tsgolint": ">=7.0.2001 <8" }, "bin": { "stll-toolchain-check": "dist/toolchain-check-cli.mjs" } }, "sha512-ly5Lzm1ZSdCoy0tCD69oPK8XUn2rMjICiyJNL9gYgAltFPPg1730/2aecRYXKAUHiyi/xWpQQL88km2Ab5F9Sw=="],
+    "@stll/oxlint-config": ["@stll/oxlint-config@0.9.1", "", { "peerDependencies": { "oxlint": ">=1.80.0 <2", "oxlint-tsgolint": ">=7.0.2001 <8" }, "bin": { "stll-toolchain-check": "dist/toolchain-check-cli.mjs", "stll-typecheck-parity": "dist/typecheck-parity-cli.mjs" } }, "sha512-9j38uJT5qHREBBvq/U4ChjB9hQqdZcbbTrHddzdBes/PT8he/VVRlYt3x53S5RtNjH/MCW1H32c1FVYgS8/etg=="],
 
     "@stll/typescript-config": ["@stll/typescript-config@0.6.0", "", { "peerDependencies": { "typescript": ">=7.0.2 <8" } }, "sha512-A9efDLMjjjdn4iBOY4qFrTtkghX96NP3vvKgIKC14xwuX55rtBUFpICsdFZ2mVIjxNcNZysO+el7pCVn+UFA3A=="],
 

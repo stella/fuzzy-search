@@ -236,7 +236,8 @@ oxlint + oxfmt. Suppress a rule only with the rule name and a reason:
 
 - `bun install`
 - `bun run lint`
-- `bun run typecheck`
+- `bun run typecheck` (`bun check --no-pretty --all --project=tsconfig.json`)
+- `bun run check:typecheck-parity`
 - `bun test`
 - `bun run test:props`
 - `bun run test:runtime:bun`
@@ -255,3 +256,7 @@ oxlint + oxfmt. Suppress a rule only with the rule name and a reason:
 - Every pull request that changes published runtime code must add a Changesets entry; use `bun run changeset --empty` for an intentional no-release change.
 - Changesets owns `CHANGELOG.md` and the version PR. The version command synchronizes `VERSION`, every npm package, Cargo manifests and lock metadata, and the generated native loader guard.
 - Keep `.github/workflows/release.yml` as the trusted-publishing caller. Do not add another changelog generator or publish from the Changesets workflow.
+
+### TypeScript Tooling
+
+Use `bun run typecheck` for type checking and `bun run check:typecheck-parity` to verify diagnostic coverage against TypeScript. Editors keep the TypeScript language service because Bun has no language server. Keep `typescript` for editor support and declaration generation through tsdown.
