@@ -4,7 +4,7 @@ resolver = "3"
 
 [package]
 name = "stella-fuzzy-search"
-version = "1.1.5"
+version = "1.1.6"
 edition = "2024"
 description = "Approximate substring matching"
 license = "Apache-2.0"
@@ -23,7 +23,7 @@ napi = { version = "=3.9.2", default-features = false, features = [
   "serde-json",
 ] }
 napi-derive = "=3.5.6"
-stella-fuzzy-search-core = { version = "1.1.5", path = "crates/core" }
+stella-fuzzy-search-core = { version = "1.1.6", path = "crates/core" }
 
 [build-dependencies]
 napi-build = "=2.3.2"

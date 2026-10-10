@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.6
+
+### Patch Changes
+
+- [#165](https://github.com/stella/fuzzy-search/pull/165) [`d1b1f23`](https://github.com/stella/fuzzy-search/commit/d1b1f2340a68ae854782da7ad464280d96002b7a) Thanks [@jan-kubica](https://github.com/jan-kubica)! - License the packages under Apache-2.0 and update the published license metadata.
+
 ## 1.1.5
 
 ### Patch Changes
