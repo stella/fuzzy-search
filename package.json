@@ -38,6 +38,7 @@
     "access": "public"
   },
   "scripts": {
+    "check:toolchain": "stll-toolchain-check",
     "fix:loader": "node scripts/fix-napi-loader.mjs",
     "build": "node scripts/build-native.mjs --platform --release",
     "build:debug": "node scripts/build-native.mjs --platform",
@@ -77,11 +78,11 @@
     "@emnapi/core": "1.11.1",
     "@emnapi/runtime": "1.11.1",
     "@napi-rs/cli": "3.7.2",
-    "@stll/oxlint-config": "0.6.0",
+    "@stll/oxlint-config": "0.8.0",
     "@stll/typescript-config": "0.6.0",
     "@tybys/wasm-util": "0.10.2",
     "@types/node": "^26.2.0",
-    "bun-types": "1.4.1",
+    "bun-types": "1.4.3",
     "emnapi": "1.11.1",
     "fast-check": "^4.9.0",
     "oxfmt": "0.63.0",
@@ -108,5 +109,5 @@
   "engines": {
     "node": ">= 18"
   },
-  "packageManager": "bun@1.4.1"
+  "packageManager": "bun@1.4.3"
 }

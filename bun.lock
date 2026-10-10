@@ -10,11 +10,11 @@
         "@emnapi/core": "1.11.1",
         "@emnapi/runtime": "1.11.1",
         "@napi-rs/cli": "3.7.2",
-        "@stll/oxlint-config": "0.6.0",
+        "@stll/oxlint-config": "0.8.0",
         "@stll/typescript-config": "0.6.0",
         "@tybys/wasm-util": "0.10.2",
         "@types/node": "^26.2.0",
-        "bun-types": "1.4.1",
+        "bun-types": "1.4.3",
         "emnapi": "1.11.1",
         "fast-check": "^4.9.0",
         "oxfmt": "0.63.0",
@@ -364,7 +364,7 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0", "", {}, "sha512-aKs/3GSWyV0mrhNmt/96/Z3yczC3yvrzYATCiCXQebBsGyYzjNdUphRVLeJQ67ySKVXRfMxt2lm12pmXvbPFQQ=="],
 
-    "@stll/oxlint-config": ["@stll/oxlint-config@0.6.0", "", { "peerDependencies": { "oxlint": ">=1.75.0 <2", "oxlint-tsgolint": ">=7.0.2001 <8" } }, "sha512-SPQuoCCMShDBR2+hKeEOv+qh6Ru5NbfjO79h4ZSJ2STlTL5CCQKIPv2ipK3iv5i6BjAIWE3D31lSWi65xWoQgA=="],
+    "@stll/oxlint-config": ["@stll/oxlint-config@0.8.0", "", { "peerDependencies": { "oxlint": ">=1.80.0 <2", "oxlint-tsgolint": ">=7.0.2001 <8" }, "bin": { "stll-toolchain-check": "dist/toolchain-check-cli.mjs" } }, "sha512-ly5Lzm1ZSdCoy0tCD69oPK8XUn2rMjICiyJNL9gYgAltFPPg1730/2aecRYXKAUHiyi/xWpQQL88km2Ab5F9Sw=="],
 
     "@stll/typescript-config": ["@stll/typescript-config@0.6.0", "", { "peerDependencies": { "typescript": ">=7.0.2 <8" } }, "sha512-A9efDLMjjjdn4iBOY4qFrTtkghX96NP3vvKgIKC14xwuX55rtBUFpICsdFZ2mVIjxNcNZysO+el7pCVn+UFA3A=="],
 
@@ -464,7 +464,7 @@
 
     "before-after-hook": ["before-after-hook@4.0.0", "", {}, "sha512-q6tR3RPqIB1pMiTRMFcZwuG5T8vwp+vUvEG0vuI6B+Rikh5BfPp2fQ82c925FOs+b0lcFQ8CFrL+KbilfZFhOQ=="],
 
-    "bun-types": ["bun-types@1.4.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-loKuVrAFZKfEv+JvWkHRS9GW5IqLuLRjVXN9p+vZvBN86O5hf/pBZQ5hSoyipsrMmWObZBDvWnlmKvjKTM0PdA=="],
+    "bun-types": ["bun-types@1.4.3", "", { "dependencies": { "@types/node": "*", "undici-types": "*" } }, "sha512-tinRJNGOmUN+tEAsn2y2e942n9JHRHR42iUYzDH75NmhJqVBokGSQkkfSFdNWwsANIdrK6ACH9t01M452YyTwg=="],
 
     "cac": ["cac@7.0.0", "", {}, "sha512-tixWYgm5ZoOD+3g6UTea91eow5z6AAHaho3g0V9CNSNb45gM8SmflpAc+GRd1InC4AqN/07Unrgp56Y94N9hJQ=="],
 
