@@ -154,7 +154,7 @@ jobs:
   napi-ci:
     if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (needs.trust-check.result == 'success' || needs.trust-check.result == 'skipped') }}
     needs: [check-changes, trust-check]
-    uses: stella/.github/.github/workflows/rust-napi-ci.yml@dff0b1d93c2438011e6755873819c89f54f1fb30
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@7e9cd7457aead346c95e169aab768b5e249a5b84 # v1.8.0 + typecheck/parity (#141)
     with:
       typecheck: true
       node-version: "22"
