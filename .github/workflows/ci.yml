@@ -151,35 +151,12 @@ jobs:
             provenance/sbom.cdx.json
           package-files: package.json
 
-  checks:
-    name: Typecheck and parity
-    if: >-
-      always()
-      && !cancelled()
-      && needs.check-changes.result == 'success'
-      && (github.event_name != 'pull_request'
-          || needs.trust-check.outputs.trusted == 'true')
-    needs: [check-changes, trust-check]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version-file: package.json
-      - run: bun install --frozen-lockfile
-      - run: bun run check:toolchain
-      - run: bun run typecheck
-      - run: bun run check:typecheck-parity
-
   napi-ci:
     if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (needs.trust-check.result == 'success' || needs.trust-check.result == 'skipped') }}
     needs: [check-changes, trust-check]
-    uses: stella/.github/.github/workflows/rust-napi-ci.yml@5628b97fb3c560c0d961baa60c272c598eddcab5 # v1.7.0
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@5b5e00c3fc77eda2d557815fb3ee148c69314480 # v1.8.0 + conditional parity (#142)
     with:
+      typecheck: true
       node-version: "22"
       trusted: ${{ (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') && 'true' || 'false' }}
       rust-changed: ${{ needs.check-changes.outputs.rust-changed }}
