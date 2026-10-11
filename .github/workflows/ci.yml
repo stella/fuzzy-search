@@ -42,6 +42,9 @@ jobs:
         with:
           filters: |
             rust:
+              - '**/rust-toolchain'
+              - '**/rust-toolchain.toml'
+              - 'stll-toolchain.json'
               - '.github/workflows/**'
               - 'VERSION'
               - 'hawk.toml'
@@ -53,6 +56,9 @@ jobs:
               - 'deny.toml'
               - '.github/workflows/ci.yml'
             build:
+              - '**/rust-toolchain'
+              - '**/rust-toolchain.toml'
+              - 'stll-toolchain.json'
               - '__test__/**'
               - '.github/workflows/**'
               - 'VERSION'
@@ -167,7 +173,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
@@ -178,7 +184,7 @@ jobs:
   napi-ci:
     if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (needs.trust-check.result == 'success' || needs.trust-check.result == 'skipped') }}
     needs: [check-changes, trust-check]
-    uses: stella/.github/.github/workflows/rust-napi-ci.yml@5628b97fb3c560c0d961baa60c272c598eddcab5 # v1.7.0
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@f928cb8f72e75a3c44eccc576730cc241f478f3e
     with:
       node-version: "22"
       trusted: ${{ (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') && 'true' || 'false' }}
@@ -207,6 +213,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: 1.99.0
       - name: Verify publication boundary
         run: |
           set -euo pipefail
@@ -224,6 +232,7 @@ jobs:
       always()
       && !cancelled()
       && needs.check-changes.result == 'success'
+      && needs.check-changes.outputs.rust-changed == 'true'
       && (github.event_name != 'pull_request'
           || needs.trust-check.outputs.trusted == 'true')
     needs: [check-changes, trust-check]
@@ -231,23 +240,16 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Skip when Hawk is not required
-        if: needs.check-changes.outputs.rust-changed != 'true'
-        run: echo "No trusted Rust changes; Hawk skipped."
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: needs.check-changes.outputs.rust-changed == 'true'
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
-        if: needs.check-changes.outputs.rust-changed == 'true'
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
-          toolchain: ${{ env.HAWK_RUST_TOOLCHAIN }}
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+          toolchain: 1.97.1 # Hawk exception: tooling#99, expires 2026-11-11
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: package.json
-        if: needs.check-changes.outputs.rust-changed == 'true'
       - name: Install pinned Hawk
-        if: needs.check-changes.outputs.rust-changed == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -267,5 +269,4 @@ jobs:
             cargo-hawk-x86_64-unknown-linux-gnu/cargo-hawk-driver
           echo "$install_dir" >> "$GITHUB_PATH"
       - name: Check internal Rust visibility
-        if: needs.check-changes.outputs.rust-changed == 'true'
         run: bun run rust:hawk
