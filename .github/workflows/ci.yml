@@ -186,6 +186,13 @@ jobs:
 
   release-node:
     name: Release Node selector
+    if: >-
+      always()
+      && !cancelled()
+      && needs.check-changes.result == 'success'
+      && (github.event_name != 'pull_request'
+          || needs.trust-check.outputs.trusted == 'true')
+    needs: [check-changes, trust-check]
     runs-on: ubuntu-latest
     permissions:
       contents: read
