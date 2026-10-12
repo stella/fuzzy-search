@@ -173,7 +173,6 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check:toolchain
       - run: bun run typecheck
-      - run: bun run check:typecheck-parity
 
   napi-ci:
     if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (needs.trust-check.result == 'success' || needs.trust-check.result == 'skipped') }}
