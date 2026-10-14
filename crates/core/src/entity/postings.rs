@@ -258,5 +258,14 @@ mod tests {
     builder.add(list(), 0, f64::MAX).unwrap();
     assert!(builder.add(list(), 0, f64::MAX).is_err());
     assert!(builder.finish().is_err());
+
+    // The sum is finite, but its upward bound would exceed the finite range.
+    let half_maximum = f64::MAX / 2.0;
+    let mut upward = PostingBuilder::default();
+    upward.add(list(), 0, half_maximum).unwrap();
+    assert!(upward.add(list(), 0, half_maximum).is_err());
+    let retained = upward.finish().unwrap();
+    let (_, impact) = retained.get(list(), 0).unwrap();
+    assert!(impact.is_finite() && impact >= half_maximum);
   }
 }
