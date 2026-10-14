@@ -586,8 +586,8 @@ pub(super) fn search(
 mod tests {
   use super::super::oracle;
   use super::super::{
-    AliasForm, AliasJoin, AliasToken, BudgetBasis, EditBudget, QueryToken,
-    QueryUnit,
+    AliasForm, AliasJoin, AliasToken, BudgetBasis, EditBudget, EntityIndex,
+    EntityIndexBuilder, QueryToken, QueryUnit,
   };
   use super::*;
   use proptest::prelude::*;
@@ -607,7 +607,7 @@ mod tests {
       self.aliases.len()
     }
     fn alias(&self, id: AliasId) -> Option<&AliasInput> {
-      self.aliases.get(id as usize)
+      self.aliases.get(usize::try_from(id).ok()?)
     }
     fn lexicon(&self, form: FormId) -> Option<&Lexicon> {
       (form < self.options.forms).then_some(&self.lexicon)
@@ -679,40 +679,7 @@ mod tests {
           joins,
           minimum_total,
         };
-        let mut impacts = BTreeMap::new();
-        for token in &form.tokens {
-          *impacts
-            .entry(PostingList::Token {
-              form: 0,
-              id: token.id,
-            })
-            .or_insert(0.0) += token.weight / form.minimum_total;
-          let text = fixture.lexicon.token(token.id).unwrap();
-          *impacts
-            .entry(PostingList::QueryInitial {
-              form: 0,
-              prefix: text.chars().next().unwrap(),
-            })
-            .or_insert(0.0) += token.weight / form.minimum_total;
-          if text.encode_utf16().count() == 1 {
-            *impacts
-              .entry(PostingList::ListedInitial {
-                form: 0,
-                prefix: text.encode_utf16().next().unwrap(),
-              })
-              .or_insert(0.0) += 0.8 * token.weight / form.minimum_total;
-          }
-        }
-        for join in &form.joins {
-          *impacts
-            .entry(PostingList::Join {
-              form: 0,
-              id: join.id,
-            })
-            .or_insert(0.0) += (form.tokens[join.left as usize].weight
-            + form.tokens[join.right as usize].weight)
-            / form.minimum_total;
-        }
+        let impacts = alias_impacts(&fixture.lexicon, &form);
         for (list, impact) in impacts {
           fixture
             .lists
@@ -750,12 +717,68 @@ mod tests {
     }
   }
 
+  fn alias_impacts(
+    lexicon: &Lexicon,
+    form: &AliasForm,
+  ) -> BTreeMap<PostingList, f64> {
+    let mut impacts = BTreeMap::new();
+    for token in &form.tokens {
+      *impacts
+        .entry(PostingList::Token {
+          form: 0,
+          id: token.id,
+        })
+        .or_insert(0.0) += token.weight / form.minimum_total;
+      let text = lexicon.token(token.id).unwrap();
+      *impacts
+        .entry(PostingList::QueryInitial {
+          form: 0,
+          prefix: text.chars().next().unwrap(),
+        })
+        .or_insert(0.0) += token.weight / form.minimum_total;
+      if text.encode_utf16().count() == 1 {
+        *impacts
+          .entry(PostingList::ListedInitial {
+            form: 0,
+            prefix: text.encode_utf16().next().unwrap(),
+          })
+          .or_insert(0.0) += 0.8 * token.weight / form.minimum_total;
+      }
+    }
+    for join in &form.joins {
+      *impacts
+        .entry(PostingList::Join {
+          form: 0,
+          id: join.id,
+        })
+        .or_insert(0.0) += (form
+        .tokens
+        .get(usize::try_from(join.left).unwrap())
+        .unwrap()
+        .weight
+        + form
+          .tokens
+          .get(usize::try_from(join.right).unwrap())
+          .unwrap()
+          .weight)
+        / form.minimum_total;
+    }
+    impacts
+  }
+
+  fn word(id: u8) -> &'static str {
+    WORDS
+      .get(usize::from(id).checked_rem(WORDS.len()).unwrap())
+      .copied()
+      .unwrap()
+  }
+
   fn query(ids: &[u8], joins: bool) -> EntityQuery {
     let tokens = ids
       .iter()
       .map(|id| QueryToken {
         form: 0,
-        text: WORDS[usize::from(*id) % WORDS.len()].to_owned(),
+        text: word(*id).to_owned(),
         weight: 1.0 + f64::from(*id),
       })
       .collect::<Vec<_>>();
@@ -811,10 +834,10 @@ mod tests {
         query,
         alias,
         &result.unit_matches,
-        |_, id| fixture.lexicon.token(id).unwrap().to_owned(),
+        |_, token_id| fixture.lexicon.token(token_id).unwrap().to_owned(),
         0.8,
       );
-      let form = &alias.forms[0];
+      let form = alias.forms.first().unwrap();
       let listed = form
         .tokens
         .iter()
@@ -850,7 +873,7 @@ mod tests {
         query,
         alias,
         &result.unit_matches,
-        |_, id| fixture.lexicon.token(id).unwrap().to_owned(),
+        |_, token_id| fixture.lexicon.token(token_id).unwrap().to_owned(),
         0.8,
         alias.quality,
       );
@@ -870,8 +893,139 @@ mod tests {
     }
   }
 
+  fn real_builder(fixture: &Fixture) -> EntityIndexBuilder {
+    let mut builder = EntityIndexBuilder::new(fixture.options.clone()).unwrap();
+    for form in 0..fixture.options.forms {
+      for (id, text) in WORDS.iter().enumerate() {
+        assert_eq!(
+          builder.intern(form, text).unwrap(),
+          u32::try_from(id).unwrap()
+        );
+      }
+    }
+    for (id, alias) in fixture.aliases.iter().enumerate() {
+      assert_eq!(
+        builder.add_alias(alias.clone()).unwrap(),
+        u32::try_from(id).unwrap()
+      );
+    }
+    builder
+  }
+
+  fn real_index(fixture: &Fixture, step: Option<u32>) -> EntityIndex {
+    let mut builder = real_builder(fixture);
+    if let Some(maximum) = step {
+      while !builder.finish_step(maximum).unwrap() {}
+    }
+    builder
+      .finish(vec![
+        vec![1.0; WORDS.len()];
+        usize::try_from(fixture.options.forms).unwrap()
+      ])
+      .unwrap()
+  }
+
+  fn assert_real_roundtrips(
+    fixture: &Fixture,
+    query: &EntityQuery,
+    params: &SearchParams,
+  ) {
+    let index = real_index(fixture, None);
+    let expected = index.search(query, params).unwrap();
+    for step in [1, 3, 31] {
+      let stepped = real_index(fixture, Some(step));
+      assert_eq!(expected, stepped.search(query, params).unwrap());
+    }
+    let restored = EntityIndex::from_bytes(&index.to_bytes().unwrap()).unwrap();
+    assert_eq!(expected, restored.search(query, params).unwrap());
+    let full = index
+      .search(
+        query,
+        &SearchParams {
+          max_cost: u64::MAX,
+          ..*params
+        },
+      )
+      .unwrap();
+    assert!(!full.exhausted);
+    let weights = query
+      .tokens
+      .iter()
+      .map(|token| token.weight)
+      .collect::<Vec<_>>();
+    for (alias_id, alias) in fixture.aliases.iter().enumerate() {
+      let pairs = oracle::candidate_pairs(
+        query,
+        alias,
+        &full.unit_matches,
+        |_, token_id| fixture.lexicon.token(token_id).unwrap().to_owned(),
+        fixture.options.initial_similarity,
+      );
+      let form = alias.forms.first().unwrap();
+      let listed = form
+        .tokens
+        .iter()
+        .map(|token| token.weight)
+        .collect::<Vec<_>>();
+      let minimum = form
+        .tokens
+        .iter()
+        .map(|token| token.minimum_weight)
+        .collect::<Vec<_>>();
+      let score = if exact(fixture, query, alias).unwrap() {
+        alias.quality
+      } else {
+        oracle::score(&pairs, &weights, &listed, &minimum, alias.quality)
+      };
+      if score * params.quality >= params.tau {
+        assert!(
+          full.survivors.contains(&u32::try_from(alias_id).unwrap()),
+          "real storage lost alias {alias_id} at score {score}"
+        );
+      }
+    }
+  }
+
   proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
+    #[test]
+    fn real_storage_preserves_exact_aliases_for_every_scalar_initial(
+      characters in prop::collection::vec(any::<char>(), 1..5),
+    ) {
+      let fixture = Fixture::new(&[], false, false);
+      let mut builder = EntityIndexBuilder::new(fixture.options).unwrap();
+      let texts = characters.into_iter().map(|character| character.to_string()).collect::<Vec<_>>();
+      let ids = texts.iter().map(|text| builder.intern(0, text).unwrap()).collect::<Vec<_>>();
+      let minimum_total = f64::from(u32::try_from(ids.len()).unwrap());
+      builder.add_alias(AliasInput { entry_id: 0, entity_group: 0, quality: 1.0,
+        forms: vec![AliasForm { form: 0, tokens: ids.into_iter().map(|id| AliasToken {
+          id, weight: 1.0, minimum_weight: 1.0,
+        }).collect(), joins: vec![], minimum_total }],
+      }).unwrap();
+      let vocabulary_size = texts.iter().collect::<BTreeSet<_>>().len();
+      let index = builder.finish(vec![vec![1.0; vocabulary_size]]).unwrap();
+      let query = EntityQuery { tokens: texts.into_iter().map(|text| QueryToken {
+        form: 0, text, weight: 1.0,
+      }).collect(), units: vec![] };
+      let result = index.search(&query, &SearchParams { tau: 1.0, quality: 1.0, max_cost: u64::MAX }).unwrap();
+      prop_assert!(!result.exhausted);
+      prop_assert_eq!(result.survivors, [0]);
+    }
+
+    #[test]
+    fn real_storage_finish_steps_and_serialization_preserve_results_and_cost(
+      rows in prop::collection::vec(prop::collection::vec((any::<u8>(), 1_u16..1000, any::<u8>()), 1..7), 0..20),
+      ids in prop::collection::vec(any::<u8>(), 1..6),
+      cutoff in 0_u16..=1000, quality in 0_u16..=1000,
+      joins in any::<bool>(), weak in any::<bool>(), cap in 0_u64..2000,
+    ) {
+      let fixture = Fixture::new(&rows, joins, weak);
+      let query = query(&ids, joins);
+      assert_real_roundtrips(&fixture, &query, &SearchParams {
+        tau: f64::from(cutoff) / 1000.0, quality: f64::from(quality) / 1000.0, max_cost: cap,
+      });
+    }
+
     #[test]
     fn complete_against_brute_force_with_deterministic_cost(
       rows in prop::collection::vec(prop::collection::vec((any::<u8>(), 1_u16..1000, any::<u8>()), 1..7), 0..30),
@@ -1113,7 +1267,7 @@ mod tests {
   #[test]
   fn boost_inverse_and_invalid_queries() {
     assert!((threshold(0.8, 0.5).unwrap() - (0.6 - 1e-9)).abs() < 1e-12);
-    assert_eq!(threshold(1.0, 0.0).unwrap(), 0.0);
+    assert_eq!(threshold(1.0, 0.0).unwrap().to_bits(), 0.0_f64.to_bits());
     assert!(threshold(f64::NAN, 1.0).is_err());
     assert!(threshold(0.5, -1.0).is_err());
     let fixture = Fixture::new(&[], false, false);
@@ -1134,7 +1288,7 @@ mod tests {
       )
       .is_err()
     );
-    query.units[0].positions = vec![7];
+    query.units.first_mut().unwrap().positions = vec![7];
     assert!(
       search(
         &fixture,

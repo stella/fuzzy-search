@@ -3,6 +3,14 @@
 //! Keep the greedy alignment and coverage arithmetic explicit here so changes to
 //! retrieval do not silently change the reference semantics.
 
+use std::collections::BTreeMap;
+
+// Oracle inputs are validated production ids; conversion failure is a test failure.
+#[allow(clippy::expect_used)]
+fn position(value: u32) -> usize {
+  usize::try_from(value).expect("validated entity position fits usize")
+}
+
 #[derive(Clone, Debug)]
 pub(super) struct Pair {
   pub word: bool,
@@ -13,6 +21,8 @@ pub(super) struct Pair {
 
 /// Build candidates independently from the retrieval implementation. Forms sharing
 /// positions represent alternate spellings; their similarities combine by maximum.
+// Alias forms supplied to the oracle have the same validated token count.
+#[allow(clippy::expect_used)]
 pub(super) fn candidate_pairs(
   query: &super::EntityQuery,
   alias: &super::AliasInput,
@@ -52,9 +62,13 @@ pub(super) fn candidate_pairs(
           if form.form != unit.form {
             continue;
           }
-          let id = form.tokens[listed].id;
+          let id = form
+            .tokens
+            .get(listed)
+            .expect("validated alias forms share positions")
+            .id;
           for hit in matches {
-            if hit.unit as usize == unit_index
+            if position(hit.unit) == unit_index
               && hit.form == form.form
               && hit.id == id
             {
@@ -66,7 +80,7 @@ pub(super) fn candidate_pairs(
       if similarity > 0.0 {
         insert(Pair {
           word: true,
-          query: query_positions.iter().map(|&p| p as usize).collect(),
+          query: query_positions.iter().map(|&p| position(p)).collect(),
           listed: vec![listed],
           similarity,
         });
@@ -80,7 +94,7 @@ pub(super) fn candidate_pairs(
             continue;
           }
           for hit in matches {
-            if hit.unit as usize == unit_index
+            if position(hit.unit) == unit_index
               && hit.form == form.form
               && hit.id == join.id
             {
@@ -91,14 +105,31 @@ pub(super) fn candidate_pairs(
         if similarity > 0.0 {
           insert(Pair {
             word: true,
-            query: query_positions.iter().map(|&p| p as usize).collect(),
-            listed: vec![join.left as usize, join.right as usize],
+            query: query_positions.iter().map(|&p| position(p)).collect(),
+            listed: vec![position(join.left), position(join.right)],
             similarity,
           });
         }
       }
     }
   }
+  append_initial_pairs(
+    query,
+    alias,
+    &mut token_text,
+    initial_similarity,
+    &mut insert,
+  );
+  pairs
+}
+
+fn append_initial_pairs(
+  query: &super::EntityQuery,
+  alias: &super::AliasInput,
+  token_text: &mut impl FnMut(super::FormId, super::TokenId) -> String,
+  initial_similarity: f64,
+  insert: &mut impl FnMut(Pair),
+) {
   for (position, token) in query.tokens.iter().enumerate() {
     let query_initial = token.text.chars().count() == 1;
     for form in &alias.forms {
@@ -132,7 +163,6 @@ pub(super) fn candidate_pairs(
       }
     }
   }
-  pairs
 }
 
 /// Port the legacy candidate gate, including its single-word lexical-only path.
@@ -193,27 +223,33 @@ pub(super) fn score(
   // Stable sorting preserves the candidate-generation order for exact ties.
   ordered.sort_by(|left, right| {
     right.similarity.total_cmp(&left.similarity).then_with(|| {
-      (right.query.len() + right.listed.len())
-        .cmp(&(left.query.len() + left.listed.len()))
+      right
+        .query
+        .len()
+        .saturating_add(right.listed.len())
+        .cmp(&left.query.len().saturating_add(left.listed.len()))
     })
   });
-  let mut query = vec![None; query_weights.len()];
-  let mut listed = vec![None; listed_weights.len()];
+  let mut query = BTreeMap::new();
+  let mut listed = BTreeMap::new();
   let mut anchored = false;
   for pair in ordered {
-    if pair.query.iter().any(|&position| query[position].is_some())
+    if pair
+      .query
+      .iter()
+      .any(|&position| query.contains_key(&position))
       || pair
         .listed
         .iter()
-        .any(|&position| listed[position].is_some())
+        .any(|&position| listed.contains_key(&position))
     {
       continue;
     }
     for position in pair.query {
-      query[position] = Some(pair.similarity);
+      query.insert(position, pair.similarity);
     }
     for position in pair.listed {
-      listed[position] = Some(pair.similarity);
+      listed.insert(position, pair.similarity);
     }
     anchored |= pair.word;
   }
@@ -223,14 +259,17 @@ pub(super) fn score(
   let query_total: f64 = query_weights.iter().sum();
   let query_explained: f64 = query_weights
     .iter()
-    .zip(query)
-    .map(|(weight, matched)| weight * matched.unwrap_or(0.0))
+    .enumerate()
+    .map(|(position, weight)| {
+      weight * query.get(&position).copied().unwrap_or(0.0)
+    })
     .sum();
   let mut aligned_total = 0.0;
   let mut explained = 0.0;
-  for ((weight, minimum), matched) in
-    listed_weights.iter().zip(minimum_weights).zip(listed)
+  for (position, (weight, minimum)) in
+    listed_weights.iter().zip(minimum_weights).enumerate()
   {
+    let matched = listed.get(&position);
     aligned_total += if matched.is_some() { *weight } else { *minimum };
     if let Some(similarity) = matched {
       explained += weight * similarity;
@@ -251,22 +290,30 @@ pub(super) fn bound(
   if !pairs.iter().any(|pair| pair.word) {
     return 0.0;
   }
-  let mut query = vec![0.0_f64; query_weights.len()];
-  let mut listed = vec![0.0_f64; listed_weights.len()];
+  let mut query = BTreeMap::<usize, f64>::new();
+  let mut listed = BTreeMap::<usize, f64>::new();
   for pair in pairs {
     for &position in &pair.query {
-      query[position] = query[position].max(pair.similarity);
+      let maximum = query.entry(position).or_default();
+      *maximum = maximum.max(pair.similarity);
     }
     for &position in &pair.listed {
-      listed[position] = listed[position].max(pair.similarity);
+      let maximum = listed.entry(position).or_default();
+      *maximum = maximum.max(pair.similarity);
     }
   }
   let query_total: f64 = query_weights.iter().sum();
-  let query_explained: f64 =
-    query_weights.iter().zip(query).map(|(w, s)| w * s).sum();
+  let query_explained: f64 = query_weights
+    .iter()
+    .enumerate()
+    .map(|(p, w)| w * query.get(&p).copied().unwrap_or(0.0))
+    .sum();
   let minimum_total: f64 = minimum_weights.iter().sum();
-  let listed_explained: f64 =
-    listed_weights.iter().zip(listed).map(|(w, s)| w * s).sum();
+  let listed_explained: f64 = listed_weights
+    .iter()
+    .enumerate()
+    .map(|(p, w)| w * listed.get(&p).copied().unwrap_or(0.0))
+    .sum();
   ((query_explained / query_total)
     * (listed_explained / minimum_total).min(1.0))
   .sqrt()
@@ -278,7 +325,9 @@ mod tests {
   use super::{Pair, bound, score};
   use proptest::prelude::*;
 
+  // These fixed fixtures always contain exactly one token and candidate.
   #[test]
+  #[allow(clippy::expect_used)]
   fn astral_initial_retains_legacy_utf16_listed_semantics() {
     use super::super::{
       AliasForm, AliasInput, AliasToken, EntityQuery, QueryToken,
@@ -309,12 +358,16 @@ mod tests {
     let pairs =
       super::candidate_pairs(&query, &alias, &[], |_, _| "𐐀".to_owned(), 0.8);
     assert_eq!(pairs.len(), 1);
-    assert!((pairs[0].similarity - 0.8).abs() < f64::EPSILON);
-    query.tokens[0].text = "𐐀word".to_owned();
-    let pairs =
+    assert!(
+      (pairs.first().expect("one initial pair").similarity - 0.8).abs()
+        < f64::EPSILON
+    );
+    query.tokens.first_mut().expect("one query token").text =
+      "𐐀word".to_owned();
+    let longer_pairs =
       super::candidate_pairs(&query, &alias, &[], |_, _| "𐐀".to_owned(), 0.8);
     assert!(
-      pairs.is_empty(),
+      longer_pairs.is_empty(),
       "an astral listed token has two UTF-16 units"
     );
   }
@@ -386,6 +439,7 @@ mod tests {
 
   proptest! {
     #[test]
+    #[allow(clippy::expect_used)] // The generated weight vector is nonempty.
     fn optimistic_estimate_dominates_greedy_alignment(
       weights in prop::collection::vec((1_u16..1000, 1_u16..1000), 1..12),
       candidates in prop::collection::vec((any::<bool>(), any::<u8>(), any::<u8>(), 0_u16..=1000, any::<bool>()), 0..50),
@@ -395,12 +449,12 @@ mod tests {
       let listed_weights = query_weights.clone();
       let minimum_weights: Vec<_> = weights.iter().map(|&(weight, fraction)| f64::from(weight) * f64::from(fraction) / 1000.0).collect();
       let pairs: Vec<_> = candidates.into_iter().map(|(word, q, l, similarity, join)| {
-        let q = usize::from(q) % weights.len();
-        let l = usize::from(l) % weights.len();
+        let q = usize::from(q).checked_rem(weights.len()).expect("nonempty weights");
+        let l = usize::from(l).checked_rem(weights.len()).expect("nonempty weights");
         Pair {
           word,
-          query: if join && q + 1 < weights.len() { vec![q, q + 1] } else { vec![q] },
-          listed: if join && l + 1 < weights.len() { vec![l, l + 1] } else { vec![l] },
+          query: if join && q.saturating_add(1) < weights.len() { vec![q, q.saturating_add(1)] } else { vec![q] },
+          listed: if join && l.saturating_add(1) < weights.len() { vec![l, l.saturating_add(1)] } else { vec![l] },
           similarity: f64::from(similarity) / 1000.0,
         }
       }).collect();
