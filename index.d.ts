@@ -90,9 +90,7 @@ export interface EntityAliasToken {
   minimumWeight: number
 }
 
-export declare const enum EntityBudgetBasis {
-  Shorter = 'shorter'
-}
+export type EntityBudgetBasis =  'shorter';
 
 export interface EntityEditBudget {
   byLength: Array<number>
@@ -154,19 +152,17 @@ export interface FuzzyMatch {
 }
 
 /** Distance metric for fuzzy matching. */
-export declare const enum Metric {
-  /**
-   * Standard Levenshtein: insertions, deletions,
-   * substitutions.
-   */
-  Levenshtein = 'levenshtein',
-  /**
-   * Damerau-Levenshtein: insertions, deletions,
-   * substitutions, and transpositions of
-   * adjacent characters.
-   */
-  DamerauLevenshtein = 'damerau-levenshtein'
-}
+export type Metric = /**
+ * Standard Levenshtein: insertions| deletions|
+ * substitutions.
+ */
+'levenshtein'|
+/**
+ * Damerau-Levenshtein: insertions| deletions|
+ * substitutions| and transpositions of
+ * adjacent characters.
+ */
+'damerau-levenshtein';
 
 /** Options for constructing a `FuzzySearch`. */
 export interface Options {

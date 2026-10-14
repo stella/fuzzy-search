@@ -3,9 +3,9 @@
  * public API through the shared core. */
 
 import native from "../fuzzy-search.wasi-browser.js";
-import { initBinding, type NativeBinding } from "./core";
+import { initBinding } from "./core";
 
-initBinding(native as unknown as NativeBinding);
+initBinding(native);
 
 export {
   EntityIndex,

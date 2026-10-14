@@ -683,7 +683,11 @@ export class EntityIndexBuilder {
 
 /** Immutable candidate index. Search returns packed hits without per-hit objects. */
 export class EntityIndex {
-  private constructor(private _inner: NativeEntityIndex) {}
+  private _inner: NativeEntityIndex;
+
+  private constructor(inner: NativeEntityIndex) {
+    this._inner = inner;
+  }
   /** @internal */
   static _fromNative(
     inner: NativeEntityIndex,
