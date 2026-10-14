@@ -7,9 +7,23 @@ import { initBinding, type NativeBinding } from "./core";
 
 initBinding(native as unknown as NativeBinding);
 
-export { FuzzySearch, distance } from "./core";
+export {
+  EntityIndex,
+  EntityIndexBuilder,
+  FuzzySearch,
+  distance,
+} from "./core";
 
 export type {
+  EntityIndexOptions,
+  EntityAliasToken,
+  EntityAliasJoin,
+  EntityAliasForm,
+  EntityAliasInput,
+  EntityQuery,
+  EntitySearchParams,
+  EntitySearchCost,
+  EntitySearchResult,
   FuzzyMatch,
   Metric,
   NativeBinding,

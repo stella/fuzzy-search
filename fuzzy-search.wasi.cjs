@@ -108,6 +108,9 @@ const { instance: __napiInstance, module: __wasiModule, napiModule: __napiModule
   },
 })
 module.exports = __napiModule.exports
+module.exports.EntityIndex = __napiModule.exports.EntityIndex
+module.exports.EntityIndexBuilder = __napiModule.exports.EntityIndexBuilder
 module.exports.FuzzySearch = __napiModule.exports.FuzzySearch
 module.exports.distance = __napiModule.exports.distance
+module.exports.EntityBudgetBasis = __napiModule.exports.EntityBudgetBasis
 module.exports.Metric = __napiModule.exports.Metric

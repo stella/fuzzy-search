@@ -1,6 +1,9 @@
 use std::panic;
 
-use napi::bindgen_prelude::{Error, Result, Uint32Array};
+use napi::bindgen_prelude::{
+  AsyncTask, Error, Float64Array, Result, Uint8Array, Uint32Array,
+};
+use napi::{Env, Task};
 use napi_derive::napi;
 use stella_fuzzy_search_core as core;
 
@@ -207,5 +210,413 @@ impl FuzzySearch {
       .inner
       .replace_all(&haystack, &replacements)
       .map_err(|error| core_to_napi_error(&error))
+  }
+}
+
+/// Indexed entity construction options. Text and weights are caller supplied.
+#[napi(object)]
+pub struct EntityIndexOptions {
+  pub forms: u32,
+  pub budget: EntityEditBudget,
+  pub initial_weight: f64,
+  pub initial_similarity: f64,
+}
+
+#[napi(object)]
+pub struct EntityEditBudget {
+  pub by_length: Vec<u8>,
+  pub basis: EntityBudgetBasis,
+}
+
+#[napi(string_enum)]
+pub enum EntityBudgetBasis {
+  #[napi(value = "shorter")]
+  Shorter,
+}
+
+#[napi(object)]
+pub struct EntityAliasToken {
+  pub id: u32,
+  pub weight: f64,
+  pub minimum_weight: f64,
+}
+
+impl From<EntityAliasToken> for core::entity::AliasToken {
+  fn from(value: EntityAliasToken) -> Self {
+    Self {
+      id: value.id,
+      weight: value.weight,
+      minimum_weight: value.minimum_weight,
+    }
+  }
+}
+
+#[napi(object)]
+pub struct EntityAliasJoin {
+  pub id: u32,
+  pub left: u32,
+  pub right: u32,
+}
+
+impl From<EntityAliasJoin> for core::entity::AliasJoin {
+  fn from(value: EntityAliasJoin) -> Self {
+    Self {
+      id: value.id,
+      left: value.left,
+      right: value.right,
+    }
+  }
+}
+
+#[napi(object)]
+pub struct EntityAliasForm {
+  pub form: u32,
+  pub tokens: Vec<EntityAliasToken>,
+  pub joins: Vec<EntityAliasJoin>,
+  pub minimum_total: f64,
+}
+
+impl From<EntityAliasForm> for core::entity::AliasForm {
+  fn from(value: EntityAliasForm) -> Self {
+    Self {
+      form: value.form,
+      tokens: value.tokens.into_iter().map(Into::into).collect(),
+      joins: value.joins.into_iter().map(Into::into).collect(),
+      minimum_total: value.minimum_total,
+    }
+  }
+}
+
+#[napi(object)]
+pub struct EntityAliasInput {
+  pub entry_id: u32,
+  pub entity_group: u32,
+  pub quality: f64,
+  pub forms: Vec<EntityAliasForm>,
+}
+
+impl From<EntityAliasInput> for core::entity::AliasInput {
+  fn from(value: EntityAliasInput) -> Self {
+    Self {
+      entry_id: value.entry_id,
+      entity_group: value.entity_group,
+      quality: value.quality,
+      forms: value.forms.into_iter().map(Into::into).collect(),
+    }
+  }
+}
+
+#[napi(object)]
+pub struct EntityQueryToken {
+  pub form: u32,
+  pub text: String,
+  pub weight: f64,
+}
+
+impl From<EntityQueryToken> for core::entity::QueryToken {
+  fn from(value: EntityQueryToken) -> Self {
+    Self {
+      form: value.form,
+      text: value.text,
+      weight: value.weight,
+    }
+  }
+}
+
+#[napi(object)]
+pub struct EntityQueryUnit {
+  pub form: u32,
+  pub text: String,
+  pub positions: Vec<u32>,
+}
+
+impl From<EntityQueryUnit> for core::entity::QueryUnit {
+  fn from(value: EntityQueryUnit) -> Self {
+    Self {
+      form: value.form,
+      text: value.text,
+      positions: value.positions,
+    }
+  }
+}
+
+#[napi(object)]
+pub struct EntityQuery {
+  pub tokens: Vec<EntityQueryToken>,
+  pub units: Vec<EntityQueryUnit>,
+}
+
+impl From<EntityQuery> for core::entity::EntityQuery {
+  fn from(value: EntityQuery) -> Self {
+    Self {
+      tokens: value.tokens.into_iter().map(Into::into).collect(),
+      units: value.units.into_iter().map(Into::into).collect(),
+    }
+  }
+}
+
+#[napi(object)]
+pub struct EntitySearchParams {
+  pub tau: f64,
+  pub quality: f64,
+  pub max_cost: f64,
+}
+
+/// Parallel typed arrays: matchKeys contains [unit, form, token] triples.
+#[napi(object)]
+pub struct EntitySearchResult {
+  pub match_keys: Uint32Array,
+  pub similarities: Float64Array,
+  pub query_weights: Float64Array,
+  pub survivors: Uint32Array,
+  /// [lexiconCells, lexiconMatches, sortedAccesses, randomAccessPairs, survivors].
+  pub cost: Float64Array,
+  pub exhausted: bool,
+}
+
+const MAX_SAFE_INTEGER: u64 = 0x001F_FFFF_FFFF_FFFF;
+
+// Integers in the checked range are represented exactly by JavaScript numbers.
+#[allow(clippy::as_conversions, clippy::cast_precision_loss)]
+fn safe_number(value: u64) -> Result<f64> {
+  if value > MAX_SAFE_INTEGER {
+    return Err(Error::from_reason(
+      "Entity count exceeds JavaScript safe integer range",
+    ));
+  }
+  Ok(value as f64)
+}
+
+// The finite, integral safe-integer check bounds this conversion.
+#[allow(
+  clippy::as_conversions,
+  clippy::cast_possible_truncation,
+  clippy::cast_sign_loss
+)]
+fn work_limit(value: f64) -> Result<u64> {
+  if !value.is_finite()
+    || value < 0.0
+    || value.fract() != 0.0
+    || value > 9_007_199_254_740_991.0
+  {
+    return Err(Error::from_reason(
+      "maxCost must be a non-negative safe integer",
+    ));
+  }
+  Ok(value as u64)
+}
+
+fn pack_entity_result(
+  result: core::entity::SearchResult,
+) -> Result<EntitySearchResult> {
+  let count = result.unit_matches.len();
+  let mut keys = Vec::with_capacity(count.saturating_mul(3));
+  let mut similarities = Vec::with_capacity(count);
+  for hit in result.unit_matches {
+    keys.extend([hit.unit, hit.form, hit.id]);
+    similarities.push(hit.similarity);
+  }
+  let cost = result.cost;
+  Ok(EntitySearchResult {
+    match_keys: Uint32Array::new(keys),
+    similarities: Float64Array::new(similarities),
+    query_weights: Float64Array::new(result.query_weights),
+    survivors: Uint32Array::new(result.survivors),
+    cost: Float64Array::new(vec![
+      safe_number(cost.lexicon_cells)?,
+      safe_number(cost.lexicon_matches)?,
+      safe_number(cost.sorted_accesses)?,
+      safe_number(cost.random_access_pairs)?,
+      safe_number(cost.survivors)?,
+    ]),
+    exhausted: result.exhausted,
+  })
+}
+
+/// A builder is consumed by finish or finishAsync, including failed finishes.
+#[napi]
+pub struct EntityIndexBuilder {
+  inner: Option<core::entity::EntityIndexBuilder>,
+}
+
+impl EntityIndexBuilder {
+  fn active(&mut self) -> Result<&mut core::entity::EntityIndexBuilder> {
+    self.inner.as_mut().ok_or_else(|| {
+      Error::from_reason("Entity builder has already been consumed")
+    })
+  }
+
+  fn take(&mut self) -> Result<core::entity::EntityIndexBuilder> {
+    self.inner.take().ok_or_else(|| {
+      Error::from_reason("Entity builder has already been consumed")
+    })
+  }
+}
+
+// NAPI decodes these boundary arguments into owned values.
+#[napi]
+#[allow(clippy::needless_pass_by_value)]
+impl EntityIndexBuilder {
+  #[napi(constructor)]
+  pub fn new(options: EntityIndexOptions) -> Result<Self> {
+    let basis = match options.budget.basis {
+      EntityBudgetBasis::Shorter => core::entity::BudgetBasis::Shorter,
+    };
+    let options = core::entity::EntityIndexOptions {
+      forms: options.forms,
+      budget: core::entity::EditBudget {
+        by_length: options.budget.by_length,
+        basis,
+      },
+      initial_weight: options.initial_weight,
+      initial_similarity: options.initial_similarity,
+    };
+    let inner = match panic::catch_unwind(|| {
+      core::entity::EntityIndexBuilder::new(options)
+    }) {
+      Ok(Ok(inner)) => inner,
+      Ok(Err(error)) => return Err(core_to_napi_error(&error)),
+      Err(error) => return Err(panic_to_napi_error(error.as_ref())),
+    };
+    Ok(Self { inner: Some(inner) })
+  }
+
+  #[napi]
+  pub fn intern(&mut self, form: u32, text: String) -> Result<u32> {
+    self
+      .active()?
+      .intern(form, &text)
+      .map_err(|e| core_to_napi_error(&e))
+  }
+
+  #[napi]
+  pub fn add_alias(&mut self, alias: EntityAliasInput) -> Result<u32> {
+    self
+      .active()?
+      .add_alias(alias.into())
+      .map_err(|e| core_to_napi_error(&e))
+  }
+
+  #[napi]
+  pub fn finish_step(&mut self, max_units: u32) -> Result<bool> {
+    self
+      .active()?
+      .finish_step(max_units)
+      .map_err(|e| core_to_napi_error(&e))
+  }
+
+  #[napi]
+  pub fn finish(
+    &mut self,
+    token_weights: Vec<Float64Array>,
+  ) -> Result<EntityIndex> {
+    let weights = token_weights.into_iter().map(|w| w.to_vec()).collect();
+    let inner = self
+      .take()?
+      .finish(weights)
+      .map_err(|e| core_to_napi_error(&e))?;
+    Ok(EntityIndex { inner })
+  }
+
+  #[napi(ts_return_type = "Promise<EntityIndex>")]
+  pub fn finish_async(
+    &mut self,
+    token_weights: Vec<Float64Array>,
+  ) -> Result<AsyncTask<EntityFinishTask>> {
+    let weights = token_weights.into_iter().map(|w| w.to_vec()).collect();
+    Ok(AsyncTask::new(EntityFinishTask {
+      builder: Some(self.take()?),
+      weights: Some(weights),
+    }))
+  }
+}
+
+pub struct EntityFinishTask {
+  builder: Option<core::entity::EntityIndexBuilder>,
+  weights: Option<Vec<Vec<f64>>>,
+}
+
+impl Task for EntityFinishTask {
+  type Output = core::entity::EntityIndex;
+  type JsValue = EntityIndex;
+
+  fn compute(&mut self) -> Result<Self::Output> {
+    let builder = self.builder.take().ok_or_else(|| {
+      Error::from_reason("Entity finish task already executed")
+    })?;
+    let weights = self.weights.take().ok_or_else(|| {
+      Error::from_reason("Entity finish task already executed")
+    })?;
+    match panic::catch_unwind(panic::AssertUnwindSafe(|| {
+      builder.finish(weights)
+    })) {
+      Ok(result) => result.map_err(|e| core_to_napi_error(&e)),
+      Err(error) => Err(panic_to_napi_error(error.as_ref())),
+    }
+  }
+
+  fn resolve(
+    &mut self,
+    _env: Env,
+    inner: Self::Output,
+  ) -> Result<Self::JsValue> {
+    Ok(EntityIndex { inner })
+  }
+}
+
+#[napi]
+pub struct EntityIndex {
+  inner: core::entity::EntityIndex,
+}
+
+// NAPI decodes these boundary arguments into owned values.
+#[napi]
+#[allow(clippy::needless_pass_by_value)]
+impl EntityIndex {
+  #[napi(factory)]
+  pub fn from_bytes(bytes: Uint8Array) -> Result<Self> {
+    let inner = core::entity::EntityIndex::from_bytes(&bytes)
+      .map_err(|e| core_to_napi_error(&e))?;
+    Ok(Self { inner })
+  }
+
+  #[napi]
+  pub fn to_bytes(&self) -> Result<Uint8Array> {
+    self
+      .inner
+      .to_bytes()
+      .map(Uint8Array::new)
+      .map_err(|e| core_to_napi_error(&e))
+  }
+
+  #[napi(getter)]
+  pub fn native_bytes(&self) -> Result<f64> {
+    let bytes = u64::try_from(self.inner.native_bytes())
+      .map_err(|_| u32_overflow_error())?;
+    safe_number(bytes)
+  }
+
+  #[napi(getter)]
+  pub fn posting_count(&self) -> Result<f64> {
+    safe_number(self.inner.posting_count())
+  }
+
+  #[napi(js_name = "_searchPacked")]
+  pub fn search_packed(
+    &self,
+    query: EntityQuery,
+    params: EntitySearchParams,
+  ) -> Result<EntitySearchResult> {
+    let query = query.into();
+    let params = core::entity::SearchParams {
+      tau: params.tau,
+      quality: params.quality,
+      max_cost: work_limit(params.max_cost)?,
+    };
+    let result = self
+      .inner
+      .search(&query, &params)
+      .map_err(|e| core_to_napi_error(&e))?;
+    pack_entity_result(result)
   }
 }
