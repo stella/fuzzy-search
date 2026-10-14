@@ -1,3 +1,5 @@
+pub mod entity;
+
 use std::collections::HashMap;
 use std::fmt;
 
@@ -515,7 +517,7 @@ fn levenshtein(a: &[char], b: &[char]) -> usize {
 /// Levenshtein) on char slices. Counts adjacent
 /// transpositions as a single edit.
 #[allow(clippy::arithmetic_side_effects, clippy::indexing_slicing)]
-fn damerau_levenshtein(a: &[char], b: &[char]) -> usize {
+pub(crate) fn damerau_levenshtein(a: &[char], b: &[char]) -> usize {
   let m = a.len();
   let n = b.len();
   if m == 0 {
