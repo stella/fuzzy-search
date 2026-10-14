@@ -3,6 +3,9 @@
 //! Spellings and weights are supplied by the caller; the index does not
 //! normalize text or compute logarithmic weights.
 
+pub mod lexicon;
+mod osa_walk;
+
 use crate::Result;
 
 /// A spelling-form index, local to an index instance.
@@ -137,7 +140,7 @@ pub struct EntityIndex;
 
 // The initial shared API intentionally has stub bodies while the independent
 // implementation slices are developed. Remove this allowance with the stubs.
-#[allow(clippy::todo)]
+#[allow(clippy::todo, clippy::needless_pass_by_ref_mut)]
 impl EntityIndexBuilder {
   pub fn new(_options: EntityIndexOptions) -> Result<Self> {
     todo!()
@@ -180,11 +183,13 @@ impl EntityIndex {
     todo!()
   }
 
+  #[must_use]
   pub fn native_bytes(&self) -> usize {
     todo!()
   }
 
   /// Number of postings used to derive the caller's work ceiling.
+  #[must_use]
   pub fn posting_count(&self) -> u64 {
     todo!()
   }

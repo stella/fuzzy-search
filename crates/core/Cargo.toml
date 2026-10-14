@@ -15,9 +15,18 @@ categories = ["text-processing"]
 
 [dependencies]
 bon = "3.9.3"
+fst = "0.4.7"
 unicode-case-mapping = "1"
 unicode-normalization = "0.1"
 unicode-segmentation = "1"
+
+[dev-dependencies]
+proptest = "1.11"
+criterion = { version = "0.8.2", default-features = false }
+
+[[bench]]
+name = "entity_lexicon"
+harness = false
 
 [lints]
 workspace = true
