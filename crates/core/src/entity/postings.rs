@@ -51,7 +51,11 @@ impl PostingBuilder {
     if !sum.is_finite() {
       return Err(Error::from_reason("Posting impact sum exceeds f64"));
     }
-    let upper = if sum == 0.0 { 0.0 } else { sum.next_up() };
+    let upper = if *total == 0.0 || impact == 0.0 {
+      sum
+    } else {
+      sum.next_up()
+    };
     if !upper.is_finite() {
       return Err(Error::from_reason(
         "Posting impact sum exceeds finite upward range",
