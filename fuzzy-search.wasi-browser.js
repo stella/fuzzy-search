@@ -57,6 +57,9 @@ const {
   },
 })
 export default __napiModule.exports
+export const EntityIndex = __napiModule.exports.EntityIndex
+export const EntityIndexBuilder = __napiModule.exports.EntityIndexBuilder
 export const FuzzySearch = __napiModule.exports.FuzzySearch
 export const distance = __napiModule.exports.distance
+export const EntityBudgetBasis = __napiModule.exports.EntityBudgetBasis
 export const Metric = __napiModule.exports.Metric

@@ -595,6 +595,9 @@ if (!nativeBinding) {
 }
 
 module.exports = nativeBinding
+module.exports.EntityIndex = nativeBinding.EntityIndex
+module.exports.EntityIndexBuilder = nativeBinding.EntityIndexBuilder
 module.exports.FuzzySearch = nativeBinding.FuzzySearch
 module.exports.distance = nativeBinding.distance
+module.exports.EntityBudgetBasis = nativeBinding.EntityBudgetBasis
 module.exports.Metric = nativeBinding.Metric
