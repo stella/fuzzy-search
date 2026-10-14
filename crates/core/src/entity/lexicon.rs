@@ -139,6 +139,8 @@ impl Lexicon {
       lexicon.text.extend_from_slice(text.as_bytes());
       lexicon.offsets.push(end);
     }
+    lexicon.text.shrink_to_fit();
+    lexicon.offsets.shrink_to_fit();
     Ok(lexicon)
   }
 
@@ -189,12 +191,7 @@ impl Lexicon {
     max_cost: u64,
   ) -> Result<LexiconSearch> {
     budget.validate()?;
-    let spent = cost
-      .lexicon_cells
-      .saturating_add(cost.lexicon_matches)
-      .saturating_add(cost.sorted_accesses)
-      .saturating_add(cost.random_access_pairs)
-      .saturating_add(cost.survivors);
+    let spent = cost.total();
     let mut remaining = max_cost.saturating_sub(spent);
     let mut matches = Vec::new();
     let exact = self.map.get(query);

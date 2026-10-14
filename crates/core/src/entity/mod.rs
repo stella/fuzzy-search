@@ -3,8 +3,28 @@
 //! Spellings and weights are supplied by the caller; the index does not
 //! normalize text or compute logarithmic weights.
 
+mod builder;
+mod cost;
+mod forward;
 pub mod lexicon;
+#[cfg(test)]
+mod oracle;
 mod osa_walk;
+mod postings;
+pub mod search;
+mod serialize;
+#[cfg(test)]
+mod storage_tests;
+
+pub use builder::EntityIndexBuilder;
+
+use std::collections::BTreeSet;
+use std::mem::size_of;
+use std::sync::Arc;
+
+use lexicon::Lexicon;
+use postings::Postings;
+use search::{PostingList, SearchIndex};
 
 use crate::Result;
 
@@ -54,7 +74,7 @@ pub struct AliasJoin {
   pub right: u32,
 }
 
-/// One spelling form of an alias.
+/// One spelling form of an alias. All forms share position weights and minima.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AliasForm {
   pub form: FormId,
@@ -130,67 +150,110 @@ pub struct SearchResult {
   pub exhausted: bool,
 }
 
-/// Mutable construction state. Implemented by the builder slice.
-#[derive(Debug)]
-pub struct EntityIndexBuilder;
-
 /// Immutable index, shareable between searches and serialization.
 #[derive(Debug)]
-pub struct EntityIndex;
-
-// The initial shared API intentionally has stub bodies while the independent
-// implementation slices are developed. Remove this allowance with the stubs.
-#[allow(clippy::todo, clippy::needless_pass_by_ref_mut)]
-impl EntityIndexBuilder {
-  pub fn new(_options: EntityIndexOptions) -> Result<Self> {
-    todo!()
-  }
-
-  pub fn intern(&mut self, _form: FormId, _text: &str) -> Result<TokenId> {
-    todo!()
-  }
-
-  pub fn add_alias(&mut self, _alias: AliasInput) -> Result<AliasId> {
-    todo!()
-  }
-
-  /// Weights are indexed first by form, then by interned token id.
-  pub fn finish(self, _token_weights: Vec<Vec<f64>>) -> Result<EntityIndex> {
-    todo!()
-  }
-
-  /// Perform at most `max_units` construction units; true means complete.
-  pub fn finish_step(&mut self, _max_units: u32) -> Result<bool> {
-    todo!()
-  }
+pub struct EntityIndex {
+  options: EntityIndexOptions,
+  lexicons: Vec<Arc<Lexicon>>,
+  aliases: Vec<AliasInput>,
+  postings: Postings,
+  token_weights: Vec<Vec<f64>>,
 }
 
-#[allow(clippy::todo)]
 impl EntityIndex {
   pub fn search(
     &self,
-    _query: &EntityQuery,
-    _params: &SearchParams,
+    query: &EntityQuery,
+    params: &SearchParams,
   ) -> Result<SearchResult> {
-    todo!()
+    search::search(self, query, params)
   }
 
   pub fn to_bytes(&self) -> Result<Vec<u8>> {
-    todo!()
+    serialize::to_bytes(self)
   }
 
-  pub fn from_bytes(_bytes: &[u8]) -> Result<Self> {
-    todo!()
+  pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
+    serialize::from_bytes(bytes)
   }
 
+  /// Owned allocations, including nested vectors and shared vocabularies once.
   #[must_use]
   pub fn native_bytes(&self) -> usize {
-    todo!()
+    let mut seen = BTreeSet::new();
+    let vocabulary_bytes = self
+      .lexicons
+      .iter()
+      .filter(|lexicon| seen.insert(Arc::as_ptr(lexicon)))
+      .fold(0_usize, |bytes, lexicon| {
+        bytes
+          .saturating_add(lexicon.native_bytes())
+          .saturating_add(2_usize.saturating_mul(size_of::<usize>()))
+      });
+    size_of::<Self>()
+      .saturating_add(
+        self
+          .lexicons
+          .capacity()
+          .saturating_mul(size_of::<Arc<Lexicon>>()),
+      )
+      .saturating_add(vocabulary_bytes)
+      .saturating_add(
+        self
+          .aliases
+          .capacity()
+          .saturating_mul(size_of::<AliasInput>()),
+      )
+      .saturating_add(forward::nested_bytes(&self.aliases))
+      .saturating_add(
+        self
+          .postings
+          .native_bytes()
+          .saturating_sub(size_of::<Postings>()),
+      )
+      .saturating_add(
+        self
+          .token_weights
+          .capacity()
+          .saturating_mul(size_of::<Vec<f64>>()),
+      )
+      .saturating_add(self.token_weights.iter().fold(
+        0_usize,
+        |bytes, weights| {
+          bytes
+            .saturating_add(weights.capacity().saturating_mul(size_of::<f64>()))
+        },
+      ))
+      .saturating_add(self.options.budget.by_length.capacity())
   }
 
-  /// Number of postings used to derive the caller's work ceiling.
   #[must_use]
-  pub fn posting_count(&self) -> u64 {
-    todo!()
+  pub const fn posting_count(&self) -> u64 {
+    self.postings.len()
+  }
+}
+
+impl SearchIndex for EntityIndex {
+  fn options(&self) -> &EntityIndexOptions {
+    &self.options
+  }
+  fn alias_count(&self) -> usize {
+    self.aliases.len()
+  }
+  fn alias(&self, id: AliasId) -> Option<&AliasInput> {
+    self.aliases.get(usize::try_from(id).ok()?)
+  }
+  fn lexicon(&self, form: FormId) -> Option<&Lexicon> {
+    self
+      .lexicons
+      .get(usize::try_from(form).ok()?)
+      .map(Arc::as_ref)
+  }
+  fn posting(
+    &self,
+    list: PostingList,
+    offset: usize,
+  ) -> Option<(AliasId, f64)> {
+    self.postings.get(list, offset)
   }
 }
