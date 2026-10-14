@@ -2,6 +2,373 @@
   "bomFormat": "CycloneDX",
   "components": [
     {
+      "bom-ref": "pkg:cargo/aho-corasick@1.1.5",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c982642fa9e8606056828ee9a8505737230110bb1099153c79efe865c59d12ba"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        },
+        {
+          "license": {
+            "id": "Unlicense"
+          }
+        }
+      ],
+      "name": "aho-corasick",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/aho-corasick@1.1.5",
+      "type": "library",
+      "version": "1.1.5"
+    },
+    {
+      "bom-ref": "pkg:cargo/alloca@0.4.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e5a7d05ea6aea7e9e64d25b9156ba2fee3fdd659e34e41063cd2fc7cd020d7f4"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "alloca",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/alloca@0.4.0",
+      "type": "library",
+      "version": "0.4.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/anes@0.1.6",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4b46cbb362ab8752921c97e041f5e366ee6297bd428a31275b9fcf1e380f7299"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "anes",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/anes@0.1.6",
+      "type": "library",
+      "version": "0.1.6"
+    },
+    {
+      "bom-ref": "pkg:cargo/anstyle@1.0.14",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "anstyle",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/anstyle@1.0.14",
+      "type": "library",
+      "version": "1.0.14"
+    },
+    {
+      "bom-ref": "pkg:cargo/arbitrary@1.5.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed"
+        }
+      ],
+      "name": "arbitrary",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/arbitrary@1.5.0",
+      "type": "library",
+      "version": "1.5.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/autocfg@1.5.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "autocfg",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/autocfg@1.5.1",
+      "type": "library",
+      "version": "1.5.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/bit-set@0.11.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "56d87354e4229f54a44f7bf2435906a4656dba36026ab6eaca629a2c436a691c"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "bit-set",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/bit-set@0.11.1",
+      "type": "library",
+      "version": "0.11.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/bit-vec@0.10.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5727b15fa97d4f4fee0a3b7c3d550ed0269f54329207b86388de918604e31269"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "bit-vec",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/bit-vec@0.10.1",
+      "type": "library",
+      "version": "0.10.1"
+    },
+    {
       "bom-ref": "pkg:cargo/bitflags@2.13.1",
       "evidence": {
         "identity": [
@@ -48,6 +415,42 @@
       "purl": "pkg:cargo/bitflags@2.13.1",
       "type": "library",
       "version": "2.13.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/bon-macros@3.10.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2706da6c749998cc555d04184909608956a69ad3f8ab1a076fbc867b4a3c3ce5"
+        }
+      ],
+      "name": "bon-macros",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/bon-macros@3.10.2",
+      "type": "library",
+      "version": "3.10.2"
     },
     {
       "bom-ref": "pkg:cargo/bon-macros@3.9.3",
@@ -98,6 +501,42 @@
       "version": "3.9.3"
     },
     {
+      "bom-ref": "pkg:cargo/bon@3.10.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "214f5df094ce551a10a30ffb9c70243d61f121a3d985a6495933e181dee6a7d2"
+        }
+      ],
+      "name": "bon",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/bon@3.10.2",
+      "type": "library",
+      "version": "3.10.2"
+    },
+    {
       "bom-ref": "pkg:cargo/bon@3.9.3",
       "evidence": {
         "identity": [
@@ -144,6 +583,240 @@
       "purl": "pkg:cargo/bon@3.9.3",
       "type": "library",
       "version": "3.9.3"
+    },
+    {
+      "bom-ref": "pkg:cargo/borsh-derive@1.8.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "12cdfe656708a01f89b451a7d36466e6fe6c414de0aa18fc54f864f6f9ca9f56"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "name": "borsh-derive",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/borsh-derive@1.8.1",
+      "type": "library",
+      "version": "1.8.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/borsh@1.8.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "553c5d846a6ba5150c65e3b1b8ec073bcf1abc20f9b7220de384a4443ea4e20a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "borsh",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/borsh@1.8.1",
+      "type": "library",
+      "version": "1.8.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/bytes@1.12.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "bytes",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/bytes@1.12.1",
+      "type": "library",
+      "version": "1.12.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/cast@0.3.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "cast",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/cast@0.3.0",
+      "type": "library",
+      "version": "0.3.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/cc@1.8.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6651c9ed80effdc7db0ff72512157f901af5e3549e341e24b1dd4887d836d838"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "cc",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/cc@1.8.0",
+      "type": "library",
+      "version": "1.8.0"
     },
     {
       "bom-ref": "pkg:cargo/cfg-if@1.0.4",
@@ -194,6 +867,406 @@
       "version": "1.0.4"
     },
     {
+      "bom-ref": "pkg:cargo/cfg-if@1.0.5",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
+        }
+      ],
+      "name": "cfg-if",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/cfg-if@1.0.5",
+      "type": "library",
+      "version": "1.0.5"
+    },
+    {
+      "bom-ref": "pkg:cargo/cfg_aliases@0.2.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "cfg_aliases",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/cfg_aliases@0.2.2",
+      "type": "library",
+      "version": "0.2.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/chacha20@0.10.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "chacha20",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/chacha20@0.10.2",
+      "type": "library",
+      "version": "0.10.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/ciborium-io@0.2.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "05afea1e0a06c9be33d539b876f1ce3692f4afea2cb41f740e7743225ed1c757"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "name": "ciborium-io",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/ciborium-io@0.2.2",
+      "type": "library",
+      "version": "0.2.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/ciborium-ll@0.2.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "57663b653d948a338bfb3eeba9bb2fd5fcfaecb9e199e87e1eda4d9e8b240fd9"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "name": "ciborium-ll",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/ciborium-ll@0.2.2",
+      "type": "library",
+      "version": "0.2.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/ciborium@0.2.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "42e69ffd6f0917f5c029256a24d0161db17cea3997d185db0d35926308770f0e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "name": "ciborium",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/ciborium@0.2.2",
+      "type": "library",
+      "version": "0.2.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/clap@4.6.7",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "aa8876b300ab35ba921adea3dfd70157a46249b33f95c9084ae5709785478946"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "clap",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/clap@4.6.7",
+      "type": "library",
+      "version": "4.6.7"
+    },
+    {
+      "bom-ref": "pkg:cargo/clap_builder@4.6.7",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ec0797fb7aeb1406c84efac526901f7ec3ead2124f946b494e72879d4b54704d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "clap_builder",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/clap_builder@4.6.7",
+      "type": "library",
+      "version": "4.6.7"
+    },
+    {
+      "bom-ref": "pkg:cargo/clap_lex@1.1.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "clap_lex",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/clap_lex@1.1.1",
+      "type": "library",
+      "version": "1.1.1"
+    },
+    {
       "bom-ref": "pkg:cargo/convert_case@0.11.0",
       "evidence": {
         "identity": [
@@ -235,6 +1308,236 @@
       "purl": "pkg:cargo/convert_case@0.11.0",
       "type": "library",
       "version": "0.11.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/core_detect@1.0.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7f8f80099a98041a3d1622845c271458a2d73e688351bf3cb999266764b81d48"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT/Apache-2.0"
+          }
+        }
+      ],
+      "name": "core_detect",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/core_detect@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/cpufeatures@0.3.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5ca28b0ae3115b884660db4118d803791fd6756b6e88f39c0f3f7859060d7566"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "cpufeatures",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/cpufeatures@0.3.1",
+      "type": "library",
+      "version": "0.3.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/criterion-plot@0.8.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d8d80a2f4f5b554395e47b5d8305bc3d27813bacb73493eb1001e8f76dae29ea"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "criterion-plot",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/criterion-plot@0.8.2",
+      "type": "library",
+      "version": "0.8.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/criterion@0.8.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "950046b2aa2492f9a536f5f4f9a3de7b9e2476e575e05bd6c333371add4d98f3"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "criterion",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/criterion@0.8.2",
+      "type": "library",
+      "version": "0.8.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/crunchy@0.2.4",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "crunchy",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/crunchy@0.2.4",
+      "type": "library",
+      "version": "0.2.4"
     },
     {
       "bom-ref": "pkg:cargo/ctor@1.0.13",
@@ -328,6 +1631,42 @@
       "version": "0.23.0"
     },
     {
+      "bom-ref": "pkg:cargo/darling@0.24.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ed17f5901b6630b993ca003def43f2f8ef4014fc13b047b57aad617ff32bc2ec"
+        }
+      ],
+      "name": "darling",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/darling@0.24.1",
+      "type": "library",
+      "version": "0.24.1"
+    },
+    {
       "bom-ref": "pkg:cargo/darling_core@0.23.0",
       "evidence": {
         "identity": [
@@ -371,6 +1710,42 @@
       "version": "0.23.0"
     },
     {
+      "bom-ref": "pkg:cargo/darling_core@0.24.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6837e2cf7485aaae18f86181d2f0e9a7ed297a025e220aeabf63fdebd3a2ddff"
+        }
+      ],
+      "name": "darling_core",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/darling_core@0.24.1",
+      "type": "library",
+      "version": "0.24.1"
+    },
+    {
       "bom-ref": "pkg:cargo/darling_macro@0.23.0",
       "evidence": {
         "identity": [
@@ -412,6 +1787,376 @@
       "purl": "pkg:cargo/darling_macro@0.23.0",
       "type": "library",
       "version": "0.23.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/darling_macro@0.24.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2ac7135c3ef02b2f7833bbeb1be5ba7f966dcde8a87c6b87f65a778d71a02785"
+        }
+      ],
+      "name": "darling_macro",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/darling_macro@0.24.1",
+      "type": "library",
+      "version": "0.24.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/either@1.19.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0e9c71c2167ca323c882b99918929403426e2373ea17242ff5653e0d5e1058be"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "either",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/either@1.19.0",
+      "type": "library",
+      "version": "1.19.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/equivalent@1.0.3",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "00d174d5400e5e8fd687ad1049e2f578285fa914201b1af7e8b112a4546bd826"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "equivalent",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/equivalent@1.0.3",
+      "type": "library",
+      "version": "1.0.3"
+    },
+    {
+      "bom-ref": "pkg:cargo/errno@0.3.14",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "errno",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/errno@0.3.14",
+      "type": "library",
+      "version": "0.3.14"
+    },
+    {
+      "bom-ref": "pkg:cargo/fastrand@2.5.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "fastrand",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/fastrand@2.5.0",
+      "type": "library",
+      "version": "2.5.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/find-msvc-tools@0.1.14",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "aedcfb3409746eddb02b9e19ebda1c3394f759a152e48ee875a0844d1b955484"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "find-msvc-tools",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/find-msvc-tools@0.1.14",
+      "type": "library",
+      "version": "0.1.14"
+    },
+    {
+      "bom-ref": "pkg:cargo/fnv@1.0.7",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0 / MIT"
+          }
+        }
+      ],
+      "name": "fnv",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/fnv@1.0.7",
+      "type": "library",
+      "version": "1.0.7"
+    },
+    {
+      "bom-ref": "pkg:cargo/fst@0.4.7",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7ab85b9b05e3978cc9a9cf8fea7f01b494e1a09ed3037e16ba39edc7a29eb61a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Unlicense/MIT"
+          }
+        }
+      ],
+      "name": "fst",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/fst@0.4.7",
+      "type": "library",
+      "version": "0.4.7"
     },
     {
       "bom-ref": "pkg:cargo/futures-channel@0.3.34",
@@ -846,7 +2591,59 @@
       "version": "0.3.34"
     },
     {
-      "bom-ref": "pkg:cargo/ident_case@1.0.1",
+      "bom-ref": "pkg:cargo/getrandom@0.4.3",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "getrandom",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/getrandom@0.4.3",
+      "type": "library",
+      "version": "0.4.3"
+    },
+    {
+      "bom-ref": "pkg:cargo/half@2.7.1",
       "evidence": {
         "identity": [
           {
@@ -858,6 +2655,102 @@
                 "confidence": 0.6,
                 "technique": "manifest-analysis",
                 "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6ea2d84b969582b4b1864a92dc5d27cd2b77b622a8d79306834f1be5ba20d84b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "half",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/half@2.7.1",
+      "type": "library",
+      "version": "2.7.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/hashbrown@0.17.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "hashbrown",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/hashbrown@0.17.1",
+      "type": "library",
+      "version": "0.17.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/ident_case@1.0.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
               }
             ]
           }
@@ -882,11 +2775,111 @@
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
         }
       ],
       "purl": "pkg:cargo/ident_case@1.0.1",
       "type": "library",
       "version": "1.0.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/indexmap@2.14.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "cc4e190f5d26ca7051642629da2c52fc03bde85a03197c99408dcd291734c855"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "indexmap",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/indexmap@2.14.2",
+      "type": "library",
+      "version": "2.14.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/itertools@0.13.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "itertools",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/itertools@0.13.0",
+      "type": "library",
+      "version": "0.13.0"
     },
     {
       "bom-ref": "pkg:cargo/itoa@1.0.18",
@@ -937,6 +2930,130 @@
       "version": "1.0.18"
     },
     {
+      "bom-ref": "pkg:cargo/jobserver@0.1.35",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1c00acbd29eabad4a2392fa0e921c874934dbbf4194312ad20f04a0ed67a3cb3"
+        }
+      ],
+      "name": "jobserver",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/jobserver@0.1.35",
+      "type": "library",
+      "version": "0.1.35"
+    },
+    {
+      "bom-ref": "pkg:cargo/libc@0.2.190",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ce5d3ddc6d3fa000eb1536d85e147bfe31aacaba692ed6a876f95cb7c855be78"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "libc",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/libc@0.2.190",
+      "type": "library",
+      "version": "0.2.190"
+    },
+    {
+      "bom-ref": "pkg:cargo/libfuzzer-sys@0.4.13",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a9fd2f41a1cba099f79a0b6b6c35656cf7c03351a7bae8ff0f28f25270f929d2"
+        }
+      ],
+      "name": "libfuzzer-sys",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/libfuzzer-sys@0.4.13",
+      "type": "library",
+      "version": "0.4.13"
+    },
+    {
       "bom-ref": "pkg:cargo/libloading@0.9.0",
       "evidence": {
         "identity": [
@@ -978,6 +3095,47 @@
       "purl": "pkg:cargo/libloading@0.9.0",
       "type": "library",
       "version": "0.9.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/linux-raw-sys@0.12.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+        }
+      ],
+      "name": "linux-raw-sys",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/linux-raw-sys@0.12.1",
+      "type": "library",
+      "version": "0.12.1"
     },
     {
       "bom-ref": "pkg:cargo/memchr@2.8.3",
@@ -1291,6 +3449,188 @@
       "version": "0.2.0"
     },
     {
+      "bom-ref": "pkg:cargo/num-traits@0.2.19",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "num-traits",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/num-traits@0.2.19",
+      "type": "library",
+      "version": "0.2.19"
+    },
+    {
+      "bom-ref": "pkg:cargo/once_cell@1.21.4",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "once_cell",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/once_cell@1.21.4",
+      "type": "library",
+      "version": "1.21.4"
+    },
+    {
+      "bom-ref": "pkg:cargo/oorandom@11.1.5",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d6790f58c7ff633d8771f42965289203411a5e5c68388703c06e14f24770b41e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "oorandom",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/oorandom@11.1.5",
+      "type": "library",
+      "version": "11.1.5"
+    },
+    {
+      "bom-ref": "pkg:cargo/page_size@0.6.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "30d5b2194ed13191c1999ae0704b7839fb18384fa22e49b57eeaa97d79ce40da"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT/Apache-2.0"
+          }
+        }
+      ],
+      "name": "page_size",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/page_size@0.6.0",
+      "type": "library",
+      "version": "0.6.0"
+    },
+    {
       "bom-ref": "pkg:cargo/pin-project-lite@0.2.17",
       "evidence": {
         "identity": [
@@ -1387,7 +3727,43 @@
       "version": "0.2.37"
     },
     {
-      "bom-ref": "pkg:cargo/proc-macro2@1.0.107",
+      "bom-ref": "pkg:cargo/prettyplease@0.3.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2bfe0f4c752e450fc2faf62654f1c134747922825d5b04ca717b8874f41a40c0"
+        }
+      ],
+      "name": "prettyplease",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/prettyplease@0.3.0",
+      "type": "library",
+      "version": "0.3.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/proc-macro-crate@3.5.0",
       "evidence": {
         "identity": [
           {
@@ -1399,6 +3775,54 @@
                 "confidence": 0.6,
                 "technique": "manifest-analysis",
                 "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e67ba7e9b2b56446f1d419b1d807906278ffa1a658a8a5d8a39dcb1f5a78614f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "proc-macro-crate",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/proc-macro-crate@3.5.0",
+      "type": "library",
+      "version": "3.5.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/proc-macro2@1.0.107",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
               }
             ]
           }
@@ -1428,6 +3852,10 @@
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
         }
       ],
       "purl": "pkg:cargo/proc-macro2@1.0.107",
@@ -1435,7 +3863,7 @@
       "version": "1.0.107"
     },
     {
-      "bom-ref": "pkg:cargo/quote@1.0.47",
+      "bom-ref": "pkg:cargo/proptest@1.12.0",
       "evidence": {
         "identity": [
           {
@@ -1447,6 +3875,97 @@
                 "confidence": 0.6,
                 "technique": "manifest-analysis",
                 "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b8530004ccb15eae51c7e40009fbe317f341f804db54dc033eec1c50be28cfa0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "proptest",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/proptest@1.12.0",
+      "type": "library",
+      "version": "1.12.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/quick-error@1.2.3",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT/Apache-2.0"
+          }
+        }
+      ],
+      "name": "quick-error",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/quick-error@1.2.3",
+      "type": "library",
+      "version": "1.2.3"
+    },
+    {
+      "bom-ref": "pkg:cargo/quote@1.0.47",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
               }
             ]
           }
@@ -1476,11 +3995,360 @@
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
         }
       ],
       "purl": "pkg:cargo/quote@1.0.47",
       "type": "library",
       "version": "1.0.47"
+    },
+    {
+      "bom-ref": "pkg:cargo/r-efi@6.0.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "r-efi",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/r-efi@6.0.0",
+      "type": "library",
+      "version": "6.0.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/rand@0.10.3",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "65c9fb96cbc91e3478eaae79a69fcd3f1ae4ad052e471fe6732fff548984b4af"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "rand",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/rand@0.10.3",
+      "type": "library",
+      "version": "0.10.3"
+    },
+    {
+      "bom-ref": "pkg:cargo/rand_core@0.10.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "rand_core",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/rand_core@0.10.1",
+      "type": "library",
+      "version": "0.10.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/rand_xorshift@0.5.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "60aa6af80be32871323012e02e6e65f8a7cc7890931ae421d217ad8fe0df2ccf"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "rand_xorshift",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/rand_xorshift@0.5.0",
+      "type": "library",
+      "version": "0.5.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/regex-automata@0.4.18",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ad8553b9b26413251cbf30e620595c7a41b3887f03da04579c0e6b0d6a06b4b2"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "regex-automata",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/regex-automata@0.4.18",
+      "type": "library",
+      "version": "0.4.18"
+    },
+    {
+      "bom-ref": "pkg:cargo/regex-syntax@0.8.11",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "regex-syntax",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/regex-syntax@0.8.11",
+      "type": "library",
+      "version": "0.8.11"
+    },
+    {
+      "bom-ref": "pkg:cargo/regex@1.13.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f020237b6c8eed93db2e2cb53c00c60a8e1bc73da7d073199a1180401450218d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "regex",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/regex@1.13.1",
+      "type": "library",
+      "version": "1.13.1"
     },
     {
       "bom-ref": "pkg:cargo/rustc-hash@2.1.3",
@@ -1531,6 +4399,47 @@
       "version": "2.1.3"
     },
     {
+      "bom-ref": "pkg:cargo/rustix@1.1.5",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "891efababe418670775f199f0d233d84843c227a0949a883ce15b37c78d6629d"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+        }
+      ],
+      "name": "rustix",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/rustix@1.1.5",
+      "type": "library",
+      "version": "1.1.5"
+    },
+    {
       "bom-ref": "pkg:cargo/rustversion@1.0.23",
       "evidence": {
         "identity": [
@@ -1577,6 +4486,92 @@
       "purl": "pkg:cargo/rustversion@1.0.23",
       "type": "library",
       "version": "1.0.23"
+    },
+    {
+      "bom-ref": "pkg:cargo/rusty-fork@0.3.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "cc6bf79ff24e648f6da1f8d1f011e9cac26491b619e6b9280f2b47f1774e6ee2"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT/Apache-2.0"
+          }
+        }
+      ],
+      "name": "rusty-fork",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/rusty-fork@0.3.1",
+      "type": "library",
+      "version": "0.3.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/same-file@1.0.6",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Unlicense/MIT"
+          }
+        }
+      ],
+      "name": "same-file",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/same-file@1.0.6",
+      "type": "library",
+      "version": "1.0.6"
     },
     {
       "bom-ref": "pkg:cargo/semver@1.0.28",
@@ -1819,6 +4814,58 @@
       "version": "1.0.151"
     },
     {
+      "bom-ref": "pkg:cargo/shlex@2.0.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "shlex",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/shlex@2.0.1",
+      "type": "library",
+      "version": "2.0.1"
+    },
+    {
       "bom-ref": "pkg:cargo/slab@0.4.12",
       "evidence": {
         "identity": [
@@ -1862,18 +4909,48 @@
       "version": "0.4.12"
     },
     {
-      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
+      "bom-ref": "pkg:cargo/stella-fuzzy-search-core-fuzz@0.0.0",
       "evidence": {
         "identity": [
           {
-            "concludedValue": "Cargo.lock",
+            "concludedValue": "fuzz/Cargo.lock",
             "confidence": 0.6,
             "field": "purl",
             "methods": [
               {
                 "confidence": 0.6,
                 "technique": "manifest-analysis",
-                "value": "Cargo.lock"
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "name": "stella-fuzzy-search-core-fuzz",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/stella-fuzzy-search-core-fuzz@0.0.0",
+      "type": "library",
+      "version": "0.0.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
               }
             ]
           }
@@ -1885,6 +4962,10 @@
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
         }
       ],
       "purl": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
@@ -1926,14 +5007,14 @@
       "evidence": {
         "identity": [
           {
-            "concludedValue": "Cargo.lock",
+            "concludedValue": "fuzz/Cargo.lock",
             "confidence": 0.6,
             "field": "purl",
             "methods": [
               {
                 "confidence": 0.6,
                 "technique": "manifest-analysis",
-                "value": "Cargo.lock"
+                "value": "fuzz/Cargo.lock"
               }
             ]
           }
@@ -1958,6 +5039,10 @@
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
         }
       ],
       "purl": "pkg:cargo/strsim@0.11.1",
@@ -2061,6 +5146,138 @@
       "version": "3.0.3"
     },
     {
+      "bom-ref": "pkg:cargo/syn@3.0.9",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b"
+        }
+      ],
+      "name": "syn",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/syn@3.0.9",
+      "type": "library",
+      "version": "3.0.9"
+    },
+    {
+      "bom-ref": "pkg:cargo/tempfile@3.27.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "tempfile",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/tempfile@3.27.0",
+      "type": "library",
+      "version": "3.27.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/tinytemplate@1.2.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "tinytemplate",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/tinytemplate@1.2.1",
+      "type": "library",
+      "version": "1.2.1"
+    },
+    {
       "bom-ref": "pkg:cargo/tinyvec@1.12.0",
       "evidence": {
         "identity": [
@@ -2112,6 +5329,42 @@
       "purl": "pkg:cargo/tinyvec@1.12.0",
       "type": "library",
       "version": "1.12.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/tinyvec@1.13.3",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee"
+        }
+      ],
+      "name": "tinyvec",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/tinyvec@1.13.3",
+      "type": "library",
+      "version": "1.13.3"
     },
     {
       "bom-ref": "pkg:cargo/tinyvec_macros@0.1.1",
@@ -2167,7 +5420,7 @@
       "version": "0.1.1"
     },
     {
-      "bom-ref": "pkg:cargo/unicode-case-mapping@1.0.0",
+      "bom-ref": "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0",
       "evidence": {
         "identity": [
           {
@@ -2179,6 +5432,165 @@
                 "confidence": 0.6,
                 "technique": "manifest-analysis",
                 "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2b86d767906c6c42421dcba507eb9d203e779497710a47782a224bb871653053"
+        }
+      ],
+      "name": "toml_datetime",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/toml_datetime@1.1.2%2Bspec-1.1.0",
+      "type": "library",
+      "version": "1.1.2+spec-1.1.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/toml_edit@0.25.17+spec-1.1.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e3641d5bbb5349a79e1020a242d251efbc546ad8048d133958323ce9c40a9c9c"
+        }
+      ],
+      "name": "toml_edit",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/toml_edit@0.25.17%2Bspec-1.1.0",
+      "type": "library",
+      "version": "0.25.17+spec-1.1.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/toml_parser@1.1.5+spec-1.1.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "baa693a8032d7e1cada7d0041e96126df243179ff061456783ac7f12bda4744c"
+        }
+      ],
+      "name": "toml_parser",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/toml_parser@1.1.5%2Bspec-1.1.0",
+      "tags": [
+        "parse"
+      ],
+      "type": "library",
+      "version": "1.1.5+spec-1.1.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/unarray@0.1.4",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "eaea85b334db583fe3274d12b4cd1880032beab409c0d774be044d4480ab9a94"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "unarray",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/unarray@0.1.4",
+      "type": "library",
+      "version": "0.1.4"
+    },
+    {
+      "bom-ref": "pkg:cargo/unicode-case-mapping@1.0.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
               }
             ]
           }
@@ -2203,6 +5615,10 @@
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
         }
       ],
       "purl": "pkg:cargo/unicode-case-mapping@1.0.0",
@@ -2251,18 +5667,54 @@
       "version": "1.0.24"
     },
     {
-      "bom-ref": "pkg:cargo/unicode-normalization@0.1.25",
+      "bom-ref": "pkg:cargo/unicode-ident@1.0.27",
       "evidence": {
         "identity": [
           {
-            "concludedValue": "Cargo.lock",
+            "concludedValue": "fuzz/Cargo.lock",
             "confidence": 0.6,
             "field": "purl",
             "methods": [
               {
                 "confidence": 0.6,
                 "technique": "manifest-analysis",
-                "value": "Cargo.lock"
+                "value": "fuzz/Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
+        }
+      ],
+      "name": "unicode-ident",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/unicode-ident@1.0.27",
+      "type": "library",
+      "version": "1.0.27"
+    },
+    {
+      "bom-ref": "pkg:cargo/unicode-normalization@0.1.25",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "fuzz/Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "fuzz/Cargo.lock"
               }
             ]
           }
@@ -2292,6 +5744,10 @@
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
         }
       ],
       "purl": "pkg:cargo/unicode-normalization@0.1.25",
@@ -2303,14 +5759,14 @@
       "evidence": {
         "identity": [
           {
-            "concludedValue": "Cargo.lock",
+            "concludedValue": "fuzz/Cargo.lock",
             "confidence": 0.6,
             "field": "purl",
             "methods": [
               {
                 "confidence": 0.6,
                 "technique": "manifest-analysis",
-                "value": "Cargo.lock"
+                "value": "fuzz/Cargo.lock"
               }
             ]
           }
@@ -2340,11 +5796,278 @@
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
+        },
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
         }
       ],
       "purl": "pkg:cargo/unicode-segmentation@1.13.3",
       "type": "library",
       "version": "1.13.3"
+    },
+    {
+      "bom-ref": "pkg:cargo/wait-timeout@0.2.1",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "09ac3b126d3914f9849036f826e054cbabdc8519970b8998ddaf3b5bd3c65f11"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT/Apache-2.0"
+          }
+        }
+      ],
+      "name": "wait-timeout",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/wait-timeout@0.2.1",
+      "type": "library",
+      "version": "0.2.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/walkdir@2.5.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Unlicense/MIT"
+          }
+        }
+      ],
+      "name": "walkdir",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/walkdir@2.5.0",
+      "type": "library",
+      "version": "2.5.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/winapi-i686-pc-windows-gnu@0.4.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT/Apache-2.0"
+          }
+        }
+      ],
+      "name": "winapi-i686-pc-windows-gnu",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/winapi-i686-pc-windows-gnu@0.4.0",
+      "type": "library",
+      "version": "0.4.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/winapi-util@0.1.11",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        },
+        {
+          "license": {
+            "id": "Unlicense"
+          }
+        }
+      ],
+      "name": "winapi-util",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/winapi-util@0.1.11",
+      "type": "library",
+      "version": "0.1.11"
+    },
+    {
+      "bom-ref": "pkg:cargo/winapi-x86_64-pc-windows-gnu@0.4.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT/Apache-2.0"
+          }
+        }
+      ],
+      "name": "winapi-x86_64-pc-windows-gnu",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/winapi-x86_64-pc-windows-gnu@0.4.0",
+      "type": "library",
+      "version": "0.4.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/winapi@0.3.9",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT/Apache-2.0"
+          }
+        }
+      ],
+      "name": "winapi",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/winapi@0.3.9",
+      "type": "library",
+      "version": "0.3.9"
     },
     {
       "bom-ref": "pkg:cargo/windows-link@0.2.1",
@@ -2395,6 +6118,203 @@
       "version": "0.2.1"
     },
     {
+      "bom-ref": "pkg:cargo/windows-sys@0.61.2",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "windows-sys",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/windows-sys@0.61.2",
+      "type": "library",
+      "version": "0.61.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/winnow@1.0.4",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "winnow",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/winnow@1.0.4",
+      "type": "library",
+      "version": "1.0.4"
+    },
+    {
+      "bom-ref": "pkg:cargo/zerocopy-derive@0.8.63",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "863ad3ac83293fb4d740aedbfdc9240dd8d1a50c1099acd76ce80ce7c7230c7f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "zerocopy-derive",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/zerocopy-derive@0.8.63",
+      "type": "library",
+      "version": "0.8.63"
+    },
+    {
+      "bom-ref": "pkg:cargo/zerocopy@0.8.63",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e5fe1f8f1b06191a00962174c61aa5005e0bb391a6d80d07e24d115c01a92ed8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "zerocopy",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/zerocopy@0.8.63",
+      "type": "library",
+      "version": "0.8.63"
+    },
+    {
       "bom-ref": "pkg:cargo/zmij@1.0.23",
       "evidence": {
         "identity": [
@@ -2436,6 +6356,69 @@
       "purl": "pkg:cargo/zmij@1.0.23",
       "type": "library",
       "version": "1.0.23"
+    },
+    {
+      "authors": [
+        {
+          "name": "LongYinan (https://github.com/Brooooooklyn)"
+        }
+      ],
+      "bom-ref": "pkg:npm/@napi-rs/wasm-runtime@1.2.3",
+      "description": "Runtime and polyfill for wasm targets",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "node_modules/@napi-rs/wasm-runtime/package.json",
+            "confidence": 0.7,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.7,
+                "technique": "manifest-analysis",
+                "value": "node_modules/@napi-rs/wasm-runtime/package.json"
+              }
+            ]
+          }
+        ],
+        "occurrences": [
+          {
+            "location": "wasi-worker-browser.mjs#5"
+          },
+          {
+            "location": "wasi-worker.mjs#13"
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://napi.rs/"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/napi-rs/napi-rs.git"
+        }
+      ],
+      "group": "@napi-rs",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+          }
+        }
+      ],
+      "name": "wasm-runtime",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "node_modules/@napi-rs/wasm-runtime/package.json"
+        }
+      ],
+      "purl": "pkg:npm/%40napi-rs/wasm-runtime@1.2.3",
+      "scope": "required",
+      "type": "library",
+      "version": "1.2.3"
     },
     {
       "authors": [
@@ -2569,6 +6552,43 @@
   ],
   "dependencies": [
     {
+      "dependsOn": [
+        "pkg:cargo/memchr@2.8.3"
+      ],
+      "ref": "pkg:cargo/aho-corasick@1.1.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cc@1.8.0"
+      ],
+      "ref": "pkg:cargo/alloca@0.4.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/anes@0.1.6"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/anstyle@1.0.14"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/autocfg@1.5.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bit-vec@0.10.1"
+      ],
+      "ref": "pkg:cargo/bit-set@0.11.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/borsh@1.8.1",
+        "pkg:cargo/serde@1.0.229"
+      ],
+      "ref": "pkg:cargo/bit-vec@0.10.1"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/bitflags@2.13.1"
     },
@@ -2592,14 +6612,138 @@
       "ref": "pkg:cargo/bon-macros@3.9.3"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/borsh-derive@1.8.1",
+        "pkg:cargo/bytes@1.12.1",
+        "pkg:cargo/cfg_aliases@0.2.2"
+      ],
+      "ref": "pkg:cargo/borsh@1.8.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/once_cell@1.21.4",
+        "pkg:cargo/proc-macro-crate@3.5.0",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.3"
+      ],
+      "ref": "pkg:cargo/borsh-derive@1.8.1"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/bytes@1.12.1"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/cast@0.3.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/find-msvc-tools@0.1.14",
+        "pkg:cargo/jobserver@0.1.35",
+        "pkg:cargo/libc@0.2.190",
+        "pkg:cargo/shlex@2.0.1"
+      ],
+      "ref": "pkg:cargo/cc@1.8.0"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/cfg-if@1.0.4"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/cfg_aliases@0.2.2"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cfg-if@1.0.4",
+        "pkg:cargo/cpufeatures@0.3.1",
+        "pkg:cargo/rand_core@0.10.1"
+      ],
+      "ref": "pkg:cargo/chacha20@0.10.2"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/ciborium-io@0.2.2",
+        "pkg:cargo/ciborium-ll@0.2.2",
+        "pkg:cargo/serde@1.0.229"
+      ],
+      "ref": "pkg:cargo/ciborium@0.2.2"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/ciborium-io@0.2.2"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/ciborium-io@0.2.2",
+        "pkg:cargo/half@2.7.1"
+      ],
+      "ref": "pkg:cargo/ciborium-ll@0.2.2"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/clap_builder@4.6.7"
+      ],
+      "ref": "pkg:cargo/clap@4.6.7"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/anstyle@1.0.14",
+        "pkg:cargo/clap_lex@1.1.1"
+      ],
+      "ref": "pkg:cargo/clap_builder@4.6.7"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/clap_lex@1.1.1"
     },
     {
       "dependsOn": [
         "pkg:cargo/unicode-segmentation@1.13.3"
       ],
       "ref": "pkg:cargo/convert_case@0.11.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/core_detect@1.0.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/libc@0.2.190"
+      ],
+      "ref": "pkg:cargo/cpufeatures@0.3.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/alloca@0.4.0",
+        "pkg:cargo/anes@0.1.6",
+        "pkg:cargo/cast@0.3.0",
+        "pkg:cargo/ciborium@0.2.2",
+        "pkg:cargo/clap@4.6.7",
+        "pkg:cargo/criterion-plot@0.8.2",
+        "pkg:cargo/itertools@0.13.0",
+        "pkg:cargo/num-traits@0.2.19",
+        "pkg:cargo/oorandom@11.1.5",
+        "pkg:cargo/page_size@0.6.0",
+        "pkg:cargo/regex@1.13.1",
+        "pkg:cargo/serde@1.0.229",
+        "pkg:cargo/serde_json@1.0.151",
+        "pkg:cargo/tinytemplate@1.2.1",
+        "pkg:cargo/walkdir@2.5.0"
+      ],
+      "ref": "pkg:cargo/criterion@0.8.2"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cast@0.3.0",
+        "pkg:cargo/itertools@0.13.0"
+      ],
+      "ref": "pkg:cargo/criterion-plot@0.8.2"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/crunchy@0.2.4"
     },
     {
       "dependsOn": [],
@@ -2629,6 +6773,37 @@
         "pkg:cargo/syn@2.0.119"
       ],
       "ref": "pkg:cargo/darling_macro@0.23.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/either@1.19.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/equivalent@1.0.3"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/libc@0.2.190",
+        "pkg:cargo/windows-sys@0.61.2"
+      ],
+      "ref": "pkg:cargo/errno@0.3.14"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/fastrand@2.5.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/find-msvc-tools@0.1.14"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/fnv@1.0.7"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/fst@0.4.7"
     },
     {
       "dependsOn": [
@@ -2696,12 +6871,51 @@
       "ref": "pkg:cargo/futures-util@0.3.34"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/cfg-if@1.0.4",
+        "pkg:cargo/cfg-if@1.0.5",
+        "pkg:cargo/libc@0.2.190",
+        "pkg:cargo/r-efi@6.0.0",
+        "pkg:cargo/rand_core@0.10.1"
+      ],
+      "ref": "pkg:cargo/getrandom@0.4.3"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cfg-if@1.0.4",
+        "pkg:cargo/crunchy@0.2.4",
+        "pkg:cargo/zerocopy@0.8.63"
+      ],
+      "ref": "pkg:cargo/half@2.7.1"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/hashbrown@0.17.1"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/ident_case@1.0.1"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/equivalent@1.0.3",
+        "pkg:cargo/hashbrown@0.17.1"
+      ],
+      "ref": "pkg:cargo/indexmap@2.14.2"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/either@1.19.0"
+      ],
+      "ref": "pkg:cargo/itertools@0.13.0"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/itoa@1.0.18"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/libc@0.2.190"
     },
     {
       "dependsOn": [
@@ -2709,6 +6923,10 @@
         "pkg:cargo/windows-link@0.2.1"
       ],
       "ref": "pkg:cargo/libloading@0.9.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/linux-raw-sys@0.12.1"
     },
     {
       "dependsOn": [],
@@ -2764,6 +6982,27 @@
       "ref": "pkg:cargo/nohash-hasher@0.2.0"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/autocfg@1.5.1"
+      ],
+      "ref": "pkg:cargo/num-traits@0.2.19"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/once_cell@1.21.4"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/oorandom@11.1.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/libc@0.2.190",
+        "pkg:cargo/winapi@0.3.9"
+      ],
+      "ref": "pkg:cargo/page_size@0.6.0"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/pin-project-lite@0.2.17"
     },
@@ -2776,9 +7015,37 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/unicode-ident@1.0.24"
+        "pkg:cargo/toml_edit@0.25.17+spec-1.1.0"
+      ],
+      "ref": "pkg:cargo/proc-macro-crate@3.5.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/unicode-ident@1.0.24",
+        "pkg:cargo/unicode-ident@1.0.27"
       ],
       "ref": "pkg:cargo/proc-macro2@1.0.107"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bit-set@0.11.1",
+        "pkg:cargo/bit-vec@0.10.1",
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/chacha20@0.10.2",
+        "pkg:cargo/core_detect@1.0.0",
+        "pkg:cargo/num-traits@0.2.19",
+        "pkg:cargo/rand@0.10.3",
+        "pkg:cargo/rand_xorshift@0.5.0",
+        "pkg:cargo/regex-syntax@0.8.11",
+        "pkg:cargo/rusty-fork@0.3.1",
+        "pkg:cargo/tempfile@3.27.0",
+        "pkg:cargo/unarray@0.1.4"
+      ],
+      "ref": "pkg:cargo/proptest@1.12.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/quick-error@1.2.3"
     },
     {
       "dependsOn": [
@@ -2788,11 +7055,78 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/r-efi@6.0.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/getrandom@0.4.3",
+        "pkg:cargo/rand_core@0.10.1"
+      ],
+      "ref": "pkg:cargo/rand@0.10.3"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/rand_core@0.10.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/rand_core@0.10.1"
+      ],
+      "ref": "pkg:cargo/rand_xorshift@0.5.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/aho-corasick@1.1.5",
+        "pkg:cargo/memchr@2.8.3",
+        "pkg:cargo/regex-automata@0.4.18",
+        "pkg:cargo/regex-syntax@0.8.11"
+      ],
+      "ref": "pkg:cargo/regex@1.13.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/aho-corasick@1.1.5",
+        "pkg:cargo/memchr@2.8.3",
+        "pkg:cargo/regex-syntax@0.8.11"
+      ],
+      "ref": "pkg:cargo/regex-automata@0.4.18"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/regex-syntax@0.8.11"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/rustc-hash@2.1.3"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/errno@0.3.14",
+        "pkg:cargo/libc@0.2.190",
+        "pkg:cargo/linux-raw-sys@0.12.1",
+        "pkg:cargo/windows-sys@0.61.2"
+      ],
+      "ref": "pkg:cargo/rustix@1.1.5"
     },
     {
       "dependsOn": [],
       "ref": "pkg:cargo/rustversion@1.0.23"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/fnv@1.0.7",
+        "pkg:cargo/quick-error@1.2.3",
+        "pkg:cargo/tempfile@3.27.0",
+        "pkg:cargo/wait-timeout@0.2.1"
+      ],
+      "ref": "pkg:cargo/rusty-fork@0.3.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/winapi-util@0.1.11"
+      ],
+      "ref": "pkg:cargo/same-file@1.0.6"
     },
     {
       "dependsOn": [],
@@ -2800,7 +7134,8 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/serde_core@1.0.229"
+        "pkg:cargo/serde_core@1.0.229",
+        "pkg:cargo/serde_derive@1.0.229"
       ],
       "ref": "pkg:cargo/serde@1.0.229"
     },
@@ -2830,6 +7165,10 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/shlex@2.0.1"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/slab@0.4.12"
     },
     {
@@ -2843,7 +7182,11 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/bon@3.10.2",
         "pkg:cargo/bon@3.9.3",
+        "pkg:cargo/criterion@0.8.2",
+        "pkg:cargo/fst@0.4.7",
+        "pkg:cargo/proptest@1.12.0",
         "pkg:cargo/unicode-case-mapping@1.0.0",
         "pkg:cargo/unicode-normalization@0.1.25",
         "pkg:cargo/unicode-segmentation@1.13.3"
@@ -2864,6 +7207,23 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/fastrand@2.5.0",
+        "pkg:cargo/getrandom@0.4.3",
+        "pkg:cargo/once_cell@1.21.4",
+        "pkg:cargo/rustix@1.1.5",
+        "pkg:cargo/windows-sys@0.61.2"
+      ],
+      "ref": "pkg:cargo/tempfile@3.27.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/serde@1.0.229",
+        "pkg:cargo/serde_json@1.0.151"
+      ],
+      "ref": "pkg:cargo/tinytemplate@1.2.1"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/tinyvec_macros@0.1.1"
       ],
       "ref": "pkg:cargo/tinyvec@1.12.0"
@@ -2871,6 +7231,31 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/tinyvec_macros@0.1.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/serde_core@1.0.229"
+      ],
+      "ref": "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/indexmap@2.14.2",
+        "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0",
+        "pkg:cargo/toml_parser@1.1.5+spec-1.1.0",
+        "pkg:cargo/winnow@1.0.4"
+      ],
+      "ref": "pkg:cargo/toml_edit@0.25.17+spec-1.1.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/winnow@1.0.4"
+      ],
+      "ref": "pkg:cargo/toml_parser@1.1.5+spec-1.1.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/unarray@0.1.4"
     },
     {
       "dependsOn": [],
@@ -2882,7 +7267,8 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/tinyvec@1.12.0"
+        "pkg:cargo/tinyvec@1.12.0",
+        "pkg:cargo/tinyvec@1.13.3"
       ],
       "ref": "pkg:cargo/unicode-normalization@0.1.25"
     },
@@ -2891,12 +7277,166 @@
       "ref": "pkg:cargo/unicode-segmentation@1.13.3"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/libc@0.2.190"
+      ],
+      "ref": "pkg:cargo/wait-timeout@0.2.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/same-file@1.0.6",
+        "pkg:cargo/winapi-util@0.1.11"
+      ],
+      "ref": "pkg:cargo/walkdir@2.5.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/winapi-i686-pc-windows-gnu@0.4.0",
+        "pkg:cargo/winapi-x86_64-pc-windows-gnu@0.4.0"
+      ],
+      "ref": "pkg:cargo/winapi@0.3.9"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/winapi-i686-pc-windows-gnu@0.4.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/windows-sys@0.61.2"
+      ],
+      "ref": "pkg:cargo/winapi-util@0.1.11"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/winapi-x86_64-pc-windows-gnu@0.4.0"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/windows-link@0.2.1"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/windows-link@0.2.1"
+      ],
+      "ref": "pkg:cargo/windows-sys@0.61.2"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/memchr@2.8.3"
+      ],
+      "ref": "pkg:cargo/winnow@1.0.4"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/zerocopy-derive@0.8.63"
+      ],
+      "ref": "pkg:cargo/zerocopy@0.8.63"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@2.0.119"
+      ],
+      "ref": "pkg:cargo/zerocopy-derive@0.8.63"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/zmij@1.0.23"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/arbitrary@1.5.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bon-macros@3.10.2"
+      ],
+      "ref": "pkg:cargo/bon@3.10.2"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/darling@0.24.1",
+        "pkg:cargo/ident_case@1.0.1",
+        "pkg:cargo/prettyplease@0.3.0",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.9"
+      ],
+      "ref": "pkg:cargo/bon-macros@3.10.2"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/cfg-if@1.0.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/darling_core@0.24.1",
+        "pkg:cargo/darling_macro@0.24.1"
+      ],
+      "ref": "pkg:cargo/darling@0.24.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/ident_case@1.0.1",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/strsim@0.11.1",
+        "pkg:cargo/syn@3.0.9"
+      ],
+      "ref": "pkg:cargo/darling_core@0.24.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/darling_core@0.24.1",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.9"
+      ],
+      "ref": "pkg:cargo/darling_macro@0.24.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/getrandom@0.4.3",
+        "pkg:cargo/libc@0.2.190"
+      ],
+      "ref": "pkg:cargo/jobserver@0.1.35"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/arbitrary@1.5.0",
+        "pkg:cargo/cc@1.8.0"
+      ],
+      "ref": "pkg:cargo/libfuzzer-sys@0.4.13"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/syn@3.0.9"
+      ],
+      "ref": "pkg:cargo/prettyplease@0.3.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/libfuzzer-sys@0.4.13",
+        "pkg:cargo/stella-fuzzy-search-core@1.1.5"
+      ],
+      "ref": "pkg:cargo/stella-fuzzy-search-core-fuzz@0.0.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/unicode-ident@1.0.27"
+      ],
+      "ref": "pkg:cargo/syn@3.0.9"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/tinyvec@1.13.3"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/unicode-ident@1.0.27"
     },
     {
       "dependsOn": [],
@@ -2933,6 +7473,14 @@
           "purl": "pkg:cargo/stella-fuzzy-search@1.1.5",
           "type": "application",
           "version": "1.1.5"
+        },
+        {
+          "bom-ref": "pkg:cargo/stella-fuzzy-search-core-fuzz@0.0.0",
+          "group": "",
+          "name": "stella-fuzzy-search-core-fuzz",
+          "purl": "pkg:cargo/stella-fuzzy-search-core-fuzz@0.0.0",
+          "type": "library",
+          "version": "0.0.0"
         },
         {
           "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
