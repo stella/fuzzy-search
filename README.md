@@ -346,7 +346,9 @@ The `typescript` dependency also supports declaration generation through tsdown.
 entity-name candidate retrieval. Normalization, final scoring, and ranking
 remain with the caller. Token ids are local to each spelling form; alias ids
 follow builder insertion order. Supply the same weight model for alias positions,
-query tokens, and the per-form vocabulary weights passed to `finish`.
+query tokens, and the per-form vocabulary weights passed to `finish`. All forms
+of one alias describe the same token positions, weights, and minimum weights;
+their token ids and spellings may differ.
 
 ```typescript
 import {
@@ -401,14 +403,17 @@ const restored = EntityIndex.fromBytes(index.toBytes());
 `finish` builds synchronously; `finishAsync` uses the native worker pool and
 copies input weights before returning. Both consume the builder, including on
 failure. `finishSteps(weights, maxUnits)` yields between construction steps
-and returns the completed index as its generator return value.
+and returns the completed index as its generator return value. One construction
+unit prepares a vocabulary, projects an alias, or finalizes the posting lists;
+`finish` then validates and attaches the vocabulary weights.
 
 Search returns typed arrays for match keys, similarities, query weights, and
 surviving alias ids, avoiding an object allocation per vocabulary hit.
 `tau` is the candidate-bound threshold. Rescore survivors with your application
 scorer. `exhausted: true` means the work ceiling was reached and results may be
 incomplete. Work counters and `maxCost` use JavaScript safe integers;
-`nativeBytes` reports index allocation size and `postingCount` supports deriving
+`nativeBytes` reports owned storage bytes, excluding allocator overhead, and
+`postingCount` supports deriving
 a workload-dependent ceiling. The native and WASM entry points share this API.
 
 ## License
