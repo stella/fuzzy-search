@@ -24,12 +24,12 @@ use std::sync::Arc;
 
 use lexicon::Lexicon;
 use postings::Postings;
-use search::{PostingList, SearchIndex};
+use search::{MAX_WEIGHT, MIN_WEIGHT, PostingList, SearchIndex};
 
 use crate::Result;
 
 pub(super) fn validate_weight(weight: f64) -> Result<()> {
-  if !weight.is_finite() || !(1e-150..=1e150).contains(&weight) {
+  if !weight.is_finite() || !(MIN_WEIGHT..=MAX_WEIGHT).contains(&weight) {
     return Err(crate::Error {
       reason: "Entity weights and minimum weights must be finite and within [1e-150, 1e150]".into(),
       kind: crate::ErrorKind::EntityWeightOutOfRange,
@@ -163,6 +163,7 @@ pub struct SearchResult {
 /// Immutable index, shareable between searches and serialization.
 #[derive(Debug)]
 pub struct EntityIndex {
+  maximum_alias_tokens: usize,
   options: EntityIndexOptions,
   lexicons: Vec<Arc<Lexicon>>,
   aliases: Vec<AliasInput>,
@@ -244,6 +245,12 @@ impl EntityIndex {
 }
 
 impl SearchIndex for EntityIndex {
+  fn minimum_token_weight(&self) -> f64 {
+    MIN_WEIGHT
+  }
+  fn maximum_alias_tokens(&self) -> usize {
+    self.maximum_alias_tokens
+  }
   fn options(&self) -> &EntityIndexOptions {
     &self.options
   }

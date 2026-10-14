@@ -233,7 +233,15 @@ impl EntityIndexBuilder {
         super::validate_weight(weight)?;
       }
     }
+    let maximum_alias_tokens = self
+      .aliases
+      .iter()
+      .filter_map(|alias| alias.forms.first())
+      .map(|form| form.tokens.len())
+      .max()
+      .unwrap_or(0);
     Ok(EntityIndex {
+      maximum_alias_tokens,
       options: self.options,
       lexicons,
       aliases: self.aliases,

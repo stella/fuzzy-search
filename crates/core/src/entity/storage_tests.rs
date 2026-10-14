@@ -533,6 +533,22 @@ fn one_token_builder() -> EntityIndexBuilder {
   builder
 }
 
+#[test]
+fn cached_maximum_alias_positions_survives_serialization() {
+  for counts in [vec![], vec![1], vec![1, 3, 2]] {
+    let mut builder = one_token_builder();
+    for &count in &counts {
+      builder.add_alias(alias(&vec![0; count])).unwrap();
+    }
+    let index = builder.finish(vec![vec![1.0]]).unwrap();
+    let restored = EntityIndex::from_bytes(&index.to_bytes().unwrap()).unwrap();
+    let expected = counts.into_iter().max().unwrap_or(0);
+    for built in [&index, &restored] {
+      assert_eq!(built.maximum_alias_tokens, expected);
+    }
+  }
+}
+
 fn weighted_alias(weight: f64, minimum_weight: f64) -> AliasInput {
   let mut input = alias(&[0]);
   let form = input.forms.first_mut().unwrap();
