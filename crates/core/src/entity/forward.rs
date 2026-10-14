@@ -30,6 +30,10 @@ pub(super) fn validate_alias(
     return Err(invalid("Entity alias requires bounded token positions"));
   }
   for form in &alias.forms {
+    for token in &form.tokens {
+      super::validate_weight(token.weight)?;
+      super::validate_weight(token.minimum_weight)?;
+    }
     let vocabulary = usize::try_from(form.form)
       .ok()
       .and_then(|index| vocabularies.get(index))
@@ -66,10 +70,6 @@ pub(super) fn validate_alias(
         .ok()
         .and_then(|id| vocabulary.get(id))
         .is_none()
-        || !token.weight.is_finite()
-        || token.weight <= 0.0
-        || !token.minimum_weight.is_finite()
-        || token.minimum_weight <= 0.0
         || token.minimum_weight > token.weight
       {
         return Err(invalid("Invalid entity alias token or weight"));

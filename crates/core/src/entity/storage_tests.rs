@@ -502,9 +502,8 @@ proptest! {
 
   #[test]
   fn initial_posting_share_is_scale_invariant(
-    bits in prop_oneof![Just(1_u64), Just(0x0010_0000_0000_0000_u64), Just(0x7FEF_FFFF_FFFF_FFFF_u64), 1_u64..=0x7FEF_FFFF_FFFF_FFFF_u64],
+    weight in prop_oneof![Just(1e-150_f64), Just(1e150_f64), 1e-150_f64..=1e150_f64],
   ) {
-    let weight = f64::from_bits(bits);
     for text in ["alpha", "a"] {
       let mut config = options(1);
       config.initial_similarity = 0.4;
@@ -525,5 +524,95 @@ proptest! {
       prop_assert!(impact >= 0.4, "weight={weight}, impact={impact}");
       prop_assert!(impact <= 0.400_01, "weight={weight}, impact={impact}");
     }
+  }
+}
+
+fn one_token_builder() -> EntityIndexBuilder {
+  let mut builder = EntityIndexBuilder::new(options(1)).unwrap();
+  builder.intern(0, "alpha").unwrap();
+  builder
+}
+
+fn weighted_alias(weight: f64, minimum_weight: f64) -> AliasInput {
+  let mut input = alias(&[0]);
+  let form = input.forms.first_mut().unwrap();
+  form.minimum_total = 1e-150;
+  let token = form.tokens.first_mut().unwrap();
+  token.weight = weight;
+  token.minimum_weight = minimum_weight;
+  input
+}
+
+#[test]
+fn accepts_inclusive_entity_weight_endpoints() {
+  for weight in [1e-150, 1e150] {
+    let mut config = options(1);
+    config.initial_weight = weight;
+    assert!(EntityIndexBuilder::new(config).is_ok());
+    let mut builder = one_token_builder();
+    builder.add_alias(weighted_alias(weight, weight)).unwrap();
+    let index = builder.finish(vec![vec![weight]]).unwrap();
+    let restored = EntityIndex::from_bytes(&index.to_bytes().unwrap()).unwrap();
+    assert_eq!(restored.aliases, index.aliases);
+    assert_eq!(restored.token_weights, index.token_weights);
+    assert_eq!(restored.options, index.options);
+  }
+}
+
+fn assert_out_of_range_weight(value: f64) {
+  let mut config = options(1);
+  config.initial_weight = value;
+  assert!(matches!(
+    EntityIndexBuilder::new(config).unwrap_err().kind(),
+    crate::ErrorKind::EntityWeightOutOfRange
+  ));
+  assert!(matches!(
+    one_token_builder()
+      .finish(vec![vec![value]])
+      .unwrap_err()
+      .kind(),
+    crate::ErrorKind::EntityWeightOutOfRange
+  ));
+  let mut builder = one_token_builder();
+  assert!(matches!(
+    builder
+      .add_alias(weighted_alias(value, 1e-150))
+      .unwrap_err()
+      .kind(),
+    crate::ErrorKind::EntityWeightOutOfRange
+  ));
+  assert!(matches!(
+    builder
+      .add_alias(weighted_alias(1e150, value))
+      .unwrap_err()
+      .kind(),
+    crate::ErrorKind::EntityWeightOutOfRange
+  ));
+}
+
+#[test]
+fn rejects_just_outside_entity_weight_endpoints_with_typed_error() {
+  for weight in [
+    1e-150_f64.next_down(),
+    1e150_f64.next_up(),
+    f64::from_bits(1),
+    f64::MAX,
+    f64::NAN,
+    f64::INFINITY,
+    f64::NEG_INFINITY,
+    0.0,
+    -1.0,
+  ] {
+    assert_out_of_range_weight(weight);
+  }
+}
+
+proptest! {
+  #![proptest_config(ProptestConfig::with_cases(64))]
+  #[test]
+  fn rejects_out_of_range_weight_models_with_typed_error(
+    weight in prop_oneof![f64::MIN_POSITIVE..1e-150_f64, 1e151_f64..=f64::MAX],
+  ) {
+    assert_out_of_range_weight(weight);
   }
 }

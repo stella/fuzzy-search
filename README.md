@@ -350,6 +350,12 @@ query tokens, and the per-form vocabulary weights passed to `finish`. All forms
 of one alias describe the same token positions, weights, and minimum weights;
 their token ids and spellings may differ.
 
+Position weights, minimum weights, vocabulary weights, and `initialWeight` must
+be finite and within the inclusive range `[1e-150, 1e150]`. The builder rejects
+values outside this range with Rust `ErrorKind::EntityWeightOutOfRange` (JavaScript
+error code `InvalidArg`). `minimumTotal` is an aggregate: it must be positive,
+finite, and no greater than the sum of position minimum weights.
+
 ```typescript
 import {
   EntityIndex,

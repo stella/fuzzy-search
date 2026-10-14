@@ -156,6 +156,97 @@ describe("EntityIndex", () => {
     );
   });
 
+  test("weight bounds reject with InvalidArg at every construction boundary", () => {
+    const rejectsInvalidArg = (action: () => unknown) => {
+      let failure: unknown;
+      try {
+        action();
+      } catch (error) {
+        failure = error;
+      }
+      expect(failure).toMatchObject({ code: "InvalidArg" });
+    };
+    for (const value of [
+      0,
+      -1,
+      1e-151,
+      1e151,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+    ]) {
+      rejectsInvalidArg(
+        () =>
+          new EntityIndexBuilder({
+            ...options,
+            initialWeight: value,
+          }),
+      );
+      for (const field of [
+        "weight",
+        "minimumWeight",
+      ] as const) {
+        const builder = new EntityIndexBuilder({
+          ...options,
+          forms: 1,
+        });
+        const id = builder.intern(0, "alpha");
+        rejectsInvalidArg(() =>
+          builder.addAlias({
+            entryId: 0,
+            entityGroup: 0,
+            quality: 1,
+            forms: [
+              {
+                form: 0,
+                tokens: [
+                  {
+                    id,
+                    weight: 1,
+                    minimumWeight: 1,
+                    [field]: value,
+                  },
+                ],
+                joins: [],
+                minimumTotal: 1,
+              },
+            ],
+          }),
+        );
+      }
+      const { builder, weights } = fixture();
+      for (const form of weights) form.fill(value);
+      rejectsInvalidArg(() => builder.finish(weights));
+    }
+  });
+
+  test("construction accepts inclusive weight bounds", () => {
+    for (const weight of [1e-150, 1e150]) {
+      const builder = new EntityIndexBuilder({
+        ...options,
+        forms: 1,
+        initialWeight: weight,
+      });
+      const id = builder.intern(0, "alpha");
+      builder.addAlias({
+        entryId: 0,
+        entityGroup: 0,
+        quality: 1,
+        forms: [
+          {
+            form: 0,
+            tokens: [{ id, weight, minimumWeight: weight }],
+            joins: [],
+            minimumTotal: weight,
+          },
+        ],
+      });
+      expect(() =>
+        builder.finish([new Float64Array([weight])]),
+      ).not.toThrow();
+    }
+  });
+
   test("rejects invalid bytes and unsafe work budgets", () => {
     expect(() =>
       EntityIndex.fromBytes(new Uint8Array([1, 2, 3])),

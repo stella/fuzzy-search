@@ -8,9 +8,17 @@ use unicode_normalization::char::is_combining_mark;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+/// Machine-readable classification of a rejected input.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum ErrorKind {
+  InvalidInput,
+  EntityWeightOutOfRange,
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Error {
   reason: String,
+  kind: ErrorKind,
 }
 
 impl Error {
@@ -18,12 +26,18 @@ impl Error {
   pub fn from_reason(reason: impl Into<String>) -> Self {
     Self {
       reason: reason.into(),
+      kind: ErrorKind::InvalidInput,
     }
   }
 
   #[must_use]
   pub fn reason(&self) -> &str {
     &self.reason
+  }
+
+  #[must_use]
+  pub const fn kind(&self) -> ErrorKind {
+    self.kind
   }
 }
 

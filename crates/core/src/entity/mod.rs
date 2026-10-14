@@ -28,6 +28,16 @@ use search::{PostingList, SearchIndex};
 
 use crate::Result;
 
+pub(super) fn validate_weight(weight: f64) -> Result<()> {
+  if !weight.is_finite() || !(1e-150..=1e150).contains(&weight) {
+    return Err(crate::Error {
+      reason: "Entity weights and minimum weights must be finite and within [1e-150, 1e150]".into(),
+      kind: crate::ErrorKind::EntityWeightOutOfRange,
+    });
+  }
+  Ok(())
+}
+
 /// A spelling-form index, local to an index instance.
 pub type FormId = u32;
 /// A token identifier in caller insertion order, local to a spelling form.

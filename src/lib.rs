@@ -8,7 +8,12 @@ use napi_derive::napi;
 use stella_fuzzy_search_core as core;
 
 fn core_to_napi_error(error: &core::Error) -> Error {
-  Error::from_reason(error.to_string())
+  match error.kind() {
+    core::ErrorKind::EntityWeightOutOfRange => {
+      Error::new(napi::Status::InvalidArg, error.to_string())
+    }
+    core::ErrorKind::InvalidInput => Error::from_reason(error.to_string()),
+  }
 }
 
 fn panic_to_napi_error(payload: &(dyn std::any::Any + Send)) -> Error {

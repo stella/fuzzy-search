@@ -47,9 +47,8 @@ fn invalid(message: &str) -> Error {
 impl EntityIndexBuilder {
   pub fn new(options: EntityIndexOptions) -> Result<Self> {
     options.budget.validate()?;
+    super::validate_weight(options.initial_weight)?;
     if options.forms == 0
-      || !options.initial_weight.is_finite()
-      || options.initial_weight <= 0.0
       || !options.initial_similarity.is_finite()
       || !(0.0..=1.0).contains(&options.initial_similarity)
     {
@@ -225,14 +224,13 @@ impl EntityIndexBuilder {
       return Err(invalid("Entity weights must cover every spelling form"));
     }
     for (weights, lexicon) in token_weights.iter().zip(&lexicons) {
-      if weights.len() != lexicon.len()
-        || weights
-          .iter()
-          .any(|weight| !weight.is_finite() || *weight <= 0.0)
-      {
+      if weights.len() != lexicon.len() {
         return Err(invalid(
-          "Entity weights must be finite positive values for every token",
+          "Entity weights must cover every vocabulary token",
         ));
+      }
+      for &weight in weights {
+        super::validate_weight(weight)?;
       }
     }
     Ok(EntityIndex {
