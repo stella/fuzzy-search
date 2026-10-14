@@ -12,7 +12,7 @@ pub(super) enum Work {
 impl Cost {
   /// Total charged work. Saturation keeps diagnostics monotone at overflow.
   #[must_use]
-  pub fn total(self) -> u64 {
+  pub const fn total(self) -> u64 {
     self
       .lexicon_cells
       .saturating_add(self.lexicon_matches)
@@ -22,7 +22,7 @@ impl Cost {
   }
 
   /// Charge an indivisible operation before doing it. Failure changes nothing.
-  pub(super) fn charge(&mut self, work: Work, maximum: u64) -> bool {
+  pub(super) const fn charge(&mut self, work: Work, maximum: u64) -> bool {
     let amount = match work {
       Work::SortedAccess | Work::Survivor => 1,
       Work::RandomAccess(pairs) => pairs,
@@ -34,9 +34,14 @@ impl Cost {
       return false;
     }
     match work {
-      Work::SortedAccess => self.sorted_accesses += amount,
-      Work::RandomAccess(_) => self.random_access_pairs += amount,
-      Work::Survivor => self.survivors += amount,
+      Work::SortedAccess => {
+        self.sorted_accesses = self.sorted_accesses.saturating_add(amount);
+      }
+      Work::RandomAccess(_) => {
+        self.random_access_pairs =
+          self.random_access_pairs.saturating_add(amount);
+      }
+      Work::Survivor => self.survivors = self.survivors.saturating_add(amount),
     }
     true
   }

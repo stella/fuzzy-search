@@ -135,6 +135,53 @@ pub(super) fn candidate_pairs(
   pairs
 }
 
+/// Port the legacy candidate gate, including its single-word lexical-only path.
+pub(super) fn candidate_estimate(
+  query: &super::EntityQuery,
+  alias: &super::AliasInput,
+  matches: &[super::UnitMatch],
+  token_text: impl FnMut(super::FormId, super::TokenId) -> String,
+  initial_similarity: f64,
+  quality: f64,
+) -> f64 {
+  let mut pairs =
+    candidate_pairs(query, alias, matches, token_text, initial_similarity);
+  let distinct_units = query
+    .units
+    .iter()
+    .map(|unit| &unit.positions)
+    .collect::<std::collections::BTreeSet<_>>()
+    .len();
+  if query.tokens.len() == 1
+    && distinct_units == 1
+    && !pairs.iter().any(|pair| pair.word && pair.listed.len() > 1)
+  {
+    pairs.retain(|pair| pair.word);
+  }
+  let query_weights: Vec<_> =
+    query.tokens.iter().map(|token| token.weight).collect();
+  alias
+    .forms
+    .iter()
+    .map(|form| {
+      let listed_weights: Vec<_> =
+        form.tokens.iter().map(|token| token.weight).collect();
+      let minimum_weights: Vec<_> = form
+        .tokens
+        .iter()
+        .map(|token| token.minimum_weight)
+        .collect();
+      bound(
+        &pairs,
+        &query_weights,
+        &listed_weights,
+        &minimum_weights,
+        quality,
+      )
+    })
+    .fold(0.0_f64, f64::max)
+}
+
 pub(super) fn score(
   pairs: &[Pair],
   query_weights: &[f64],
@@ -269,6 +316,71 @@ mod tests {
     assert!(
       pairs.is_empty(),
       "an astral listed token has two UTF-16 units"
+    );
+  }
+
+  #[test]
+  fn single_word_estimate_ignores_stronger_initial_pair() {
+    use super::super::{
+      AliasForm, AliasInput, AliasToken, EntityQuery, QueryToken, QueryUnit,
+      UnitMatch,
+    };
+    let query = EntityQuery {
+      tokens: vec![QueryToken {
+        form: 0,
+        text: "alpha".to_owned(),
+        weight: 1.0,
+      }],
+      units: vec![QueryUnit {
+        form: 0,
+        text: "alpha".to_owned(),
+        positions: vec![0],
+      }],
+    };
+    let alias = AliasInput {
+      entry_id: 0,
+      entity_group: 0,
+      quality: 1.0,
+      forms: vec![AliasForm {
+        form: 0,
+        tokens: vec![
+          AliasToken {
+            id: 0,
+            weight: 1.0,
+            minimum_weight: 1.0,
+          },
+          AliasToken {
+            id: 1,
+            weight: 1.0,
+            minimum_weight: 1.0,
+          },
+        ],
+        joins: vec![],
+        minimum_total: 2.0,
+      }],
+    };
+    let matches = vec![UnitMatch {
+      unit: 0,
+      form: 0,
+      id: 0,
+      similarity: 0.75,
+    }];
+    let text = |_, id| {
+      if id == 0 {
+        "alfa".to_owned()
+      } else {
+        "a".to_owned()
+      }
+    };
+    let estimate =
+      super::candidate_estimate(&query, &alias, &matches, text, 0.8, 1.0);
+    let expected = (0.75_f64 * (0.75 / 2.0)).sqrt();
+    assert!((estimate - expected).abs() < 1e-12);
+    let pairs = super::candidate_pairs(&query, &alias, &matches, text, 0.8);
+    let generic = bound(&pairs, &[1.0], &[1.0, 1.0], &[1.0, 1.0], 1.0);
+    assert!(
+      generic > estimate,
+      "the generic maximum includes the stronger initial"
     );
   }
 

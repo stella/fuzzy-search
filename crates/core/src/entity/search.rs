@@ -25,6 +25,9 @@ pub(super) enum PostingList {
 }
 
 /// Storage boundary: search does not depend on builder or serialization layout.
+/// Aliases use dense insertion-order ids, validated weight bounds and quality
+/// factors in [0, 1]. All spelling forms describe the same token positions.
+/// Query weights are caller-prepared; search preserves their exact values.
 pub(super) trait SearchIndex {
   fn options(&self) -> &EntityIndexOptions;
   fn alias_count(&self) -> usize;
@@ -191,44 +194,7 @@ fn prepare(
       return Ok((prepared, true));
     }
   }
-  for (position, token) in query.tokens.iter().enumerate() {
-    let Some(prefix) = token.text.chars().next() else {
-      continue;
-    };
-    let initial = token.text.chars().count() == 1;
-    let list = if initial {
-      PostingList::QueryInitial {
-        form: token.form,
-        prefix,
-      }
-    } else {
-      let prefix = token
-        .text
-        .encode_utf16()
-        .next()
-        .ok_or_else(|| invalid("Missing entity initial"))?;
-      PostingList::ListedInitial {
-        form: token.form,
-        prefix,
-      }
-    };
-    // A query initial may match an identical listed initial with similarity 1.
-    // Noninitial words may still match a listed initial without a lexicon hit.
-    if index.posting(list, 0).is_some() {
-      if let Some(maximum) = maxima.get_mut(position) {
-        *maximum = maximum.max(if initial {
-          1.0
-        } else {
-          index.options().initial_similarity
-        });
-      }
-      prepared.cursors.push(Cursor {
-        list,
-        similarity: 1.0,
-        offset: 0,
-      });
-    }
-  }
+  add_initial_cursors(index, query, &mut maxima, &mut prepared.cursors)?;
   let total = query.tokens.iter().map(|token| token.weight).sum::<f64>();
   if total > 0.0 {
     prepared.q_max = query
@@ -240,6 +206,56 @@ fn prepare(
       .min(1.0);
   }
   Ok((prepared, false))
+}
+
+fn add_initial_cursors(
+  index: &impl SearchIndex,
+  query: &EntityQuery,
+  maxima: &mut [f64],
+  cursors: &mut Vec<Cursor>,
+) -> Result<()> {
+  for (position, token) in query.tokens.iter().enumerate() {
+    let prefix = token
+      .text
+      .chars()
+      .next()
+      .ok_or_else(|| invalid("Missing entity initial"))?;
+    let initial = token.text.chars().count() == 1;
+    let list = if initial {
+      PostingList::QueryInitial {
+        form: token.form,
+        prefix,
+      }
+    } else {
+      let prefix_unit = token
+        .text
+        .encode_utf16()
+        .next()
+        .ok_or_else(|| invalid("Missing entity initial"))?;
+      PostingList::ListedInitial {
+        form: token.form,
+        prefix: prefix_unit,
+      }
+    };
+    // A query initial may match an identical listed initial with similarity 1.
+    // Noninitial words may still match a listed initial without a lexicon hit.
+    if index.posting(list, 0).is_some() {
+      let maximum = maxima
+        .get_mut(position)
+        .ok_or_else(|| invalid("Missing entity query maximum"))?;
+      *maximum = maximum.max(if initial {
+        1.0
+      } else {
+        index.options().initial_similarity
+      });
+      cursors.push(Cursor {
+        list,
+        similarity: 1.0,
+        offset: 0,
+      });
+    }
+  }
+  Ok(())
 }
 
 /// Random-access upper bound; matching positions can be reused here, unlike
@@ -254,6 +270,7 @@ fn alias_bound(
   let listed_count = alias.forms.first().map_or(0, |form| form.tokens.len());
   let mut listed_max = vec![0.0_f64; listed_count];
   let mut anchored = false;
+  let mut joined = false;
   for (unit_index, unit) in query.units.iter().enumerate() {
     let Some(form) = alias.forms.iter().find(|form| form.form == unit.form)
     else {
@@ -287,6 +304,7 @@ fn alias_bound(
           .map_err(|_| invalid("Invalid entity join"))?,
       ];
       anchored |= similarity > 0.0;
+      joined |= similarity > 0.0;
       update_maxima(
         &mut query_max,
         &mut listed_max,
@@ -298,6 +316,11 @@ fn alias_bound(
   }
   if !anchored {
     return Ok(0.0);
+  }
+  // Legacy's single-unit fast path deliberately omits initial coverage.
+  // Alternate spelling units with the same position are one conceptual unit.
+  if query.tokens.len() == 1 && !joined {
+    return Ok(coverage_bound(query, alias, &query_max, &listed_max));
   }
   for (position, token) in query.tokens.iter().enumerate() {
     let Some(form) = alias.forms.iter().find(|form| form.form == token.form)
@@ -334,6 +357,15 @@ fn alias_bound(
       )?;
     }
   }
+  Ok(coverage_bound(query, alias, &query_max, &listed_max))
+}
+
+fn coverage_bound(
+  query: &EntityQuery,
+  alias: &AliasInput,
+  query_max: &[f64],
+  listed_max: &[f64],
+) -> f64 {
   // Forms describe the same positions and weights. Taking the maximum also
   // safely handles caller-supplied form-specific weight bounds.
   let mut listed_share = 0.0_f64;
@@ -341,14 +373,14 @@ fn alias_bound(
     let explained = form
       .tokens
       .iter()
-      .zip(&listed_max)
+      .zip(listed_max)
       .map(|(token, similarity)| token.weight * similarity)
       .sum::<f64>();
     listed_share = listed_share.max((explained / form.minimum_total).min(1.0));
   }
   let total = query.tokens.iter().map(|token| token.weight).sum::<f64>();
   if total == 0.0 {
-    return Ok(0.0);
+    return 0.0;
   }
   let query_share = query
     .tokens
@@ -357,7 +389,7 @@ fn alias_bound(
     .map(|(token, similarity)| token.weight / total * similarity)
     .sum::<f64>()
     .min(1.0);
-  Ok((query_share * listed_share).sqrt())
+  (query_share * listed_share).sqrt()
 }
 
 fn update_maxima(
@@ -397,13 +429,20 @@ fn exact(
     .collect::<Vec<_>>();
   query_text.sort_unstable();
   // The raw form is identified by the query tokens, not inferred from form id.
-  let Some(token) = query.tokens.first() else {
+  let Some(first_token) = query.tokens.first() else {
     return Ok(false);
   };
-  if query.tokens.iter().any(|other| other.form != token.form) {
+  if query
+    .tokens
+    .iter()
+    .any(|other| other.form != first_token.form)
+  {
     return Ok(false);
   }
-  let Some(form) = alias.forms.iter().find(|form| form.form == token.form)
+  let Some(form) = alias
+    .forms
+    .iter()
+    .find(|form| form.form == first_token.form)
   else {
     return Ok(false);
   };
@@ -480,7 +519,7 @@ pub(super) fn search(
         .filter_map(|cursor| {
           index
             .posting(cursor.list, cursor.offset)
-            .map(|(_, impact)| cursor.similarity * impact + 1e-12)
+            .map(|(_, impact)| cursor.similarity.mul_add(impact, 1e-12))
         })
         .sum::<f64>();
       let ceiling =
@@ -497,7 +536,10 @@ pub(super) fn search(
           exhausted = true;
           break 'walk;
         }
-        cursor.offset += 1;
+        cursor.offset = cursor
+          .offset
+          .checked_add(1)
+          .ok_or_else(|| invalid("Entity posting offset exceeds usize"))?;
         advanced = true;
         if !seen.insert(id) {
           continue;
@@ -515,7 +557,8 @@ pub(super) fn search(
         } else {
           alias_bound(index, query, &prepared, alias)?
         };
-        if bound * alias.quality * params.quality + 1e-12 >= params.tau {
+        if (bound * alias.quality).mul_add(params.quality, 1e-12) >= params.tau
+        {
           if !cost.charge(Work::Survivor, params.max_cost) {
             exhausted = true;
             break 'walk;
@@ -671,9 +714,6 @@ mod tests {
             / form.minimum_total;
         }
         for (list, impact) in impacts {
-          // Exercise the same upward u16 quantization required of real storage.
-          let impact = (impact.min(1.0) * f64::from(u16::MAX)).ceil()
-            / f64::from(u16::MAX);
           fixture
             .lists
             .entry(list)
@@ -688,6 +728,17 @@ mod tests {
         });
       }
       for list in fixture.lists.values_mut() {
+        // Per-list scaling preserves ratios above one until after similarity.
+        let maximum = list
+          .iter()
+          .map(|(_, impact)| *impact)
+          .fold(0.0_f64, f64::max);
+        let quantum = (maximum / f64::from(u16::MAX)).next_up();
+        for (_, impact) in list.iter_mut() {
+          let encoded = (*impact / quantum).ceil();
+          assert!(encoded <= f64::from(u16::MAX));
+          *impact = (encoded * quantum).next_up();
+        }
         list.sort_by(|left, right| {
           right
             .1
@@ -795,8 +846,14 @@ mod tests {
       };
       let bound =
         alias_bound(fixture, query, &prepared, alias).unwrap() * alias.quality;
-      let estimate =
-        oracle::bound(&pairs, &weights, &listed, &minimum, alias.quality);
+      let estimate = oracle::candidate_estimate(
+        query,
+        alias,
+        &result.unit_matches,
+        |_, id| fixture.lexicon.token(id).unwrap().to_owned(),
+        0.8,
+        alias.quality,
+      );
       assert!(
         bound + 1e-12 >= estimate,
         "bound {bound} < estimate {estimate}"
@@ -984,6 +1041,73 @@ mod tests {
     assert!(result.survivors.is_empty());
     assert_eq!(result.cost.sorted_accesses, 0);
     assert_eq!(result.cost.random_access_pairs, 0);
+  }
+
+  #[test]
+  fn impact_ratio_above_one_is_scaled_before_frontier_clamping() {
+    let fixture = Fixture::new(&[vec![(1, 1, 25)]], false, false);
+    let query = EntityQuery {
+      tokens: vec![QueryToken {
+        form: 0,
+        text: "alphx".to_owned(),
+        weight: 1.0,
+      }],
+      units: vec![QueryUnit {
+        form: 0,
+        text: "alphx".to_owned(),
+        positions: vec![0],
+      }],
+    };
+    let impact = fixture
+      .posting(PostingList::Token { form: 0, id: 1 }, 0)
+      .unwrap()
+      .1;
+    assert!(impact > 1.0);
+    let result = search(
+      &fixture,
+      &query,
+      &SearchParams {
+        tau: 0.85,
+        quality: 1.0,
+        max_cost: u64::MAX,
+      },
+    )
+    .unwrap();
+    // The legacy optimistic estimate exceeds .85; clipping this impact to one
+    // before multiplying by .8 would stop at a frontier ceiling of .8.
+    assert_eq!(result.survivors, [0]);
+    assert_eq!(result.cost.random_access_pairs, 2);
+    check_oracle(&fixture, &query, 0.8);
+  }
+
+  #[test]
+  fn frontier_stops_after_the_high_impact_prefix_at_every_scale() {
+    let mut previous_cost = None;
+    for scale in [1, 2, 5] {
+      let mut rows = vec![vec![(1, 1, 255)]];
+      rows.extend(vec![vec![(1, 1, 255), (11, 1000, 255)]; 200 * scale]);
+      let mut fixture = Fixture::new(&rows, false, false);
+      fixture.options.budget.by_length = vec![0];
+      let query = query(&[1], false);
+      let result = search(
+        &fixture,
+        &query,
+        &SearchParams {
+          tau: 0.9,
+          quality: 1.0,
+          max_cost: u64::MAX,
+        },
+      )
+      .unwrap();
+      assert_eq!(result.survivors, [0]);
+      assert_eq!(result.cost.sorted_accesses, 1);
+      assert_eq!(result.cost.random_access_pairs, 2);
+      if let Some(previous) = previous_cost {
+        assert_eq!(previous, result.cost);
+      }
+      previous_cost = Some(result.cost);
+      check_oracle(&fixture, &query, 0.9);
+    }
   }
 
   #[test]
