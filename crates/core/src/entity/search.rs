@@ -14,6 +14,75 @@ use super::{
 };
 use crate::{Error, Result};
 
+/// Persisted weight limits; normalization remains caller-owned.
+pub(super) const MIN_WEIGHT: f64 = 1e-150;
+pub(super) const MAX_WEIGHT: f64 = 1e150;
+const MIN_SUBNORMAL: f64 = f64::from_bits(1);
+const ROUNDING_FACTOR: f64 = 1.0 + 4.0 * f64::EPSILON;
+
+// Bound arithmetic includes relative rounding and absolute underflow error.
+// Infinity deliberately widens a bound; zero operands stay exactly zero.
+fn upward(value: f64) -> f64 {
+  value.mul_add(ROUNDING_FACTOR, MIN_SUBNORMAL).next_up()
+}
+
+fn upper_product(left: f64, right: f64) -> f64 {
+  if left == 0.0 || right == 0.0 {
+    return 0.0;
+  }
+  upward(left * right)
+}
+
+fn upper_add(left: f64, right: f64) -> f64 {
+  if left == 0.0 && right == 0.0 {
+    return 0.0;
+  }
+  upward(left + right)
+}
+
+fn upper_sum(values: impl Iterator<Item = f64>) -> f64 {
+  values.fold(0.0, upper_add)
+}
+
+fn upper_ratio(numerator: f64, denominator: f64) -> f64 {
+  if numerator == 0.0 {
+    return 0.0;
+  }
+  upward(numerator / denominator)
+}
+
+fn weighted_share(
+  weights: impl Iterator<Item = (f64, f64)>,
+  total: f64,
+) -> f64 {
+  upper_ratio(
+    upper_sum(
+      weights.map(|(weight, similarity)| upper_product(weight, similarity)),
+    ),
+    total,
+  )
+  .min(1.0)
+}
+
+fn geometric_ceiling(query: f64, listed: f64) -> f64 {
+  upward(upper_product(query, listed).sqrt()).min(1.0)
+}
+
+// A posting group can combine many token positions, while the reference adds
+// their rounded products sequentially. Account for every such addition even
+// when a group is represented by just one cursor. Very large counts widen to
+// infinity instead of truncating work or rounding the count downward.
+fn summation_factor(positions: usize) -> f64 {
+  let Ok(positions) = u32::try_from(positions) else {
+    return f64::INFINITY;
+  };
+  let error = upper_product(f64::from(positions), 4.0 * f64::EPSILON);
+  if error >= 1.0 {
+    return f64::INFINITY;
+  }
+  upper_ratio(1.0, (1.0 - error).next_down())
+}
+
 /// Posting impacts must be rounded upward and sorted descending, alias id
 /// ascending on ties. Initial lists use the query token's spelling form.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
@@ -31,6 +100,10 @@ pub(super) enum PostingList {
 pub(super) trait SearchIndex {
   fn options(&self) -> &EntityIndexOptions;
   fn alias_count(&self) -> usize;
+  /// A positive lower bound for every listed position weight.
+  fn minimum_token_weight(&self) -> f64;
+  /// Cached maximum position count, for reference summation rounding.
+  fn maximum_alias_tokens(&self) -> usize;
   fn alias(&self, id: AliasId) -> Option<&AliasInput>;
   fn lexicon(&self, form: FormId) -> Option<&Lexicon>;
   fn posting(&self, list: PostingList, offset: usize)
@@ -197,13 +270,14 @@ fn prepare(
   add_initial_cursors(index, query, &mut maxima, &mut prepared.cursors)?;
   let total = query.tokens.iter().map(|token| token.weight).sum::<f64>();
   if total > 0.0 {
-    prepared.q_max = query
-      .tokens
-      .iter()
-      .zip(maxima)
-      .map(|(token, similarity)| (token.weight / total) * similarity)
-      .sum::<f64>()
-      .min(1.0);
+    prepared.q_max = weighted_share(
+      query
+        .tokens
+        .iter()
+        .zip(maxima)
+        .map(|(token, similarity)| (token.weight, similarity)),
+      total,
+    );
   }
   Ok((prepared, false))
 }
@@ -370,26 +444,29 @@ fn coverage_bound(
   // safely handles caller-supplied form-specific weight bounds.
   let mut listed_share = 0.0_f64;
   for form in &alias.forms {
-    let explained = form
-      .tokens
-      .iter()
-      .zip(listed_max)
-      .map(|(token, similarity)| token.weight * similarity)
-      .sum::<f64>();
-    listed_share = listed_share.max((explained / form.minimum_total).min(1.0));
+    let explained = upper_sum(
+      form
+        .tokens
+        .iter()
+        .zip(listed_max)
+        .map(|(token, similarity)| upper_product(token.weight, *similarity)),
+    );
+    listed_share =
+      listed_share.max(upper_ratio(explained, form.minimum_total).min(1.0));
   }
   let total = query.tokens.iter().map(|token| token.weight).sum::<f64>();
   if total == 0.0 {
     return 0.0;
   }
-  let query_share = query
-    .tokens
-    .iter()
-    .zip(query_max)
-    .map(|(token, similarity)| token.weight / total * similarity)
-    .sum::<f64>()
-    .min(1.0);
-  (query_share * listed_share).sqrt()
+  let query_share = weighted_share(
+    query
+      .tokens
+      .iter()
+      .zip(query_max)
+      .map(|(token, similarity)| (token.weight, *similarity)),
+    total,
+  );
+  geometric_ceiling(query_share, listed_share)
 }
 
 fn update_maxima(
@@ -482,6 +559,41 @@ fn random_access_work(query: &EntityQuery, alias: &AliasInput) -> Result<u64> {
   Ok(pairs)
 }
 
+fn initial_rounding_factor(index: &impl SearchIndex) -> f64 {
+  let similarity = index.options().initial_similarity;
+  if similarity == 0.0 {
+    return 1.0;
+  }
+  // Initial impacts already contain their similarity. Use a lower product in
+  // this denominator so rounding cannot understate their absolute error.
+  let denominator = (index.minimum_token_weight() * similarity).next_down();
+  if denominator <= 0.0 {
+    return f64::INFINITY;
+  }
+  upper_add(1.0, upper_ratio(MIN_SUBNORMAL, denominator))
+}
+
+fn frontier_bound(index: &impl SearchIndex, cursors: &[Cursor]) -> f64 {
+  let product_error = upper_ratio(MIN_SUBNORMAL, index.minimum_token_weight());
+  let initial_factor = initial_rounding_factor(index);
+  let frontier = upper_sum(cursors.iter().filter_map(|cursor| {
+    index
+      .posting(cursor.list, cursor.offset)
+      .map(|(_, impact)| match cursor.list {
+        PostingList::Token { .. } | PostingList::Join { .. } => {
+          let similarity = upper_add(cursor.similarity, product_error).min(1.0);
+          upper_product(similarity, impact)
+        }
+        PostingList::QueryInitial { .. }
+        | PostingList::ListedInitial { .. } => upper_product(
+          cursor.similarity,
+          upper_product(impact, initial_factor),
+        ),
+      })
+  }));
+  upper_product(frontier, summation_factor(index.maximum_alias_tokens()))
+}
+
 pub(super) fn search(
   index: &impl SearchIndex,
   query: &EntityQuery,
@@ -512,18 +624,11 @@ pub(super) fn search(
     }
   } else if !exhausted && !query.tokens.is_empty() {
     'walk: loop {
-      // Recompute once per round: subtracting old heads accumulates downward
-      // FP error. Inflate each term to keep this an upper bound near ties.
-      let frontier = cursors
-        .iter()
-        .filter_map(|cursor| {
-          index
-            .posting(cursor.list, cursor.offset)
-            .map(|(_, impact)| cursor.similarity.mul_add(impact, 1e-12))
-        })
-        .sum::<f64>();
-      let ceiling =
-        (prepared.q_max * frontier.min(1.0)).sqrt() * params.quality;
+      let frontier = frontier_bound(index, &cursors);
+      let ceiling = upper_product(
+        geometric_ceiling(prepared.q_max, frontier.min(1.0)),
+        params.quality,
+      );
       if ceiling + 1e-12 < params.tau {
         break;
       }
@@ -557,7 +662,9 @@ pub(super) fn search(
         } else {
           alias_bound(index, query, &prepared, alias)?
         };
-        if (bound * alias.quality).mul_add(params.quality, 1e-12) >= params.tau
+        if upper_product(upper_product(bound, alias.quality), params.quality)
+          + 1e-12
+          >= params.tau
         {
           if !cost.charge(Work::Survivor, params.max_cost) {
             exhausted = true;
@@ -605,6 +712,24 @@ mod tests {
     }
     fn alias_count(&self) -> usize {
       self.aliases.len()
+    }
+    fn minimum_token_weight(&self) -> f64 {
+      self
+        .aliases
+        .iter()
+        .flat_map(|alias| &alias.forms)
+        .flat_map(|form| &form.tokens)
+        .map(|token| token.weight)
+        .fold(MAX_WEIGHT, f64::min)
+    }
+    fn maximum_alias_tokens(&self) -> usize {
+      self
+        .aliases
+        .iter()
+        .flat_map(|alias| &alias.forms)
+        .map(|form| form.tokens.len())
+        .max()
+        .unwrap_or(0)
     }
     fn alias(&self, id: AliasId) -> Option<&AliasInput> {
       self.aliases.get(usize::try_from(id).ok()?)
@@ -679,7 +804,11 @@ mod tests {
           joins,
           minimum_total,
         };
-        let impacts = alias_impacts(&fixture.lexicon, &form);
+        let impacts = alias_impacts(
+          &fixture.lexicon,
+          &form,
+          fixture.options.initial_similarity,
+        );
         for (list, impact) in impacts {
           fixture
             .lists
@@ -720,6 +849,7 @@ mod tests {
   fn alias_impacts(
     lexicon: &Lexicon,
     form: &AliasForm,
+    initial_similarity: f64,
   ) -> BTreeMap<PostingList, f64> {
     let mut impacts = BTreeMap::new();
     for token in &form.tokens {
@@ -730,19 +860,32 @@ mod tests {
         })
         .or_insert(0.0) += token.weight / form.minimum_total;
       let text = lexicon.token(token.id).unwrap();
-      *impacts
-        .entry(PostingList::QueryInitial {
-          form: 0,
-          prefix: text.chars().next().unwrap(),
-        })
-        .or_insert(0.0) += token.weight / form.minimum_total;
-      if text.encode_utf16().count() == 1 {
-        *impacts
+      let similarity = if text.chars().count() == 1 {
+        1.0
+      } else {
+        initial_similarity
+      };
+      if similarity > 0.0 {
+        let impact = impacts
+          .entry(PostingList::QueryInitial {
+            form: form.form,
+            prefix: text.chars().next().unwrap(),
+          })
+          .or_insert(0.0);
+        *impact = (token.weight / form.minimum_total)
+          .mul_add(similarity, *impact)
+          .next_up();
+      }
+      if text.encode_utf16().count() == 1 && initial_similarity > 0.0 {
+        let impact = impacts
           .entry(PostingList::ListedInitial {
-            form: 0,
+            form: form.form,
             prefix: text.encode_utf16().next().unwrap(),
           })
-          .or_insert(0.0) += 0.8 * token.weight / form.minimum_total;
+          .or_insert(0.0);
+        *impact = (token.weight / form.minimum_total)
+          .mul_add(initial_similarity, *impact)
+          .next_up();
       }
     }
     for join in &form.joins {
@@ -835,7 +978,7 @@ mod tests {
         alias,
         &result.unit_matches,
         |_, token_id| fixture.lexicon.token(token_id).unwrap().to_owned(),
-        0.8,
+        fixture.options.initial_similarity,
       );
       let form = alias.forms.first().unwrap();
       let listed = form
@@ -874,7 +1017,7 @@ mod tests {
         alias,
         &result.unit_matches,
         |_, token_id| fixture.lexicon.token(token_id).unwrap().to_owned(),
-        0.8,
+        fixture.options.initial_similarity,
         alias.quality,
       );
       assert!(
@@ -891,6 +1034,127 @@ mod tests {
         );
       }
     }
+  }
+
+  fn rescale_fixture(fixture: &mut Fixture, scale: f64) {
+    fixture.lists.clear();
+    for (alias_id, alias) in fixture.aliases.iter_mut().enumerate() {
+      for form in &mut alias.forms {
+        for token in &mut form.tokens {
+          token.weight = scale;
+          token.minimum_weight = scale;
+        }
+        form.minimum_total =
+          form.tokens.iter().map(|token| token.minimum_weight).sum();
+        for (list, impact) in alias_impacts(
+          &fixture.lexicon,
+          form,
+          fixture.options.initial_similarity,
+        ) {
+          fixture
+            .lists
+            .entry(list)
+            .or_default()
+            .push((u32::try_from(alias_id).unwrap(), impact.next_up()));
+        }
+      }
+    }
+    for list in fixture.lists.values_mut() {
+      list.sort_by(|left, right| {
+        right
+          .1
+          .total_cmp(&left.1)
+          .then_with(|| left.0.cmp(&right.0))
+      });
+    }
+  }
+
+  fn assert_extreme_bounds(fixture: &Fixture, query: &EntityQuery) {
+    let (prepared, exhausted) =
+      prepare(fixture, query, &mut Cost::default(), u64::MAX).unwrap();
+    assert!(!exhausted);
+    let weights = query
+      .tokens
+      .iter()
+      .map(|token| token.weight)
+      .collect::<Vec<_>>();
+    let scores = fixture
+      .aliases
+      .iter()
+      .map(|alias| {
+        let pairs = oracle::candidate_pairs(
+          query,
+          alias,
+          &prepared.matches,
+          |_, token_id| fixture.lexicon.token(token_id).unwrap().to_owned(),
+          fixture.options.initial_similarity,
+        );
+        let form = alias.forms.first().unwrap();
+        let listed = form
+          .tokens
+          .iter()
+          .map(|token| token.weight)
+          .collect::<Vec<_>>();
+        let minimum = form
+          .tokens
+          .iter()
+          .map(|token| token.minimum_weight)
+          .collect::<Vec<_>>();
+        let score = if exact(fixture, query, alias).unwrap() {
+          alias.quality
+        } else {
+          oracle::score(&pairs, &weights, &listed, &minimum, alias.quality)
+        };
+        let bound = if exact(fixture, query, alias).unwrap() {
+          1.0
+        } else {
+          alias_bound(fixture, query, &prepared, alias).unwrap()
+        };
+        assert!(
+          upper_product(bound, alias.quality) >= score,
+          "bound {bound} below oracle {score}"
+        );
+        score
+      })
+      .collect::<Vec<_>>();
+    let mut cursors = prepared.cursors;
+    let mut seen = BTreeSet::new();
+    loop {
+      let ceiling = geometric_ceiling(
+        prepared.q_max,
+        frontier_bound(fixture, &cursors).min(1.0),
+      );
+      for (alias_id, score) in scores.iter().enumerate() {
+        if !seen.contains(&u32::try_from(alias_id).unwrap()) {
+          assert!(
+            ceiling >= *score,
+            "frontier {ceiling} below unseen oracle {score}"
+          );
+        }
+      }
+      let mut advanced = false;
+      for cursor in &mut cursors {
+        if let Some((alias_id, _)) = fixture.posting(cursor.list, cursor.offset)
+        {
+          seen.insert(alias_id);
+          cursor.offset = cursor.offset.checked_add(1).unwrap();
+          advanced = true;
+        }
+      }
+      if !advanced {
+        break;
+      }
+    }
+  }
+
+  fn extreme_weight() -> impl Strategy<Value = f64> {
+    prop_oneof![
+      (1_u64..=2048).prop_map(f64::from_bits),
+      (-300_i32..=300).prop_map(|exponent| 10.0_f64.powi(exponent)),
+      Just(MIN_WEIGHT),
+      Just(MAX_WEIGHT),
+      Just(1.0),
+    ]
   }
 
   fn real_builder(fixture: &Fixture) -> EntityIndexBuilder {
@@ -988,6 +1252,23 @@ mod tests {
 
   proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
+    #[test]
+    fn extreme_weight_bounds_and_frontier_preserve_every_oracle_match(
+      rows in prop::collection::vec(prop::collection::vec((any::<u8>(), 1_u16..1000, 255_u8..=255), 1..7), 1..20),
+      ids in prop::collection::vec(any::<u8>(), 1..6),
+      query_scale in extreme_weight(), alias_scale in extreme_weight(),
+      cutoff in 0_u16..=1000, joins in any::<bool>(), weak in any::<bool>(),
+      initial_similarity in prop::sample::select(vec![0.0, 0.8, 1.0, MIN_SUBNORMAL, 1e-300]),
+    ) {
+      let mut fixture = Fixture::new(&rows, joins, weak);
+      fixture.options.initial_similarity = initial_similarity;
+      rescale_fixture(&mut fixture, alias_scale);
+      let mut query = query(&ids, joins);
+      for token in &mut query.tokens { token.weight = query_scale; }
+      check_oracle(&fixture, &query, f64::from(cutoff) / 1000.0);
+      assert_extreme_bounds(&fixture, &query);
+    }
+
     #[test]
     fn real_storage_preserves_exact_aliases_for_every_scalar_initial(
       characters in prop::collection::vec(any::<char>(), 1..5),
@@ -1102,6 +1383,61 @@ mod tests {
       check_oracle(&fixture, &query, cutoff);
       check_oracle_with_quality(&fixture, &query, cutoff, 0.7);
     }
+  }
+
+  #[test]
+  fn initial_postings_cover_underflow_before_embedded_similarity() {
+    let mut fixture =
+      Fixture::new(&[vec![(0, 1, 255), (3, 1, 255)]], false, false);
+    rescale_fixture(&mut fixture, MIN_SUBNORMAL);
+    let mut query = query(&[1, 3], false);
+    for token in &mut query.tokens {
+      token.weight = MIN_SUBNORMAL;
+    }
+    let result = search(
+      &fixture,
+      &query,
+      &SearchParams {
+        tau: 1.0,
+        quality: 1.0,
+        max_cost: u64::MAX,
+      },
+    )
+    .unwrap();
+    assert_eq!(result.survivors, [0]);
+    check_oracle(&fixture, &query, 1.0);
+  }
+
+  #[test]
+  fn minimum_subnormal_products_cannot_hide_an_oracle_score_of_one() {
+    let mut fixture = Fixture::new(&[vec![(1, 1, 255)]], false, false);
+    rescale_fixture(&mut fixture, MIN_SUBNORMAL);
+    let mut query = query(&[2], false);
+    query.tokens.first_mut().unwrap().weight = MIN_SUBNORMAL;
+    let params = SearchParams {
+      tau: 0.9,
+      quality: 1.0,
+      max_cost: u64::MAX,
+    };
+    let result = search(&fixture, &query, &params).unwrap();
+    let alias = fixture.aliases.first().unwrap();
+    let pairs = oracle::candidate_pairs(
+      &query,
+      alias,
+      &result.unit_matches,
+      |_, token_id| fixture.lexicon.token(token_id).unwrap().to_owned(),
+      0.8,
+    );
+    let score = oracle::score(
+      &pairs,
+      &[MIN_SUBNORMAL],
+      &[MIN_SUBNORMAL],
+      &[MIN_SUBNORMAL],
+      1.0,
+    );
+    assert_eq!(score.to_bits(), 1.0_f64.to_bits());
+    assert_eq!(result.survivors, [0]);
+    check_oracle(&fixture, &query, params.tau);
   }
 
   #[test]

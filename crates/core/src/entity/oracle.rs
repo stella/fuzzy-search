@@ -187,6 +187,34 @@ pub(super) fn candidate_estimate(
     && !pairs.iter().any(|pair| pair.word && pair.listed.len() > 1)
   {
     pairs.retain(|pair| pair.word);
+    let similarity = pairs
+      .iter()
+      .map(|pair| pair.similarity)
+      .fold(0.0_f64, f64::max);
+    let mut listed = BTreeMap::<usize, f64>::new();
+    for pair in &pairs {
+      for &position in &pair.listed {
+        let maximum = listed.entry(position).or_default();
+        *maximum = maximum.max(pair.similarity);
+      }
+    }
+    return alias
+      .forms
+      .iter()
+      .map(|form| {
+        let explained: f64 = form
+          .tokens
+          .iter()
+          .enumerate()
+          .map(|(position, token)| {
+            token.weight * listed.get(&position).copied().unwrap_or(0.0)
+          })
+          .sum();
+        let minimum_total: f64 =
+          form.tokens.iter().map(|token| token.minimum_weight).sum();
+        (similarity * (explained / minimum_total).min(1.0)).sqrt() * quality
+      })
+      .fold(0.0_f64, f64::max);
   }
   let query_weights: Vec<_> =
     query.tokens.iter().map(|token| token.weight).collect();
@@ -434,6 +462,68 @@ mod tests {
     assert!(
       generic > estimate,
       "the generic maximum includes the stronger initial"
+    );
+  }
+
+  #[test]
+  fn single_word_estimate_does_not_multiply_subnormal_query_weight() {
+    use super::super::{
+      AliasForm, AliasInput, AliasToken, EntityQuery, QueryToken, QueryUnit,
+      UnitMatch,
+    };
+    let tiny = f64::from_bits(1);
+    let query = EntityQuery {
+      tokens: vec![QueryToken {
+        form: 0,
+        text: "alhpa".to_owned(),
+        weight: tiny,
+      }],
+      units: vec![QueryUnit {
+        form: 0,
+        text: "alhpa".to_owned(),
+        positions: vec![0],
+      }],
+    };
+    let alias = AliasInput {
+      entry_id: 0,
+      entity_group: 0,
+      quality: 1.0,
+      forms: vec![AliasForm {
+        form: 0,
+        tokens: vec![AliasToken {
+          id: 0,
+          weight: tiny,
+          minimum_weight: tiny,
+        }],
+        joins: vec![],
+        minimum_total: tiny,
+      }],
+    };
+    let matches = vec![UnitMatch {
+      unit: 0,
+      form: 0,
+      id: 0,
+      similarity: 0.8,
+    }];
+    let estimate = super::candidate_estimate(
+      &query,
+      &alias,
+      &matches,
+      |_, _| "alpha".to_owned(),
+      0.8,
+      1.0,
+    );
+    assert!((estimate - 0.8_f64.sqrt()).abs() < f64::EPSILON);
+    let pairs = super::candidate_pairs(
+      &query,
+      &alias,
+      &matches,
+      |_, _| "alpha".to_owned(),
+      0.8,
+    );
+    assert!(
+      (score(&pairs, &[tiny], &[tiny], &[tiny], 1.0) - 1.0).abs()
+        < f64::EPSILON
     );
   }
 
