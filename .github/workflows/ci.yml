@@ -124,7 +124,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: stella/.github/.github/actions/changeset-policy@92c44f95faa3687d5766a9a63e79a340dbe3ef6a
+      - uses: stella/.github/.github/actions/changeset-policy@5764ab66e4df84cfd2e642c7d7e4678261e668f8
         with:
           release-paths: |
             src/**
@@ -178,7 +178,7 @@ jobs:
   napi-ci:
     if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (needs.trust-check.result == 'success' || needs.trust-check.result == 'skipped') }}
     needs: [check-changes, trust-check]
-    uses: stella/.github/.github/workflows/rust-napi-ci.yml@5628b97fb3c560c0d961baa60c272c598eddcab5 # v1.7.0
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@5764ab66e4df84cfd2e642c7d7e4678261e668f8
     with:
       node-version: "22"
       trusted: ${{ (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') && 'true' || 'false' }}
@@ -206,7 +206,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
       - name: Verify publication boundary
         run: |
           set -euo pipefail
@@ -238,7 +238,7 @@ jobs:
         if: needs.check-changes.outputs.rust-changed == 'true'
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
         if: needs.check-changes.outputs.rust-changed == 'true'
         with:
           toolchain: ${{ env.HAWK_RUST_TOOLCHAIN }}

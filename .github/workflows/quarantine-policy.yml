@@ -13,4 +13,4 @@ jobs:
     if: github.repository == 'stella/fuzzy-search'
     permissions:
       contents: read
-    uses: stella/.github/.github/workflows/quarantine-policy.yml@9e1915536efc226c5ec9d3ca0f2192be5aa6ec7e
+    uses: stella/.github/.github/workflows/quarantine-policy.yml@5764ab66e4df84cfd2e642c7d7e4678261e668f8
