@@ -4939,7 +4939,7 @@
       "version": "0.0.0"
     },
     {
-      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
+      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.2.0",
       "evidence": {
         "identity": [
           {
@@ -4968,12 +4968,12 @@
           "value": "fuzz/Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
+      "purl": "pkg:cargo/stella-fuzzy-search-core@1.2.0",
       "type": "library",
-      "version": "1.1.5"
+      "version": "1.2.0"
     },
     {
-      "bom-ref": "pkg:cargo/stella-fuzzy-search@1.1.5",
+      "bom-ref": "pkg:cargo/stella-fuzzy-search@1.2.0",
       "evidence": {
         "identity": [
           {
@@ -4998,9 +4998,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/stella-fuzzy-search@1.1.5",
+      "purl": "pkg:cargo/stella-fuzzy-search@1.2.0",
       "type": "library",
-      "version": "1.1.5"
+      "version": "1.2.0"
     },
     {
       "bom-ref": "pkg:cargo/strsim@0.11.1",
@@ -6547,7 +6547,7 @@
   "compositions": [
     {
       "aggregate": "incomplete",
-      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.1.5"
+      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.2.0"
     }
   ],
   "dependencies": [
@@ -7176,9 +7176,9 @@
         "pkg:cargo/napi-build@2.3.2",
         "pkg:cargo/napi-derive@3.5.6",
         "pkg:cargo/napi@3.9.2",
-        "pkg:cargo/stella-fuzzy-search-core@1.1.5"
+        "pkg:cargo/stella-fuzzy-search-core@1.2.0"
       ],
-      "ref": "pkg:cargo/stella-fuzzy-search@1.1.5"
+      "ref": "pkg:cargo/stella-fuzzy-search@1.2.0"
     },
     {
       "dependsOn": [
@@ -7191,7 +7191,7 @@
         "pkg:cargo/unicode-normalization@0.1.25",
         "pkg:cargo/unicode-segmentation@1.13.3"
       ],
-      "ref": "pkg:cargo/stella-fuzzy-search-core@1.1.5"
+      "ref": "pkg:cargo/stella-fuzzy-search-core@1.2.0"
     },
     {
       "dependsOn": [],
@@ -7418,7 +7418,7 @@
     {
       "dependsOn": [
         "pkg:cargo/libfuzzer-sys@0.4.13",
-        "pkg:cargo/stella-fuzzy-search-core@1.1.5"
+        "pkg:cargo/stella-fuzzy-search-core@1.2.0"
       ],
       "ref": "pkg:cargo/stella-fuzzy-search-core-fuzz@0.0.0"
     },
@@ -7440,7 +7440,7 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:npm/@stll/fuzzy-search@1.1.5"
+      "ref": "pkg:npm/@stll/fuzzy-search@1.2.0"
     }
   ],
   "metadata": {
@@ -7450,10 +7450,10 @@
       }
     ],
     "component": {
-      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.1.5",
+      "bom-ref": "pkg:npm/@stll/fuzzy-search@1.2.0",
       "components": [
         {
-          "bom-ref": "pkg:cargo/stella-fuzzy-search@1.1.5",
+          "bom-ref": "pkg:cargo/stella-fuzzy-search@1.2.0",
           "externalReferences": [
             {
               "type": "vcs",
@@ -7470,9 +7470,9 @@
             }
           ],
           "name": "stella-fuzzy-search",
-          "purl": "pkg:cargo/stella-fuzzy-search@1.1.5",
+          "purl": "pkg:cargo/stella-fuzzy-search@1.2.0",
           "type": "application",
-          "version": "1.1.5"
+          "version": "1.2.0"
         },
         {
           "bom-ref": "pkg:cargo/stella-fuzzy-search-core-fuzz@0.0.0",
@@ -7483,7 +7483,7 @@
           "version": "0.0.0"
         },
         {
-          "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
+          "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.2.0",
           "externalReferences": [
             {
               "type": "vcs",
@@ -7504,9 +7504,9 @@
             }
           ],
           "name": "stella-fuzzy-search-core",
-          "purl": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
+          "purl": "pkg:cargo/stella-fuzzy-search-core@1.2.0",
           "type": "library",
-          "version": "1.1.5"
+          "version": "1.2.0"
         }
       ],
       "description": "Approximate substring matching for Node.js and Bun via a Rust Myers engine exposed through NAPI-RS.",
@@ -7530,9 +7530,9 @@
         }
       ],
       "name": "fuzzy-search",
-      "purl": "pkg:npm/%40stll/fuzzy-search@1.1.5",
+      "purl": "pkg:npm/%40stll/fuzzy-search@1.2.0",
       "type": "application",
-      "version": "1.1.5"
+      "version": "1.2.0"
     },
     "lifecycles": [
       {
