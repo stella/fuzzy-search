@@ -1,8 +1,5 @@
 {
-  "extends": "@stll/typescript-config/library.json",
-  "compilerOptions": {
-    "types": ["node", "bun-types"]
-  },
+  "extends": "@stll/typescript-config/bun.json",
   "include": [
     "*.d.ts",
     "src/**/*.ts",
