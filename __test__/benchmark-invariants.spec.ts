@@ -44,3 +44,19 @@ test("benchmark lookups fail for every absent index instead of producing a resul
   );
 });
 
+test("skipped comparators retain timing-to-name correspondence", () => {
+  expect(
+    speedupRows(
+      ["baseline", "skipped", "measured"],
+      [2, Number.NaN, 6],
+    ),
+  ).toEqual([{ name: "measured", multiple: 3 }]);
+  expect(speedupRows(["baseline"], [2])).toEqual([]);
+  expect(() => speedupRows([], [])).toThrow(RangeError);
+  expect(() =>
+    speedupRows(["baseline", "missing"], [2]),
+  ).toThrow(RangeError);
+  expect(() => speedupRows(["baseline"], [2, 6])).toThrow(
+    RangeError,
+  );
+});

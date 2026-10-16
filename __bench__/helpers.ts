@@ -4,7 +4,7 @@ import Fuse from "fuse.js";
 const fuzzball = require("fuzzball");
 
 import { FuzzySearch } from "../src/index";
-import { requiredAt } from "./required-at";
+import { requiredAt, speedupRows } from "./required-at";
 
 // ─── Adapter type ─────────────────────────────
 
@@ -205,18 +205,13 @@ export const bench = (
 };
 
 export const printSpeedups = (times: number[]) => {
-  const stellaMs = requiredAt(times, 0);
+  const rows = speedupRows(
+    libs.map(({ name }) => name),
+    times,
+  );
   console.log();
-  for (let i = 1; i < times.length; i++) {
-    const lib = libs.at(i);
-    const time = times.at(i);
-    if (lib === undefined || time === undefined) {
-      continue;
-    }
-    console.log(
-      `  vs ${lib.name}: ` +
-        `${(time / stellaMs).toFixed(1)}x`,
-    );
+  for (const { name, multiple } of rows) {
+    console.log(`  vs ${name}: ${multiple.toFixed(1)}x`);
   }
 };
 

@@ -207,7 +207,7 @@ for (const s of scenarios) {
       ),
     );
   }
-  printSpeedups(times.filter((t) => !Number.isNaN(t)));
+  printSpeedups(times);
 }
 
 // ─── Real corpus benchmarks ──────────────────
@@ -295,7 +295,7 @@ if (corpusScenarios.length > 0) {
         ),
       );
     }
-    printSpeedups(times.filter((t) => !Number.isNaN(t)));
+    printSpeedups(times);
   }
 } else {
   console.log(
