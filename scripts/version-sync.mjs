@@ -72,8 +72,11 @@ export const resolveVersion = ({
 }) =>
   explicitVersion ??
   tag?.replace(/^v/, "") ??
-  (command === "sync" ? packageVersion : versionFileVersion);
+  (command === "sync"
+    ? packageVersion
+    : versionFileVersion);
 
+/** @param {{ content: string, filePath: string, sourceVersion: string, targetVersion: string }} options */
 export const replaceLoaderVersion = ({
   content,
   filePath,
@@ -88,6 +91,7 @@ export const replaceLoaderVersion = ({
   return content.replaceAll(sourceVersion, targetVersion);
 };
 
+/** @param {string} name */
 function encodedScopedPackageName(name) {
   if (!name.startsWith("@")) {
     return name;
@@ -111,6 +115,7 @@ function npmPurlPrefixes(name) {
   ];
 }
 
+/** @param {string} bunLock @param {string} packageName */
 function readBunLockVersion(bunLock, packageName) {
   const escaped = escapeRegex(packageName);
   const patterns = [
@@ -128,6 +133,12 @@ function readBunLockVersion(bunLock, packageName) {
   return null;
 }
 
+/**
+ * @param {unknown} value
+ * @param {Set<string>} expectedPurls
+ * @param {string} expectedVersion
+ * @param {string[]} results
+ */
 function collectSbomVersionDrift(
   value,
   expectedPurls,
@@ -150,13 +161,16 @@ function collectSbomVersionDrift(
     return;
   }
 
+  const purl = "purl" in value ? value.purl : undefined;
+  const version =
+    "version" in value ? value.version : undefined;
   if (
-    typeof value.purl === "string" &&
-    expectedPurls.has(value.purl) &&
-    value.version !== expectedVersion
+    typeof purl === "string" &&
+    expectedPurls.has(purl) &&
+    version !== expectedVersion
   ) {
     results.push(
-      `${value.purl}: version=${value.version ?? "<missing>"}`,
+      `${purl}: version=${version ?? "<missing>"}`,
     );
   }
 
@@ -694,7 +708,8 @@ function main() {
 
 if (
   process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  path.resolve(process.argv[1]) ===
+    fileURLToPath(import.meta.url)
 ) {
   main();
 }
