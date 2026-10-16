@@ -25,6 +25,11 @@ concurrency:
 
 jobs:
   check-changes:
+    needs: [trust-check]
+    if: >-
+      always() && !cancelled()
+      && (github.event_name != 'pull_request'
+          || needs.trust-check.outputs.trusted == 'true')
     runs-on: ubuntu-latest
     permissions:
       contents: read
