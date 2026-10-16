@@ -30,8 +30,8 @@ bundled plugin so the generated WASM loader is not
 pre-bundled into broken asset URLs:
 
 ```typescript
-import { defineConfig } from "vite";
 import stllFuzzySearchWasm from "@stll/fuzzy-search-wasm/vite";
+import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [stllFuzzySearchWasm()],
@@ -45,6 +45,12 @@ Prebuilts are available for:
 | macOS         | x64, arm64   |
 | Linux (glibc) | x64, arm64   |
 | WASM          | browser      |
+
+## Cloud setup
+
+On Ubuntu 24.04, run `bash .agents/cloud-setup.sh install` to provision the
+toolchain and dependencies, then `bash .agents/cloud-setup.sh start` at session
+startup to restore the environment.
 
 ## Usage
 

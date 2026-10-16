@@ -1,0 +1,9 @@
+{
+  "cloud": {
+    "install": "bun install --frozen-lockfile --ignore-scripts",
+    "rust": {
+      "components": ["clippy", "rustfmt"],
+      "targets": ["wasm32-wasip1-threads"]
+    }
+  }
+}
