@@ -4939,7 +4939,7 @@
       "version": "0.0.0"
     },
     {
-      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.2.0",
+      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
       "evidence": {
         "identity": [
           {
@@ -4961,11 +4961,37 @@
       "properties": [
         {
           "name": "SrcFile",
-          "value": "Cargo.lock"
-        },
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
+      "type": "library",
+      "version": "1.1.5"
+    },
+    {
+      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.2.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "name": "stella-fuzzy-search-core",
+      "properties": [
         {
           "name": "SrcFile",
-          "value": "fuzz/Cargo.lock"
+          "value": "Cargo.lock"
         }
       ],
       "purl": "pkg:cargo/stella-fuzzy-search-core@1.2.0",
@@ -7182,7 +7208,6 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/bon@3.10.2",
         "pkg:cargo/bon@3.9.3",
         "pkg:cargo/criterion@0.8.2",
         "pkg:cargo/fst@0.4.7",
@@ -7417,8 +7442,18 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/bon@3.10.2",
+        "pkg:cargo/fst@0.4.7",
+        "pkg:cargo/unicode-case-mapping@1.0.0",
+        "pkg:cargo/unicode-normalization@0.1.25",
+        "pkg:cargo/unicode-segmentation@1.13.3"
+      ],
+      "ref": "pkg:cargo/stella-fuzzy-search-core@1.1.5"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/libfuzzer-sys@0.4.13",
-        "pkg:cargo/stella-fuzzy-search-core@1.2.0"
+        "pkg:cargo/stella-fuzzy-search-core@1.1.5"
       ],
       "ref": "pkg:cargo/stella-fuzzy-search-core-fuzz@0.0.0"
     },
