@@ -47,7 +47,7 @@
     "universal": "napi universal",
     "build:js": "node scripts/ensure-wasm-artifact.mjs && tsdown && node scripts/fix-napi-loader.mjs && node scripts/check-wasm-compat.mjs",
     "prepublishOnly": "napi prepublish -t npm && tsdown && node scripts/fix-napi-loader.mjs",
-    "test": "bun test __test__/index.spec.ts",
+    "test": "bun test __test__/index.spec.ts __test__/entity.spec.ts __test__/entity-contract.spec.ts",
     "test:props": "bun test __test__/properties.spec.ts",
     "test:runtime:bun": "bun scripts/runtime-smoke.mjs && bun scripts/compiled-smoke.mjs",
     "test:runtime:node": "node scripts/runtime-smoke.mjs",
@@ -79,6 +79,7 @@
     "@emnapi/core": "1.11.1",
     "@emnapi/runtime": "1.11.1",
     "@napi-rs/cli": "3.7.2",
+    "@napi-rs/wasm-runtime": "1.2.3",
     "@stll/oxlint-config": "0.10.0",
     "@stll/typescript-config": "0.6.0",
     "@tybys/wasm-util": "0.10.2",
@@ -98,6 +99,7 @@
   },
   "napi": {
     "binaryName": "fuzzy-search",
+    "constEnum": false,
     "targets": [
       "x86_64-apple-darwin",
       "aarch64-apple-darwin",
