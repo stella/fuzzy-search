@@ -1,7 +1,6 @@
 {
   "extends": "@stll/typescript-config/library.json",
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
     "types": ["node", "bun-types"]
   },
   "include": [

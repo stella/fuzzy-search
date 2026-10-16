@@ -1,6 +1,6 @@
 import { defineConfig } from "tsdown";
 
-import { wasmFetchGuardPlugin } from "./src/wasm-fetch-guard.ts";
+import { wasmFetchGuardPlugin } from "./src/wasm-fetch-guard";
 
 export default defineConfig([
   {
