@@ -1,0 +1,9 @@
+{
+  "cloud": {
+    "install": "bun install --frozen-lockfile",
+    "rust": {
+      "components": ["clippy", "rustfmt"],
+      "toolchain": "1.99.0"
+    }
+  }
+}
