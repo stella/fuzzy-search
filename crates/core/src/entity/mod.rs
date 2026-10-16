@@ -28,7 +28,7 @@ use search::{MAX_WEIGHT, MIN_WEIGHT, PostingList, SearchIndex};
 
 use crate::Result;
 
-pub(super) fn validate_weight(weight: f64) -> Result<()> {
+fn validate_weight(weight: f64) -> Result<()> {
   if !weight.is_finite() || !(MIN_WEIGHT..=MAX_WEIGHT).contains(&weight) {
     return Err(crate::Error {
       reason: "Entity weights and minimum weights must be finite and within [1e-150, 1e150]".into(),
