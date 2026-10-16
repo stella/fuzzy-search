@@ -60,3 +60,34 @@ test("skipped comparators retain timing-to-name correspondence", () => {
     RangeError,
   );
 });
+
+test("speedup baselines must be positive and finite", () => {
+  for (const baseline of [
+    -Infinity,
+    -1,
+    -Number.MIN_VALUE,
+    -0,
+    0,
+    Number.NaN,
+    Infinity,
+  ]) {
+    expect(() =>
+      speedupRows(["baseline", "measured"], [baseline, 6]),
+    ).toThrow(
+      "Benchmark baseline must be positive and finite",
+    );
+  }
+  for (const baseline of [
+    Number.MIN_VALUE,
+    0.125,
+    1,
+    Number.MAX_VALUE,
+  ]) {
+    expect(
+      speedupRows(
+        ["baseline", "measured"],
+        [baseline, baseline],
+      ),
+    ).toEqual([{ name: "measured", multiple: 1 }]);
+  }
+});

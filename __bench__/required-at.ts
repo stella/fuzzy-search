@@ -23,6 +23,11 @@ export const speedupRows = (
     );
   }
   const baseline = requiredAt(times, 0);
+  if (!Number.isFinite(baseline) || baseline <= 0) {
+    throw new RangeError(
+      "Benchmark baseline must be positive and finite",
+    );
+  }
   const rows: { name: string; multiple: number }[] = [];
   for (const [index, name] of names.entries()) {
     if (index === 0) continue;
