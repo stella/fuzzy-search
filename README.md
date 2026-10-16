@@ -30,8 +30,8 @@ bundled plugin so the generated WASM loader is not
 pre-bundled into broken asset URLs:
 
 ```typescript
-import { defineConfig } from "vite";
 import stllFuzzySearchWasm from "@stll/fuzzy-search-wasm/vite";
+import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [stllFuzzySearchWasm()],
@@ -169,6 +169,10 @@ import { distance } from "@stll/fuzzy-search";
 distance("kitten", "sitting"); // 3
 distance("abcd", "abdc", "damerau-levenshtein"); // 1
 ```
+
+`"damerau-levenshtein"` means Optimal String Alignment (OSA), also called
+restricted Damerau–Levenshtein: an edited substring cannot be edited again.
+Distances count Unicode code points, including supplementary characters.
 
 ## Benchmarks
 
@@ -335,6 +339,88 @@ Run `bun run typecheck` to check types with `bun check --no-pretty --all --proje
 Run `bun run check:typecheck-parity` to compare repository diagnostics and seeded diagnostic classes with TypeScript; CI runs both checks.
 Editors continue to use the TypeScript language service because Bun has no language server.
 The `typescript` dependency also supports declaration generation through tsdown.
+
+## Entity candidate index
+
+`EntityIndexBuilder` indexes caller-normalized spelling forms for repeated
+entity-name candidate retrieval. Normalization, final scoring, and ranking
+remain with the caller. Token ids are local to each spelling form; alias ids
+follow builder insertion order. Supply the same weight model for alias positions,
+query tokens, and the per-form vocabulary weights passed to `finish`. All forms
+of one alias describe the same token positions, weights, and minimum weights;
+their token ids and spellings may differ.
+
+Position weights, minimum weights, vocabulary weights, and `initialWeight` must
+be finite and within the inclusive range `[1e-150, 1e150]`. The builder rejects
+values outside this range with Rust `ErrorKind::EntityWeightOutOfRange` (JavaScript
+error code `InvalidArg`). `minimumTotal` is an aggregate: it must be positive,
+finite, and no greater than the sum of position minimum weights.
+
+```typescript
+import {
+  EntityIndex,
+  EntityIndexBuilder,
+} from "@stll/fuzzy-search";
+
+const builder = new EntityIndexBuilder({
+  forms: 1,
+  budget: {
+    byLength: [0, 0, 0, 0, 1, 1, 2],
+    basis: "shorter",
+  },
+  initialWeight: 1,
+  initialSimilarity: 0.8,
+});
+const id = builder.intern(0, "alpha");
+builder.addAlias({
+  entryId: 0,
+  entityGroup: 0,
+  quality: 1,
+  forms: [
+    {
+      form: 0,
+      tokens: [{ id, weight: 1, minimumWeight: 1 }],
+      joins: [],
+      minimumTotal: 1,
+    },
+  ],
+});
+const index = await builder.finishAsync([
+  new Float64Array([1]),
+]);
+const result = index.search(
+  {
+    tokens: [{ form: 0, text: "alhpa", weight: 1 }],
+    units: [{ form: 0, text: "alhpa", positions: [0] }],
+  },
+  { tau: 0.7, quality: 1, maxCost: 100_000 },
+);
+
+// Each matchKeys triple is [query unit, spelling form, token id].
+// similarities[i] belongs to matchKeys.subarray(i * 3, i * 3 + 3).
+console.log(
+  result.survivors,
+  result.cost,
+  result.exhausted,
+);
+const restored = EntityIndex.fromBytes(index.toBytes());
+```
+
+`finish` builds synchronously; `finishAsync` uses the native worker pool and
+copies input weights before returning. Both consume the builder, including on
+failure. `finishSteps(weights, maxUnits)` yields between construction steps
+and returns the completed index as its generator return value. One construction
+unit prepares a vocabulary, projects an alias, or finalizes the posting lists;
+`finish` then validates and attaches the vocabulary weights.
+
+Search returns typed arrays for match keys, similarities, query weights, and
+surviving alias ids, avoiding an object allocation per vocabulary hit.
+`tau` is the candidate-bound threshold. Rescore survivors with your application
+scorer. `exhausted: true` means the work ceiling was reached and results may be
+incomplete. Work counters and `maxCost` use JavaScript safe integers;
+`nativeBytes` reports owned storage bytes, excluding allocator overhead, and
+`postingCount` supports deriving
+a workload-dependent ceiling. The native and WASM entry points share this API.
 
 ## License
 
