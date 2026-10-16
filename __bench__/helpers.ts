@@ -4,6 +4,7 @@ import Fuse from "fuse.js";
 const fuzzball = require("fuzzball");
 
 import { FuzzySearch } from "../src/index";
+import { requiredAt } from "./required-at";
 
 // ─── Adapter type ─────────────────────────────
 
@@ -32,14 +33,14 @@ function naiveLevenshtein(a: string, b: string): number {
     for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
       curr[j] = Math.min(
-        curr[j - 1]! + 1,
-        prev[j]! + 1,
-        prev[j - 1]! + cost,
+        requiredAt(curr, j - 1) + 1,
+        requiredAt(prev, j) + 1,
+        requiredAt(prev, j - 1) + cost,
       );
     }
     prev = curr;
   }
-  return prev[n]!;
+  return requiredAt(prev, n);
 }
 
 /** Naive sliding window fuzzy search (correct
@@ -204,7 +205,7 @@ export const bench = (
 };
 
 export const printSpeedups = (times: number[]) => {
-  const stellaMs = times[0]!;
+  const stellaMs = requiredAt(times, 0);
   console.log();
   for (let i = 1; i < times.length; i++) {
     const lib = libs.at(i);

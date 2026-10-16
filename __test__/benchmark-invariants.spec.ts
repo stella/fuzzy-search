@@ -1,0 +1,46 @@
+import { expect, test } from "bun:test";
+
+import {
+  requiredAt,
+  speedupRows,
+} from "../__bench__/required-at";
+
+test("benchmark lookups preserve every populated index, including falsy values", () => {
+  const values = [
+    0,
+    1,
+    -1,
+    Number.NaN,
+    false,
+    "",
+    "text",
+    null,
+  ];
+  for (const [index, value] of values.entries()) {
+    expect(requiredAt(values, index)).toBe(value);
+  }
+});
+
+test("benchmark lookups fail for every absent index instead of producing a result", () => {
+  const values = [1, 2, 3];
+  for (const index of [
+    -1,
+    3,
+    4,
+    0.5,
+    Number.NaN,
+    Infinity,
+  ]) {
+    expect(() => requiredAt(values, index)).toThrow(
+      RangeError,
+    );
+  }
+  expect(() => requiredAt([], 0)).toThrow(RangeError);
+  expect(() =>
+    requiredAt(Array.from({ length: 3 }), 1),
+  ).toThrow(RangeError);
+  expect(() => requiredAt([undefined], 0)).toThrow(
+    RangeError,
+  );
+});
+

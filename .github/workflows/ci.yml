@@ -178,7 +178,7 @@ jobs:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
       - run: bun run check:toolchain
-      - run: bun test __test__/tooling-adoption.spec.ts
+      - run: bun test __test__/tooling-adoption.spec.ts __test__/benchmark-invariants.spec.ts
       - run: bun run typecheck
       - run: bun run check:typecheck-parity
         if: needs.check-changes.outputs.toolchain-changed == 'true'
