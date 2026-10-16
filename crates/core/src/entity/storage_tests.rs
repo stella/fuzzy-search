@@ -265,7 +265,7 @@ fn rejects_invalid_aliases_and_weight_tables() {
     },
     AliasJoin {
       id: 0,
-      left: 1,
+      left: 2,
       right: 0,
     },
     AliasJoin {
@@ -468,6 +468,51 @@ proptest! {
     }
     let index = builder.finish(vec![vec![1.0; 4]]).unwrap();
     assert_oracle_completeness(&index, &EntityQuery { tokens, units }, &SearchParams { tau: f64::from(cutoff) / 1000.0, quality: f64::from(quality) / 1000.0, max_cost: u64::MAX });
+  }
+}
+
+proptest! {
+  #![proptest_config(ProptestConfig::with_cases(64))]
+  #[test]
+  fn caller_mapped_joins_preserve_oracle_completeness(
+    weights in prop::collection::vec(1_u16..100, 3),
+    cutoff in 0_u16..=1000,
+  ) {
+    // Original neighbors may map to any pair after a caller interns duplicate
+    // positions, including reversed pairs and two occurrences of one position.
+    let texts = ["alpha", "beta", "gamma"];
+    for left in 0..3_usize {
+      for right in 0..3_usize {
+        let mut builder = EntityIndexBuilder::new(options(1)).unwrap();
+        let ids = texts.iter().map(|text| builder.intern(0, text).unwrap()).collect::<Vec<_>>();
+        let joined_text = format!("{}{}", texts.get(left).unwrap(), texts.get(right).unwrap());
+        let joined = builder.intern(0, &joined_text).unwrap();
+        let mut input = alias(&ids);
+        let form = input.forms.first_mut().unwrap();
+        for (token, weight) in form.tokens.iter_mut().zip(&weights) {
+          token.weight = f64::from(*weight);
+          token.minimum_weight = token.weight * 0.5;
+        }
+        form.minimum_total = form.tokens.iter().map(|token| token.minimum_weight).sum();
+        form.joins.push(AliasJoin { id: joined, left: u32::try_from(left).unwrap(), right: u32::try_from(right).unwrap() });
+        builder.add_alias(input).unwrap();
+        let index = builder.finish(vec![vec![1.0; 4]]).unwrap();
+        let params = SearchParams { tau: f64::from(cutoff) / 1000.0, quality: 1.0, max_cost: u64::MAX };
+        let joined_query = EntityQuery {
+          tokens: vec![QueryToken { form: 0, text: joined_text.clone(), weight: 1.0 }],
+          units: vec![QueryUnit { form: 0, text: joined_text, positions: vec![0] }],
+        };
+        assert_oracle_completeness(&index, &joined_query, &params);
+        let mut split_query = EntityQuery {
+          tokens: texts.iter().map(|text| QueryToken { form: 0, text: (*text).to_owned(), weight: 1.0 }).collect(),
+          units: texts.iter().enumerate().map(|(position, text)| QueryUnit { form: 0, text: (*text).to_owned(), positions: vec![u32::try_from(position).unwrap()] }).collect(),
+        };
+        // Query units cover a set of positions even when the text repeats one.
+        let positions = if left == right { vec![u32::try_from(left).unwrap()] } else { vec![u32::try_from(left).unwrap(), u32::try_from(right).unwrap()] };
+        split_query.units.push(QueryUnit { form: 0, text: format!("{}{}", texts.get(left).unwrap(), texts.get(right).unwrap()), positions });
+        assert_oracle_completeness(&index, &split_query, &params);
+      }
+    }
   }
 }
 

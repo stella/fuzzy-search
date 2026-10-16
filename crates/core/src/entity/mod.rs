@@ -76,7 +76,8 @@ pub struct AliasToken {
   pub minimum_weight: f64,
 }
 
-/// A joined pair of adjacent positions, interned in the same vocabulary.
+/// A caller-declared joined pair, interned in the same vocabulary.
+/// Positions may repeat or be reordered after caller-side token deduplication.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct AliasJoin {
   pub id: TokenId,

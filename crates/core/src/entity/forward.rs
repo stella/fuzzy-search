@@ -92,7 +92,7 @@ pub(super) fn validate_alias(
         .map_err(|_| invalid("Invalid entity join"))?;
       let right = usize::try_from(join.right)
         .map_err(|_| invalid("Invalid entity join"))?;
-      if left.checked_add(1) != Some(right)
+      if left >= count
         || right >= count
         || usize::try_from(join.id)
           .ok()
@@ -100,7 +100,7 @@ pub(super) fn validate_alias(
           .is_none()
         || !joins.insert((join.left, join.right, join.id))
       {
-        return Err(invalid("Invalid entity join id or adjacent positions"));
+        return Err(invalid("Invalid entity join id or positions"));
       }
     }
   }
