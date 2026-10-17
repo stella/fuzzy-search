@@ -47,6 +47,27 @@ fn float_count(value: usize) -> Result<f64> {
     .map_err(|_| Error::from_reason("Entity count exceeds u32"))
 }
 
+/// Bytes allocated by a std `HashMap` table holding `capacity` usable entries
+/// of `entry` bytes. The table keeps a power-of-two bucket count at a 7/8
+/// load factor (4 or 8 buckets below eight entries), one control byte per
+/// bucket and one trailing control group.
+fn hash_table_bytes(capacity: usize, entry: usize) -> usize {
+  const CONTROL_GROUP: usize = 16;
+  if capacity == 0 {
+    return 0;
+  }
+  let buckets = if capacity < 4 {
+    4
+  } else if capacity < 8 {
+    8
+  } else {
+    capacity.saturating_mul(8).div_ceil(7).next_power_of_two()
+  };
+  buckets
+    .saturating_mul(entry.saturating_add(1))
+    .saturating_add(CONTROL_GROUP)
+}
+
 fn bigrams(text: &str) -> BTreeSet<(char, char)> {
   let mut previous = '^';
   let mut grams = BTreeSet::new();
@@ -199,8 +220,9 @@ impl Lexicon {
           .capacity()
           .saturating_mul(size_of::<usize>()),
       )
-      .saturating_add(self.gram_postings.capacity().saturating_mul(
-        size_of::<((char, char), Vec<TokenId>)>().saturating_add(1),
+      .saturating_add(hash_table_bytes(
+        self.gram_postings.capacity(),
+        size_of::<((char, char), Vec<TokenId>)>(),
       ))
       .saturating_add(self.map.as_fst().as_inner().capacity())
       .saturating_add(self.text.capacity())
@@ -355,6 +377,23 @@ mod tests {
   use super::*;
   use crate::damerau_levenshtein;
   use proptest::prelude::*;
+
+  #[test]
+  fn hash_table_bytes_counts_allocated_buckets() {
+    assert_eq!(hash_table_bytes(0, 24), 0);
+    assert_eq!(hash_table_bytes(3, 24), 4 * 25 + 16);
+    assert_eq!(hash_table_bytes(7, 24), 8 * 25 + 16);
+    // 14 usable entries live in 16 buckets, 28 in 32.
+    assert_eq!(hash_table_bytes(14, 24), 16 * 25 + 16);
+    assert_eq!(hash_table_bytes(28, 24), 32 * 25 + 16);
+    let mut map: HashMap<(char, char), Vec<TokenId>> = HashMap::new();
+    map.insert(('a', 'b'), Vec::new());
+    let capacity = map.capacity();
+    assert!(
+      hash_table_bytes(capacity, size_of::<((char, char), Vec<TokenId>)>())
+        >= capacity.saturating_mul(size_of::<((char, char), Vec<TokenId>)>())
+    );
+  }
 
   fn default_budget() -> EditBudget {
     EditBudget {
