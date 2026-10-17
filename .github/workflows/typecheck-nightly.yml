@@ -1,0 +1,23 @@
+name: Nightly compiler parity
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-compiler-parity
+  cancel-in-progress: false
+
+jobs:
+  napi-ci:
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
+    with:
+      trusted: "true"
+      typecheck: true
+      typecheck-only: true
+      parity: always
+      install-command: bun install --frozen-lockfile
