@@ -20,6 +20,9 @@
     "type": "git",
     "url": "git+https://github.com/stella/fuzzy-search.git"
   },
+  "workspaces": [
+    "__bench__"
+  ],
   "files": [
     "NOTICE",
     "dist",

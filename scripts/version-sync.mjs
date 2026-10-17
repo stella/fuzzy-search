@@ -6,12 +6,18 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
+import {
+  parsePackageManifest,
+  formatSbomVersion,
+} from "./release-json.mjs";
+
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 
 function repoPath(...segments) {
   return path.join(ROOT, ...segments);
 }
 
+/** @param {string} filePath */
 function readText(filePath) {
   return fs.readFileSync(filePath, "utf8");
 }
@@ -21,7 +27,7 @@ function writeText(filePath, content) {
 }
 
 function readJson(filePath) {
-  return JSON.parse(readText(filePath));
+  return parsePackageManifest(readText(filePath));
 }
 
 function writeJson(filePath, value) {
@@ -35,6 +41,7 @@ function readVersion() {
   return readText(repoPath("VERSION")).trim();
 }
 
+/** @param {string} filePath */
 function fileExists(filePath) {
   return fs.existsSync(filePath);
 }
@@ -43,6 +50,7 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** @param {string} content @param {RegExp} matcher @param {string} replacement @param {string} filePath */
 function replaceRequired(
   content,
   matcher,
@@ -57,12 +65,14 @@ function replaceRequired(
   return content.replace(matcher, replacement);
 }
 
+/** @param {string} content @param {RegExp} matcher @param {string} replacement */
 function replaceIfPresent(content, matcher, replacement) {
   return matcher.test(content)
     ? content.replace(matcher, replacement)
     : content;
 }
 
+/** @param {{command: string, explicitVersion?: string, packageVersion: string, tag?: string, versionFileVersion: string}} options */
 export const resolveVersion = ({
   command,
   explicitVersion,
@@ -170,7 +180,7 @@ function collectSbomVersionDrift(
     version !== expectedVersion
   ) {
     results.push(
-      `${purl}: version=${version ?? "<missing>"}`,
+      `${purl}: version=${formatSbomVersion(version)}`,
     );
   }
 
@@ -298,6 +308,7 @@ function platformPackageManifests() {
     );
 }
 
+/** @param {string} expectedVersion */
 function mismatches(expectedVersion) {
   const meta = packageMeta();
   const platforms = platformPackageManifests();
@@ -509,6 +520,7 @@ function mismatches(expectedVersion) {
   return results;
 }
 
+/** @param {string} nextVersion */
 function syncVersion(nextVersion) {
   const meta = packageMeta();
   const platforms = platformPackageManifests();
@@ -516,7 +528,7 @@ function syncVersion(nextVersion) {
 
   writeText(repoPath("VERSION"), `${nextVersion}\n`);
   meta.root.version = nextVersion;
-  if (meta.root.optionalDependencies) {
+  if (meta.root.optionalDependencies !== undefined) {
     const platformPackageNames = new Set(
       platforms.map(({ manifest }) => manifest.name),
     );
@@ -644,6 +656,7 @@ function syncVersion(nextVersion) {
 
 function parseArgs() {
   const [command, ...rest] = process.argv.slice(2);
+  /** @type {Map<string, string>} */
   const args = new Map();
   for (let i = 0; i < rest.length; i += 1) {
     const token = rest[i];
@@ -693,16 +706,13 @@ function main() {
     return;
   }
 
-  if (command === "check") {
-    const drift = mismatches(version);
-    if (drift.length > 0) {
-      console.error("Version drift detected:");
-      for (const mismatch of drift) {
-        console.error(`- ${mismatch}`);
-      }
-      process.exit(1);
+  const drift = mismatches(version);
+  if (drift.length > 0) {
+    console.error("Version drift detected:");
+    for (const mismatch of drift) {
+      console.error(`- ${mismatch}`);
     }
-    return;
+    process.exit(1);
   }
 }
 
