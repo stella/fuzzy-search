@@ -1,7 +1,10 @@
 version: 2
 updates:
   - package-ecosystem: bun
-    directory: /
+    directories:
+      - /
+      - /npm/wasm32-wasi
+      - /wasm
     schedule:
       interval: weekly
       day: saturday

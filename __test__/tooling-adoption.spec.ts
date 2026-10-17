@@ -65,3 +65,29 @@ test("generated cloud setup is a fixed point and preserves the startup hook", ()
   expect(before.at(1)).toContain("CLAUDE_CODE_REMOTE");
   expect(before.at(1)).toContain(".agents/cloud-setup.sh");
 });
+
+test("cloud setup provisions and verifies the authorized Hawk compiler", () => {
+  const setup = read(".agents/cloud-setup.sh");
+  expect(setup).toContain(
+    "toolchain install 1.97.1 --profile minimal --no-self-update",
+  );
+  expect(setup).toContain(
+    `[[ "$additional_version" == 'rustc 1.97.1 '* ]] || return 1`,
+  );
+  expect(setup).toContain('rustc" +1.97.1 --version');
+});
+
+test("generated Dependabot coverage is a fixed point including standalone WASM manifests", () => {
+  const before = read(".github/dependabot.yml");
+  execFileSync("bunx", ["--no-install", "stll-dependabot"]);
+  expect(read(".github/dependabot.yml")).toEqual(before);
+  expect(before).toContain(
+    [
+      "  - package-ecosystem: bun",
+      "    directories:",
+      "      - /",
+      "      - /npm/wasm32-wasi",
+      "      - /wasm",
+    ].join("\n"),
+  );
+});

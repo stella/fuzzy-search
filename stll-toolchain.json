@@ -3,6 +3,7 @@
     "install": "bun install --frozen-lockfile",
     "rust": {
       "components": ["clippy", "rustfmt"],
+      "additionalToolchains": ["1.97.1"],
       "toolchain": "1.99.0"
     }
   },
