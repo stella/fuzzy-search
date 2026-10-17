@@ -6,6 +6,7 @@
 mod builder;
 mod cost;
 mod forward;
+mod gram_postings;
 pub mod lexicon;
 #[cfg(test)]
 mod oracle;

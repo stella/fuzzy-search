@@ -1,10 +1,11 @@
 //! Compact vocabulary and complete, deterministically ordered OSA lookup.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::mem::size_of;
 
-use fst::{IntoStreamer, Map, MapBuilder, Streamer};
+use fst::{Map, MapBuilder};
 
+use super::gram_postings::GramPostings;
 use super::osa_walk::OsaAutomaton;
 use super::{BudgetBasis, Cost, EditBudget, TokenId};
 use crate::{Error, Result};
@@ -33,6 +34,8 @@ pub struct Lexicon {
   offsets: Vec<u32>,
   lengths: Vec<u16>,
   gram_counts: Vec<u32>,
+  gram_postings: GramPostings,
+  lexical_order: Vec<TokenId>,
 }
 
 fn fst_error(error: &fst::Error) -> Error {
@@ -97,6 +100,13 @@ impl Lexicon {
         "Entity vocabulary tokens must be distinct",
       ));
     }
+    let lexical_order = ordered
+      .iter()
+      .map(|(id, _)| {
+        u32::try_from(*id)
+          .map_err(|_| Error::from_reason("Entity token id exceeds u32"))
+      })
+      .collect::<Result<Vec<_>>>()?;
     let mut builder = MapBuilder::memory();
     for (id, text) in ordered {
       builder
@@ -114,18 +124,27 @@ impl Lexicon {
       offsets: vec![0],
       lengths: Vec::with_capacity(tokens.len()),
       gram_counts: Vec::with_capacity(tokens.len()),
+      gram_postings: GramPostings::default(),
+      lexical_order,
     };
     u32::try_from(tokens.len())
       .map_err(|_| Error::from_reason("Entity vocabulary exceeds u32"))?;
-    for text in tokens {
+    let mut gram_postings: BTreeMap<_, Vec<TokenId>> = BTreeMap::new();
+    for (id, text) in tokens.iter().enumerate() {
       lexicon
         .lengths
         .push(u16::try_from(text.chars().count()).map_err(|_| {
           Error::from_reason("Entity token exceeds u16 length")
         })?);
+      let grams = bigrams(text);
+      let id = u32::try_from(id)
+        .map_err(|_| Error::from_reason("Entity token id exceeds u32"))?;
+      for gram in &grams {
+        gram_postings.entry(*gram).or_default().push(id);
+      }
       lexicon
         .gram_counts
-        .push(u32::try_from(bigrams(text).len()).map_err(|_| {
+        .push(u32::try_from(grams.len()).map_err(|_| {
           Error::from_reason("Entity bigram count exceeds u32")
         })?);
       let end = lexicon
@@ -139,6 +158,7 @@ impl Lexicon {
       lexicon.text.extend_from_slice(text.as_bytes());
       lexicon.offsets.push(end);
     }
+    lexicon.gram_postings = GramPostings::new(gram_postings)?;
     lexicon.text.shrink_to_fit();
     lexicon.offsets.shrink_to_fit();
     Ok(lexicon)
@@ -172,6 +192,13 @@ impl Lexicon {
   #[must_use]
   pub fn native_bytes(&self) -> usize {
     size_of::<Self>()
+      .saturating_add(self.gram_postings.heap_bytes())
+      .saturating_add(
+        self
+          .lexical_order
+          .capacity()
+          .saturating_mul(size_of::<TokenId>()),
+      )
       .saturating_add(self.map.as_fst().as_inner().capacity())
       .saturating_add(self.text.capacity())
       .saturating_add(self.offsets.capacity().saturating_mul(size_of::<u32>()))
@@ -179,6 +206,26 @@ impl Lexicon {
       .saturating_add(
         self.gram_counts.capacity().saturating_mul(size_of::<u32>()),
       )
+  }
+
+  fn shared_bigram_counts(
+    &self,
+    grams: &BTreeSet<(char, char)>,
+  ) -> Result<Vec<u32>> {
+    let mut shared_counts = vec![0_u32; self.len()];
+    for gram in grams {
+      self.gram_postings.for_each(*gram, |id| {
+        let shared = shared_counts
+          .get_mut(
+            usize::try_from(id)
+              .map_err(|_| Error::from_reason("Invalid entity token id"))?,
+          )
+          .ok_or_else(|| Error::from_reason("Missing entity bigram count"))?;
+        *shared = shared.saturating_add(1);
+        Ok(())
+      })?;
+    }
+    Ok(shared_counts)
   }
 
   /// Lookup charges every evaluated DP cell and every returned match.
@@ -191,8 +238,7 @@ impl Lexicon {
     max_cost: u64,
   ) -> Result<LexiconSearch> {
     budget.validate()?;
-    let spent = cost.total();
-    let mut remaining = max_cost.saturating_sub(spent);
+    let mut remaining = max_cost.saturating_sub(cost.total());
     let mut matches = Vec::new();
     let exact = self.map.get(query);
     if let Some(id) = exact {
@@ -221,38 +267,62 @@ impl Lexicon {
       });
     }
     let grams = bigrams(query);
+    let shared_counts = self.shared_bigram_counts(&grams)?;
     let automaton = OsaAutomaton::new(query, maximum_distance, remaining);
-    let mut stream = self.map.search_with_state(&automaton).into_stream();
     let mut fuzzy = Vec::new();
-    while let Some((key, id, state)) = stream.next() {
-      if Some(id) == exact {
+    for &id in &self.lexical_order {
+      let index = usize::try_from(id)
+        .map_err(|_| Error::from_reason("Invalid entity token id"))?;
+      let (&length, (&gram_count, &shared)) = self
+        .lengths
+        .get(index)
+        .zip(self.gram_counts.get(index).zip(shared_counts.get(index)))
+        .ok_or_else(|| Error::from_reason("Missing entity lexicon metadata"))?;
+      if exact == Some(u64::from(id)) {
         continue;
       }
-      let distance = state.distance(
-        query_length,
-        usize::from(maximum_distance).saturating_add(1),
-      );
-      if distance
-        > usize::from(budget.for_length(query_length.min(state.length)))
+      let length = usize::from(length);
+      let allowed = usize::from(budget.for_length(query_length.min(length)));
+      if query_length.abs_diff(length) > allowed {
+        continue;
+      }
+      // An insertion/deletion/substitution destroys at most two padded bigrams
+      // on either side; an adjacent transposition destroys at most three:
+      // xaby -> xbay replaces xa, ab, by with xb, ba, ay. Along any OSA edit
+      // path each directional set difference is therefore <= 3 * distance.
+      // Repeated grams and literal padding characters can only weaken the bound.
+      let candidate_count = usize::try_from(gram_count)
+        .map_err(|_| Error::from_reason("Invalid entity bigram count"))?;
+      let shared = usize::try_from(shared)
+        .map_err(|_| Error::from_reason("Invalid entity bigram count"))?;
+      if grams.len().max(candidate_count).saturating_sub(shared)
+        > allowed.saturating_mul(3)
       {
+        continue;
+      }
+      let token = self
+        .token(id)
+        .ok_or_else(|| Error::from_reason("Missing entity token"))?;
+      let Some(distance) = automaton.distance_for(token) else {
+        if automaton.exhausted() {
+          break;
+        }
+        continue;
+      };
+      if distance > allowed {
         continue;
       }
       if !automaton.charge_match() {
         break;
       }
-      let token = std::str::from_utf8(key)
-        .map_err(|_| Error::from_reason("Invalid UTF-8 in entity lexicon"))?;
-      let candidate_grams = bigrams(token);
-      let shared = grams.intersection(&candidate_grams).count();
       let distance = u8::try_from(distance)
         .map_err(|_| Error::from_reason("Invalid entity distance"))?;
-      let similarity = 1.0
-        - f64::from(distance) / float_count(query_length.max(state.length))?;
-      let bigram_similarity = float_count(shared)?
-        / float_count(grams.len().max(candidate_grams.len()))?;
+      let similarity =
+        1.0 - f64::from(distance) / float_count(query_length.max(length))?;
+      let bigram_similarity =
+        float_count(shared)? / float_count(grams.len().max(candidate_count))?;
       fuzzy.push(LexiconMatch {
-        id: u32::try_from(id)
-          .map_err(|_| Error::from_reason("Invalid entity token id"))?,
+        id,
         distance,
         similarity,
         bigram_similarity,
@@ -340,7 +410,8 @@ mod tests {
   fn word() -> impl Strategy<Value = String> {
     prop::collection::vec(
       prop::sample::select(vec![
-        'a', 'b', 'c', 'é', '日', '本', 'ع', 'ر', '𐐀', '😀',
+        'a', 'b', 'c', 'é', '\u{301}', '日', '本', 'ع', 'ر', '𐐀', '😀', '^',
+        '$',
       ]),
       0..12,
     )
@@ -349,6 +420,42 @@ mod tests {
 
   proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
+    #[test]
+    fn prefilters_preserve_edited_queries_at_every_budget(
+      query in word(),
+      mut vocabulary in prop::collection::btree_set(word(), 0..20),
+      edits in prop::collection::vec((0_usize..16, any::<bool>()), 0..5),
+      mut table in prop::collection::vec(0_u8..=12, 1..16),
+    ) {
+      let mut chars = query.chars().collect::<Vec<_>>();
+      vocabulary.insert(query.clone());
+      for (position, transpose) in edits {
+        let index = position.checked_rem(chars.len().max(1)).unwrap_or(0);
+        if transpose && index.saturating_add(1) < chars.len() {
+          chars.swap(index, index.saturating_add(1));
+        } else {
+          chars.insert(index, '𐐀');
+        }
+        vocabulary.insert(chars.iter().collect());
+      }
+      // OSA must not be replaced by unrestricted Damerau when edits intervene.
+      vocabulary.extend(["ca".to_owned(), "abc".to_owned()]);
+      let tokens = vocabulary.into_iter().collect::<Vec<_>>();
+      let lexicon = Lexicon::new(&tokens).unwrap();
+      table.sort_unstable();
+      let maximum = tokens.iter().map(|text| text.chars().count())
+        .chain(std::iter::once(query.chars().count())).max().unwrap();
+      let tables = (0..=u8::try_from(maximum).unwrap())
+        .chain(std::iter::once(u8::MAX)).map(|limit| vec![limit])
+        .chain(std::iter::once(table));
+      for by_length in tables {
+        let budget = EditBudget { by_length, basis: BudgetBasis::Shorter };
+        let result = lexicon.lookup(&query, &budget, &mut Cost::default(), u64::MAX).unwrap();
+        prop_assert!(!result.exhausted);
+        prop_assert_eq!(result.matches, oracle(&tokens, &query, &budget));
+      }
+    }
+
     #[test]
     fn lookup_equals_full_osa_oracle(
       tokens in prop::collection::btree_set(word(), 0..35),
@@ -401,6 +508,16 @@ mod tests {
     .map(str::to_owned);
     let lexicon = Lexicon::new(&tokens).unwrap();
     for query in &tokens {
+      for maximum in 0..=4 {
+        let budget = EditBudget {
+          by_length: vec![maximum],
+          basis: BudgetBasis::Shorter,
+        };
+        let result = lexicon
+          .lookup(query, &budget, &mut Cost::default(), u64::MAX)
+          .unwrap();
+        assert_eq!(result.matches, oracle(&tokens, query, &budget));
+      }
       let mut cost = Cost::default();
       let result = lexicon
         .lookup(query, &default_budget(), &mut cost, u64::MAX)
