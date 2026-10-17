@@ -347,8 +347,8 @@ entity-name candidate retrieval. Normalization, final scoring, and ranking
 remain with the caller. Token ids are local to each spelling form; alias ids
 follow builder insertion order. Supply the same weight model for alias positions,
 query tokens, and the per-form vocabulary weights passed to `finish`. All forms
-of one alias describe the same token positions, weights, and minimum weights;
-their token ids and spellings may differ.
+of one alias describe the same token positions and weights. Their token ids,
+spellings, and minimum weights may differ.
 
 Position weights, minimum weights, vocabulary weights, and `initialWeight` must
 be finite and within the inclusive range `[1e-150, 1e150]`. The builder rejects

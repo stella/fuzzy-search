@@ -9,7 +9,8 @@ use stella_fuzzy_search_core as core;
 
 fn core_to_napi_error(error: &core::Error) -> Error {
   match error.kind() {
-    core::ErrorKind::EntityWeightOutOfRange => {
+    core::ErrorKind::EntityWeightOutOfRange
+    | core::ErrorKind::EntityIndexUnsupportedVersion => {
       Error::new(napi::Status::InvalidArg, error.to_string())
     }
     core::ErrorKind::InvalidInput => Error::from_reason(error.to_string()),

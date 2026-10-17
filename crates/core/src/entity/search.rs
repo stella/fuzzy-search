@@ -11,9 +11,10 @@ use std::collections::{BTreeSet, HashMap};
 
 use super::cost::Work;
 use super::lexicon::Lexicon;
+use super::packed_forward::{AliasView, FormView};
 use super::{
-  AliasId, AliasInput, Cost, EntityIndexOptions, EntityQuery, FormId,
-  SearchParams, SearchResult, TokenId, UnitMatch,
+  AliasId, Cost, EntityIndexOptions, EntityQuery, FormId, SearchParams,
+  SearchResult, TokenId, UnitMatch,
 };
 use crate::{Error, Result};
 
@@ -107,7 +108,7 @@ pub(super) trait SearchIndex {
   fn minimum_token_weight(&self) -> f64;
   /// Cached maximum position count, for reference summation rounding.
   fn maximum_alias_tokens(&self) -> usize;
-  fn alias(&self, id: AliasId) -> Option<&AliasInput>;
+  fn alias(&self, id: AliasId) -> Option<AliasView<'_>>;
   fn lexicon(&self, form: FormId) -> Option<&Lexicon>;
   fn posting(&self, list: PostingList, offset: usize)
   -> Option<(AliasId, f64)>;
@@ -326,19 +327,18 @@ fn alias_bound(
   index: &impl SearchIndex,
   query: &EntityQuery,
   prepared: &Prepared,
-  alias: &AliasInput,
+  alias: AliasView<'_>,
 ) -> Result<f64> {
   let mut query_max = vec![0.0_f64; query.tokens.len()];
-  let listed_count = alias.forms.first().map_or(0, |form| form.tokens.len());
+  let listed_count = alias.forms().next().map_or(0, FormView::token_count);
   let mut listed_max = vec![0.0_f64; listed_count];
   let mut anchored = false;
   let mut joined = false;
   for (unit_index, unit) in query.units.iter().enumerate() {
-    let Some(form) = alias.forms.iter().find(|form| form.form == unit.form)
-    else {
+    let Some(form) = alias.forms().find(|form| form.form() == unit.form) else {
       continue;
     };
-    for (position, token) in form.tokens.iter().enumerate() {
+    for (position, token) in form.tokens().enumerate() {
       let similarity = prepared
         .similarities
         .get(&(unit_index, unit.form, token.id))
@@ -353,7 +353,7 @@ fn alias_bound(
         similarity,
       )?;
     }
-    for join in &form.joins {
+    for join in form.joins() {
       let similarity = prepared
         .similarities
         .get(&(unit_index, unit.form, join.id))
@@ -385,13 +385,13 @@ fn alias_bound(
     return Ok(coverage_bound(query, alias, &query_max, &listed_max));
   }
   for (position, token) in query.tokens.iter().enumerate() {
-    let Some(form) = alias.forms.iter().find(|form| form.form == token.form)
+    let Some(form) = alias.forms().find(|form| form.form() == token.form)
     else {
       continue;
     };
-    for (listed, listed_token) in form.tokens.iter().enumerate() {
+    for (listed, listed_token) in form.tokens().enumerate() {
       let text = index
-        .lexicon(form.form)
+        .lexicon(form.form())
         .and_then(|lexicon| lexicon.token(listed_token.id))
         .ok_or_else(|| invalid("Missing entity forward token"))?;
       let query_initial = token.text.chars().count() == 1;
@@ -424,23 +424,22 @@ fn alias_bound(
 
 fn coverage_bound(
   query: &EntityQuery,
-  alias: &AliasInput,
+  alias: AliasView<'_>,
   query_max: &[f64],
   listed_max: &[f64],
 ) -> f64 {
   // Forms describe the same positions and weights. Taking the maximum also
   // safely handles caller-supplied form-specific weight bounds.
   let mut listed_share = 0.0_f64;
-  for form in &alias.forms {
+  for form in alias.forms() {
     let explained = upper_sum(
       form
-        .tokens
-        .iter()
+        .tokens()
         .zip(listed_max)
         .map(|(token, similarity)| upper_product(token.weight, *similarity)),
     );
     listed_share =
-      listed_share.max(upper_ratio(explained, form.minimum_total).min(1.0));
+      listed_share.max(upper_ratio(explained, form.minimum_total()).min(1.0));
   }
   let total = query.tokens.iter().map(|token| token.weight).sum::<f64>();
   if total == 0.0 {
@@ -485,7 +484,7 @@ fn update_maxima(
 fn exact(
   index: &impl SearchIndex,
   query: &EntityQuery,
-  alias: &AliasInput,
+  alias: AliasView<'_>,
 ) -> Result<bool> {
   let mut query_text = query
     .tokens
@@ -504,19 +503,15 @@ fn exact(
   {
     return Ok(false);
   }
-  let Some(form) = alias
-    .forms
-    .iter()
-    .find(|form| form.form == first_token.form)
+  let Some(form) = alias.forms().find(|form| form.form() == first_token.form)
   else {
     return Ok(false);
   };
   let mut listed_text = form
-    .tokens
-    .iter()
+    .tokens()
     .map(|token| {
       index
-        .lexicon(form.form)
+        .lexicon(form.form())
         .and_then(|lexicon| lexicon.token(token.id))
         .ok_or_else(|| invalid("Missing entity exact token"))
     })
@@ -525,22 +520,24 @@ fn exact(
   Ok(query_text == listed_text)
 }
 
-fn random_access_work(query: &EntityQuery, alias: &AliasInput) -> Result<u64> {
+fn random_access_work(
+  query: &EntityQuery,
+  alias: AliasView<'_>,
+) -> Result<u64> {
   // Each spelling unit compares only with its corresponding alias form.
   let mut pairs = 0_u64;
   for unit in &query.units {
-    if let Some(form) = alias.forms.iter().find(|form| form.form == unit.form) {
+    if let Some(form) = alias.forms().find(|form| form.form() == unit.form) {
       pairs = pairs
-        .checked_add(count(form.tokens.len())?)
-        .and_then(|pairs| pairs.checked_add(count(form.joins.len()).ok()?))
+        .checked_add(count(form.token_count())?)
+        .and_then(|pairs| pairs.checked_add(count(form.join_count()).ok()?))
         .ok_or_else(|| invalid("Entity work count overflow"))?;
     }
   }
   for token in &query.tokens {
-    if let Some(form) = alias.forms.iter().find(|form| form.form == token.form)
-    {
+    if let Some(form) = alias.forms().find(|form| form.form() == token.form) {
       pairs = pairs
-        .checked_add(count(form.tokens.len())?)
+        .checked_add(count(form.token_count())?)
         .ok_or_else(|| invalid("Entity work count overflow"))?;
     }
   }
@@ -702,7 +699,7 @@ pub(super) fn search(
         } else {
           alias_bound(index, query, &prepared, alias)?
         };
-        if upper_product(upper_product(bound, alias.quality), params.quality)
+        if upper_product(upper_product(bound, alias.quality()), params.quality)
           + 1e-12
           >= params.tau
         {
@@ -733,8 +730,8 @@ pub(super) fn search(
 mod tests {
   use super::super::oracle;
   use super::super::{
-    AliasForm, AliasJoin, AliasToken, BudgetBasis, EditBudget, EntityIndex,
-    EntityIndexBuilder, QueryToken, QueryUnit,
+    AliasForm, AliasInput, AliasJoin, AliasToken, BudgetBasis, EditBudget,
+    EntityIndex, EntityIndexBuilder, QueryToken, QueryUnit,
   };
   use super::*;
   use proptest::prelude::*;
@@ -771,8 +768,11 @@ mod tests {
         .max()
         .unwrap_or(0)
     }
-    fn alias(&self, id: AliasId) -> Option<&AliasInput> {
-      self.aliases.get(usize::try_from(id).ok()?)
+    fn alias(&self, id: AliasId) -> Option<AliasView<'_>> {
+      self
+        .aliases
+        .get(usize::try_from(id).ok()?)
+        .map(AliasView::from)
     }
     fn lexicon(&self, form: FormId) -> Option<&Lexicon> {
       (form < self.options.forms).then_some(&self.lexicon)
@@ -1044,14 +1044,14 @@ mod tests {
         .collect::<Vec<_>>();
       raw_listed.sort();
       let is_exact = raw_query == raw_listed;
-      assert_eq!(exact(fixture, query, alias).unwrap(), is_exact);
+      assert_eq!(exact(fixture, query, alias.into()).unwrap(), is_exact);
       let score = if is_exact {
         alias.quality
       } else {
         oracle::score(&pairs, &weights, &listed, &minimum, alias.quality)
       };
-      let bound =
-        alias_bound(fixture, query, &prepared, alias).unwrap() * alias.quality;
+      let bound = alias_bound(fixture, query, &prepared, alias.into()).unwrap()
+        * alias.quality;
       let estimate = oracle::candidate_estimate(
         query,
         alias,
@@ -1140,15 +1140,15 @@ mod tests {
           .iter()
           .map(|token| token.minimum_weight)
           .collect::<Vec<_>>();
-        let score = if exact(fixture, query, alias).unwrap() {
+        let score = if exact(fixture, query, alias.into()).unwrap() {
           alias.quality
         } else {
           oracle::score(&pairs, &weights, &listed, &minimum, alias.quality)
         };
-        let bound = if exact(fixture, query, alias).unwrap() {
+        let bound = if exact(fixture, query, alias.into()).unwrap() {
           1.0
         } else {
-          alias_bound(fixture, query, &prepared, alias).unwrap()
+          alias_bound(fixture, query, &prepared, alias.into()).unwrap()
         };
         assert!(
           upper_product(bound, alias.quality) >= score,
@@ -1273,7 +1273,7 @@ mod tests {
         .iter()
         .map(|token| token.minimum_weight)
         .collect::<Vec<_>>();
-      let score = if exact(fixture, query, alias).unwrap() {
+      let score = if exact(fixture, query, alias.into()).unwrap() {
         alias.quality
       } else {
         oracle::score(&pairs, &weights, &listed, &minimum, alias.quality)

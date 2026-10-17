@@ -1,7 +1,6 @@
 //! Validated caller-owned forward positions and posting projections.
 
 use std::collections::BTreeSet;
-use std::mem::size_of;
 use std::sync::Arc;
 
 use super::lexicon::Lexicon;
@@ -53,15 +52,9 @@ pub(super) fn validate_alias(
       .zip(&reference.tokens)
       .any(|(token, reference)| {
         !token.weight.total_cmp(&reference.weight).is_eq()
-          || !token
-            .minimum_weight
-            .total_cmp(&reference.minimum_weight)
-            .is_eq()
       })
     {
-      return Err(invalid(
-        "Entity alias forms must share position weights and minimum weights",
-      ));
+      return Err(invalid("Entity alias forms must share position weights"));
     }
     let mut minimum_total = 0.0;
     let mut weight_total = 0.0;
@@ -209,32 +202,4 @@ pub(super) fn post_alias(
     }
   }
   Ok(())
-}
-
-pub(super) fn nested_bytes(aliases: &[AliasInput]) -> usize {
-  aliases.iter().fold(0_usize, |bytes, alias| {
-    alias.forms.iter().fold(
-      bytes.saturating_add(
-        alias
-          .forms
-          .capacity()
-          .saturating_mul(size_of::<super::AliasForm>()),
-      ),
-      |bytes, form| {
-        bytes
-          .saturating_add(
-            form
-              .tokens
-              .capacity()
-              .saturating_mul(size_of::<super::AliasToken>()),
-          )
-          .saturating_add(
-            form
-              .joins
-              .capacity()
-              .saturating_mul(size_of::<super::AliasJoin>()),
-          )
-      },
-    )
-  })
 }

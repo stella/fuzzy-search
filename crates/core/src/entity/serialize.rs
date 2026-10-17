@@ -7,7 +7,7 @@ use super::{
 use crate::{Error, Result};
 
 const MAGIC: &[u8; 8] = b"STLLEIDX";
-const VERSION: u32 = 1;
+const VERSION: u32 = 2;
 
 fn invalid(reason: &str) -> Error {
   Error::from_reason(format!("Invalid entity index encoding: {reason}"))
@@ -126,7 +126,7 @@ pub(super) fn to_bytes(index: &EntityIndex) -> Result<Vec<u8>> {
     }
   }
   writer.count(index.aliases.len())?;
-  for alias in &index.aliases {
+  for alias in index.aliases.iter() {
     writer.u32(alias.entry_id);
     writer.u32(alias.entity_group);
     writer.f64(alias.quality)?;
@@ -221,8 +221,14 @@ pub(super) fn from_bytes(bytes: &[u8]) -> Result<EntityIndex> {
   if reader.take(MAGIC.len())? != MAGIC {
     return Err(invalid("unknown magic"));
   }
-  if reader.u32()? != VERSION {
-    return Err(invalid("unsupported version"));
+  let version = reader.u32()?;
+  if version != VERSION {
+    return Err(Error {
+      reason: format!(
+        "Unsupported entity index version {version}; expected {VERSION}"
+      ),
+      kind: crate::ErrorKind::EntityIndexUnsupportedVersion,
+    });
   }
   let options = read_options(&mut reader)?;
   let form_count = options.forms;
@@ -257,6 +263,9 @@ pub(super) fn from_bytes(bytes: &[u8]) -> Result<EntityIndex> {
 
 #[cfg(test)]
 mod tests {
+  use proptest::prelude::*;
+
+  use super::super::{EntityQuery, QueryToken, QueryUnit, SearchParams};
   use super::{
     AliasForm, AliasInput, AliasJoin, AliasToken, BudgetBasis, EditBudget,
     EntityIndex, EntityIndexBuilder, EntityIndexOptions, MAGIC, Reader, Result,
@@ -449,7 +458,11 @@ mod tests {
     replace(&mut malformed, 0, b"?")?;
     assert!(from_bytes(&malformed).is_err(), "unknown magic must fail");
     malformed.clone_from(&bytes);
-    replace(&mut malformed, MAGIC.len(), &2_u32.to_le_bytes())?;
+    replace(
+      &mut malformed,
+      MAGIC.len(),
+      &VERSION.saturating_add(1).to_le_bytes(),
+    )?;
     assert!(from_bytes(&malformed).is_err(), "unknown version must fail");
     malformed.clone_from(&bytes);
     let mut reader = Reader { remaining: &bytes };
@@ -486,5 +499,128 @@ mod tests {
       );
     }
     Ok(())
+  }
+
+  #[test]
+  #[allow(clippy::expect_used)]
+  fn rejects_all_other_versions_with_typed_error() -> Result<()> {
+    let bytes = to_bytes(&fixture()?)?;
+    for version in [0_u32, 1, VERSION.saturating_add(1), u32::MAX] {
+      let mut malformed = bytes.clone();
+      replace(&mut malformed, MAGIC.len(), &version.to_le_bytes())?;
+      let error =
+        from_bytes(&malformed).expect_err("unsupported versions must fail");
+      assert_eq!(
+        error.kind(),
+        crate::ErrorKind::EntityIndexUnsupportedVersion
+      );
+      assert!(error.reason().contains(&version.to_string()));
+    }
+    Ok(())
+  }
+
+  #[test]
+  fn roundtrip_preserves_different_minima_for_equal_form_weights() -> Result<()>
+  {
+    let source = fixture()?;
+    let mut original = source.aliases.iter().collect::<Vec<_>>();
+    for alias in &mut original {
+      for form in &mut alias.forms {
+        let divisor = f64::from(form.form.saturating_add(2));
+        for token in &mut form.tokens {
+          token.minimum_weight = token.weight / divisor;
+        }
+        form.minimum_total =
+          form.tokens.iter().map(|token| token.minimum_weight).sum();
+      }
+    }
+    let mut builder = EntityIndexBuilder::new(source.options)?;
+    for form in 0..2 {
+      for text in ["álpha", "東京", "álpha東京"] {
+        builder.intern(form, text)?;
+      }
+    }
+    for input in &original {
+      builder.add_alias(input.clone())?;
+    }
+    let index = builder.finish(vec![vec![2.0, 3.0, 4.0]; 2])?;
+    let restored = from_bytes(&to_bytes(&index)?)?;
+    assert_eq!(index.aliases.iter().collect::<Vec<_>>(), original);
+    assert_eq!(restored.aliases.iter().collect::<Vec<_>>(), original);
+    Ok(())
+  }
+
+  proptest! {
+    #![proptest_config(ProptestConfig::with_cases(48))]
+    #[test]
+    #[allow(clippy::unwrap_used, clippy::expect_used)]
+    fn source_roundtrip_preserves_search_and_encoding(
+      rows in prop::collection::vec((prop::collection::vec((0_u32..3, 1_u16..1000, any::<u8>()), 2..6), 0_u16..=1000), 1..10),
+      form_count in 1_u32..4,
+      tau in 0_u16..=1000,
+      quality in 0_u16..=1000,
+    ) {
+      let mut builder = EntityIndexBuilder::new(EntityIndexOptions {
+        forms: form_count,
+        budget: EditBudget { by_length: vec![0, 0, 0, 1, 2], basis: BudgetBasis::Shorter },
+        initial_weight: 0.25,
+        initial_similarity: 0.8,
+      }).unwrap();
+      let spellings = (0..form_count).map(|form| {
+        ["álpha", "東京", "a", "álphaálpha", "álpha東京"].map(|text| if form % 2 == 0 { text.to_owned() } else { text.to_uppercase() })
+      }).collect::<Vec<_>>();
+      for (form, words) in spellings.iter().enumerate() {
+        for word in words { builder.intern(u32::try_from(form).unwrap(), word).unwrap(); }
+      }
+      let mut original = Vec::new();
+      for (entry_id, (positions, alias_quality)) in rows.into_iter().enumerate() {
+        let tokens = positions.iter().map(|&(id, weight, discount)| AliasToken {
+          id,
+          weight: f64::from(weight),
+          minimum_weight: f64::from(weight) * (f64::from(discount) + 1.0) / 256.0,
+        }).collect::<Vec<_>>();
+        let last = u32::try_from(tokens.len().checked_sub(1).unwrap()).unwrap();
+        let forms = (0..form_count).map(|form| {
+          let form_tokens = tokens.iter().map(|token| AliasToken {
+            id: token.id,
+            weight: token.weight,
+            minimum_weight: token.minimum_weight / f64::from(form.checked_add(1).unwrap()),
+          }).collect::<Vec<_>>();
+          AliasForm {
+            form,
+            minimum_total: form_tokens.iter().map(|token| token.minimum_weight).sum(),
+            tokens: form_tokens,
+            joins: vec![AliasJoin { id: 3, left: 0, right: 0 }, AliasJoin { id: 4, left: last, right: 0 }],
+          }
+        }).collect();
+        let input = AliasInput {
+          entry_id: u32::try_from(entry_id).unwrap(),
+          entity_group: u32::try_from(entry_id % 3).unwrap(),
+          quality: f64::from(alias_quality) / 1000.0,
+          forms,
+        };
+        builder.add_alias(input.clone()).unwrap();
+        original.push(input);
+      }
+      let index = builder.finish(vec![vec![1.0, 2.0, 0.25, 3.0, 4.0]; usize::try_from(form_count).unwrap()]).unwrap();
+      let bytes = to_bytes(&index).unwrap();
+      let restored = from_bytes(&bytes).unwrap();
+      prop_assert_eq!(index.aliases.iter().collect::<Vec<_>>(), original.clone());
+      prop_assert_eq!(restored.aliases.iter().collect::<Vec<_>>(), original);
+      prop_assert_eq!(to_bytes(&restored).unwrap(), bytes);
+      let tokens = ["álpha", "東京"].into_iter().map(|text| QueryToken { form: 0, text: text.to_owned(), weight: 1.0 }).collect();
+      let mut units = Vec::new();
+      for (form, words) in spellings.iter().enumerate() {
+        for position in 0..2 {
+          units.push(QueryUnit { form: u32::try_from(form).unwrap(), text: words.get(position).unwrap().clone(), positions: vec![u32::try_from(position).unwrap()] });
+        }
+        units.push(QueryUnit { form: u32::try_from(form).unwrap(), text: words.get(4).unwrap().clone(), positions: vec![0, 1] });
+      }
+      let query = EntityQuery { tokens, units };
+      for cutoff in [0.0, f64::from(tau) / 1000.0, 1.0] {
+        let params = SearchParams { tau: cutoff, quality: f64::from(quality) / 1000.0, max_cost: u64::MAX };
+        prop_assert_eq!(index.search(&query, &params).unwrap(), restored.search(&query, &params).unwrap());
+      }
+    }
   }
 }
