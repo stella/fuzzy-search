@@ -52,15 +52,9 @@ pub(super) fn validate_alias(
       .zip(&reference.tokens)
       .any(|(token, reference)| {
         !token.weight.total_cmp(&reference.weight).is_eq()
-          || !token
-            .minimum_weight
-            .total_cmp(&reference.minimum_weight)
-            .is_eq()
       })
     {
-      return Err(invalid(
-        "Entity alias forms must share position weights and minimum weights",
-      ));
+      return Err(invalid("Entity alias forms must share position weights"));
     }
     let mut minimum_total = 0.0;
     let mut weight_total = 0.0;

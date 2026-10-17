@@ -13,7 +13,6 @@ pub(super) struct AliasHeader {
   quality: f64,
   forms_start: u32,
   forms_len: u32,
-  weights_start: u32,
 }
 
 #[derive(Debug, PartialEq)]
@@ -24,6 +23,7 @@ pub(super) struct FormHeader {
   joins_start: u32,
   joins_len: u32,
   positions_start: u32,
+  weights_start: u32,
   minimum_total: f64,
 }
 
@@ -61,38 +61,34 @@ impl ForwardStore {
     let mut weights = BTreeMap::new();
     let mut positions = BTreeMap::new();
     for alias in aliases {
-      let reference = alias
-        .forms
-        .first()
-        .ok_or_else(|| Error::from_reason("Missing entity alias form"))?;
-      let weights_key = reference
-        .tokens
-        .iter()
-        .map(|token| (token.weight.to_bits(), token.minimum_weight.to_bits()))
-        .collect::<Vec<_>>();
-      let weights_start = if let Some(start) = weights.get(&weights_key) {
-        *start
-      } else {
-        let start = offset(store.weights.len())?;
-        store
-          .weights
-          .extend(reference.tokens.iter().map(|token| Weight {
-            value: token.weight,
-            minimum: token.minimum_weight,
-          }));
-        offset(store.weights.len())?;
-        weights.insert(weights_key, start);
-        start
-      };
+      if alias.forms.is_empty() {
+        return Err(Error::from_reason("Missing entity alias form"));
+      }
       let header = AliasHeader {
         entry_id: alias.entry_id,
         entity_group: alias.entity_group,
         quality: alias.quality,
         forms_start: offset(store.forms.len())?,
         forms_len: offset(alias.forms.len())?,
-        weights_start,
       };
       for form in alias.forms {
+        let weights_key = form
+          .tokens
+          .iter()
+          .map(|token| (token.weight.to_bits(), token.minimum_weight.to_bits()))
+          .collect::<Vec<_>>();
+        let weights_start = if let Some(start) = weights.get(&weights_key) {
+          *start
+        } else {
+          let start = offset(store.weights.len())?;
+          store.weights.extend(form.tokens.iter().map(|token| Weight {
+            value: token.weight,
+            minimum: token.minimum_weight,
+          }));
+          offset(store.weights.len())?;
+          weights.insert(weights_key, start);
+          start
+        };
         let positions_key = form
           .joins
           .iter()
@@ -115,6 +111,7 @@ impl ForwardStore {
           joins_start: offset(store.joins.len())?,
           joins_len: offset(form.joins.len())?,
           positions_start,
+          weights_start,
           minimum_total: form.minimum_total,
         });
         store
@@ -232,7 +229,6 @@ impl<'a> AliasView<'a> {
       Self::Packed { store, alias } => FormView::Packed {
         form: &store.forms[alias.forms_start as usize + position],
         store,
-        weights_start: alias.weights_start as usize,
       },
     })
   }
@@ -267,7 +263,6 @@ pub(super) enum FormView<'a> {
   Packed {
     form: &'a FormHeader,
     store: &'a ForwardStore,
-    weights_start: usize,
   },
 }
 
@@ -312,12 +307,8 @@ impl<'a> FormView<'a> {
     (0..self.token_count()).map(move |position| match self {
       #[cfg(test)]
       Self::Input(form) => form.tokens[position].clone(),
-      Self::Packed {
-        form,
-        store,
-        weights_start,
-      } => {
-        let weight = &store.weights[weights_start + position];
+      Self::Packed { form, store } => {
+        let weight = &store.weights[form.weights_start as usize + position];
         AliasToken {
           id: store.tokens[form.tokens_start as usize + position],
           weight: weight.value,

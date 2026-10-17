@@ -11,11 +11,9 @@ use super::ForwardStore;
 fn assert_storage(inputs: &[AliasInput]) {
   let weights = inputs
     .iter()
-    .map(|alias| {
-      alias
-        .forms
-        .first()
-        .unwrap()
+    .flat_map(|alias| &alias.forms)
+    .map(|form| {
+      form
         .tokens
         .iter()
         .map(|token| (token.weight.to_bits(), token.minimum_weight.to_bits()))
@@ -66,7 +64,7 @@ proptest! {
         let tokens = weights.iter().enumerate().map(|(position, &(weight, discount))| AliasToken {
           id: seed.wrapping_add(form.wrapping_mul(31)).wrapping_add(u32::try_from(position % 2).unwrap()),
           weight: f64::from(weight),
-          minimum_weight: f64::from(weight) * (f64::from(discount) + 1.0) / 256.0,
+          minimum_weight: f64::from(weight) * (f64::from(discount) + 1.0) / (256.0 * f64::from(form.checked_add(1).unwrap())),
         }).collect::<Vec<_>>();
         let last = u32::try_from(tokens.len().checked_sub(1).unwrap()).unwrap();
         let joins = [(0, 0), (last, 0), (0, last)].into_iter().enumerate().filter_map(|(position, (left, right))| {

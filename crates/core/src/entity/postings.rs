@@ -279,6 +279,10 @@ impl Postings {
     if offset >= usize::try_from(range.len).ok()? {
       return None;
     }
+    // Constant singleton records live entirely in the descriptor.
+    if range.alias_bits == 0 && range.impact_bits == 0 {
+      return Some((range.base, range.impact));
+    }
     let bits = usize::from(range.alias_bits)
       .saturating_add(usize::from(range.impact_bits));
     let bit = offset.checked_mul(bits)?;
@@ -319,6 +323,49 @@ impl Postings {
         *self.quanta.get(usize::try_from(range.quantum).ok()?)?,
       ),
     ))
+  }
+
+  #[cfg(test)]
+  #[allow(clippy::expect_used)]
+  pub(super) fn list_keys(&self) -> Vec<PostingList> {
+    let [tokens, joins, query_initials, listed_initials] = &self.tables;
+    let parts = |key: &u64| {
+      (
+        u32::try_from(key >> 32).expect("form key fits u32"),
+        u32::try_from(key & u64::from(u32::MAX)).expect("token key fits u32"),
+      )
+    };
+    tokens
+      .keys
+      .iter()
+      .map(parts)
+      .map(|(form, id)| PostingList::Token { form, id })
+      .chain(
+        joins
+          .keys
+          .iter()
+          .map(parts)
+          .map(|(form, id)| PostingList::Join { form, id }),
+      )
+      .chain(query_initials.keys.iter().map(parts).map(|(form, prefix)| {
+        PostingList::QueryInitial {
+          form,
+          prefix: char::from_u32(prefix)
+            .expect("query-initial key is a Unicode scalar"),
+        }
+      }))
+      .chain(
+        listed_initials
+          .keys
+          .iter()
+          .map(parts)
+          .map(|(form, prefix)| PostingList::ListedInitial {
+            form,
+            prefix: u16::try_from(prefix)
+              .expect("listed-initial key fits UTF-16"),
+          }),
+      )
+      .collect()
   }
 
   pub(super) const fn len(&self) -> u64 {

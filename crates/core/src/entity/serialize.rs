@@ -519,6 +519,37 @@ mod tests {
     Ok(())
   }
 
+  #[test]
+  fn roundtrip_preserves_different_minima_for_equal_form_weights() -> Result<()>
+  {
+    let source = fixture()?;
+    let mut original = source.aliases.iter().collect::<Vec<_>>();
+    for alias in &mut original {
+      for form in &mut alias.forms {
+        let divisor = f64::from(form.form.saturating_add(2));
+        for token in &mut form.tokens {
+          token.minimum_weight = token.weight / divisor;
+        }
+        form.minimum_total =
+          form.tokens.iter().map(|token| token.minimum_weight).sum();
+      }
+    }
+    let mut builder = EntityIndexBuilder::new(source.options)?;
+    for form in 0..2 {
+      for text in ["álpha", "東京", "álpha東京"] {
+        builder.intern(form, text)?;
+      }
+    }
+    for input in &original {
+      builder.add_alias(input.clone())?;
+    }
+    let index = builder.finish(vec![vec![2.0, 3.0, 4.0]; 2])?;
+    let restored = from_bytes(&to_bytes(&index)?)?;
+    assert_eq!(index.aliases.iter().collect::<Vec<_>>(), original);
+    assert_eq!(restored.aliases.iter().collect::<Vec<_>>(), original);
+    Ok(())
+  }
+
   proptest! {
     #![proptest_config(ProptestConfig::with_cases(48))]
     #[test]
@@ -541,30 +572,41 @@ mod tests {
       for (form, words) in spellings.iter().enumerate() {
         for word in words { builder.intern(u32::try_from(form).unwrap(), word).unwrap(); }
       }
+      let mut original = Vec::new();
       for (entry_id, (positions, alias_quality)) in rows.into_iter().enumerate() {
         let tokens = positions.iter().map(|&(id, weight, discount)| AliasToken {
           id,
           weight: f64::from(weight),
           minimum_weight: f64::from(weight) * (f64::from(discount) + 1.0) / 256.0,
         }).collect::<Vec<_>>();
-        let minimum_total = tokens.iter().map(|token| token.minimum_weight).sum();
         let last = u32::try_from(tokens.len().checked_sub(1).unwrap()).unwrap();
-        let forms = (0..form_count).map(|form| AliasForm {
-          form,
-          tokens: tokens.clone(),
-          joins: vec![AliasJoin { id: 3, left: 0, right: 0 }, AliasJoin { id: 4, left: last, right: 0 }],
-          minimum_total,
+        let forms = (0..form_count).map(|form| {
+          let form_tokens = tokens.iter().map(|token| AliasToken {
+            id: token.id,
+            weight: token.weight,
+            minimum_weight: token.minimum_weight / f64::from(form.checked_add(1).unwrap()),
+          }).collect::<Vec<_>>();
+          AliasForm {
+            form,
+            minimum_total: form_tokens.iter().map(|token| token.minimum_weight).sum(),
+            tokens: form_tokens,
+            joins: vec![AliasJoin { id: 3, left: 0, right: 0 }, AliasJoin { id: 4, left: last, right: 0 }],
+          }
         }).collect();
-        builder.add_alias(AliasInput {
+        let input = AliasInput {
           entry_id: u32::try_from(entry_id).unwrap(),
           entity_group: u32::try_from(entry_id % 3).unwrap(),
           quality: f64::from(alias_quality) / 1000.0,
           forms,
-        }).unwrap();
+        };
+        builder.add_alias(input.clone()).unwrap();
+        original.push(input);
       }
       let index = builder.finish(vec![vec![1.0, 2.0, 0.25, 3.0, 4.0]; usize::try_from(form_count).unwrap()]).unwrap();
       let bytes = to_bytes(&index).unwrap();
       let restored = from_bytes(&bytes).unwrap();
+      prop_assert_eq!(index.aliases.iter().collect::<Vec<_>>(), original.clone());
+      prop_assert_eq!(restored.aliases.iter().collect::<Vec<_>>(), original);
       prop_assert_eq!(to_bytes(&restored).unwrap(), bytes);
       let tokens = ["álpha", "東京"].into_iter().map(|text| QueryToken { form: 0, text: text.to_owned(), weight: 1.0 }).collect();
       let mut units = Vec::new();

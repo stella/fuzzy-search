@@ -87,7 +87,7 @@ pub struct AliasJoin {
   pub right: u32,
 }
 
-/// One spelling form of an alias. All forms share position weights and minima.
+/// One spelling form of an alias. Position weights are shared; minima are form-specific.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AliasForm {
   pub form: FormId,
