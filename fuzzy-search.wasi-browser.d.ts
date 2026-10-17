@@ -1,5 +1,4 @@
-declare const _exports: Record<string, unknown>;
-export default _exports;
-export const FuzzySearch: unknown;
-export const distance: unknown;
-export const Metric: unknown;
+// Both generated loaders expose the API declared by NAPI-RS.
+export * from "./index.js";
+declare const native: typeof import("./index.js");
+export default native;

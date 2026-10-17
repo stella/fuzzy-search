@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0
+
+### Minor Changes
+
+- [#175](https://github.com/stella/fuzzy-search/pull/175) [`2cbe621`](https://github.com/stella/fuzzy-search/commit/2cbe621de4b57bf663346c3f0a77feb34f5c44f1) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Add entity candidate indexing with a Unicode OSA lexicon, impact-ordered threshold retrieval, deterministic work accounting, versioned serialization, and shared native/WASM bindings with asynchronous construction.
+
+  Support caller-mapped joins after position deduplication, including reordered and repeated positions.
+
+### Patch Changes
+
+- [#165](https://github.com/stella/fuzzy-search/pull/165) [`d1b1f23`](https://github.com/stella/fuzzy-search/commit/d1b1f2340a68ae854782da7ad464280d96002b7a) Thanks [@jan-kubica](https://github.com/jan-kubica)! - License the packages under Apache-2.0 and update the published license metadata.
+
 ## 1.1.5
 
 ### Patch Changes

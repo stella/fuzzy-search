@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { FuzzySearch } from "../src/index";
+import { requiredAt } from "./required-at";
 
 // ─── Levenshtein oracle ──────────────────────
 
@@ -27,14 +28,14 @@ function levenshtein(a: string, b: string): number {
     for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
       curr[j] = Math.min(
-        curr[j - 1]! + 1,
-        prev[j]! + 1,
-        prev[j - 1]! + cost,
+        requiredAt(curr, j - 1) + 1,
+        requiredAt(prev, j) + 1,
+        requiredAt(prev, j - 1) + cost,
       );
     }
     prev = curr;
   }
-  return prev[n]!;
+  return requiredAt(prev, n);
 }
 
 // ─── Corpus loader ───────────────────────────
@@ -99,7 +100,7 @@ function verify(
     const sliced = text.slice(m.start, m.end);
     if (sliced !== m.text) {
       failures.push({
-        pattern: patterns[m.pattern]!.pattern,
+        pattern: requiredAt(patterns, m.pattern).pattern,
         text: m.text,
         reportedDist: m.distance,
         actualDist: -1,
@@ -113,7 +114,7 @@ function verify(
     // If normalization options are enabled, the
     // library matches on normalized text. Apply
     // the same normalization to the oracle.
-    let pat = patterns[m.pattern]!.pattern;
+    let pat = requiredAt(patterns, m.pattern).pattern;
     let matchedText = m.text;
     if (opts.normalizeDiacritics) {
       pat = pat
@@ -127,7 +128,10 @@ function verify(
       pat = pat.toLowerCase();
       matchedText = matchedText.toLowerCase();
     }
-    const maxDist = patterns[m.pattern]!.distance;
+    const maxDist = requiredAt(
+      patterns,
+      m.pattern,
+    ).distance;
     const actualDist = levenshtein(pat, matchedText);
 
     if (actualDist !== m.distance) {
@@ -242,13 +246,15 @@ function generateCzechText(): string {
   let size = 0;
   let i = 0;
   while (size < 64 * 1024) {
-    if (i % 200 === 50) parts.push("Gais1erová");
-    else if (i % 200 === 100) parts.push("Nowák");
-    else if (i % 200 === 150) parts.push("Pribram");
-    else if (i % 500 === 250) parts.push("Dvorak");
-    else if (i % 500 === 350) parts.push("Snytrova");
-    else parts.push(words[i % words.length]!);
-    size += parts.at(-1)!.length + 1;
+    let part: string;
+    if (i % 200 === 50) part = "Gais1erová";
+    else if (i % 200 === 100) part = "Nowák";
+    else if (i % 200 === 150) part = "Pribram";
+    else if (i % 500 === 250) part = "Dvorak";
+    else if (i % 500 === 350) part = "Snytrova";
+    else part = requiredAt(words, i % words.length);
+    parts.push(part);
+    size += part.length + 1;
     i++;
   }
   return parts.join(" ");
