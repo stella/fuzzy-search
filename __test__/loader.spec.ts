@@ -231,9 +231,9 @@ describe("generated loader WASI selection", () => {
   test("loader failure preserves a non-enumerable cause", () => {
     const result = results.unavailable;
 
-    expect(result["causePresent"]).toBe(true);
-    expect(result["causeEnumerable"]).toBe(false);
-    expect(result["error"]).toContain(
+    expect(result.causePresent).toBe(true);
+    expect(result.causeEnumerable).toBe(false);
+    expect(result.error).toContain(
       "Cannot find native binding",
     );
   });

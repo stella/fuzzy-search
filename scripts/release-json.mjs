@@ -108,5 +108,5 @@ export const formatSbomVersion = (version) => {
   if (version === undefined || version === null)
     return "<missing>";
   if (typeof version === "string") return version;
-  return JSON.stringify(version) ?? "<missing>";
+  return JSON.stringify(version);
 };
