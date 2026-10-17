@@ -41,7 +41,7 @@ export function buildFuzzySearchWasmViteConfig(
   };
 }
 
-export default function stllFuzzySearchWasmVite(): Plugin {
+export default function stllFuzzySearchWasmVite() {
   return {
     name: "stll-fuzzy-search-wasm",
     config() {
@@ -54,5 +54,5 @@ export default function stllFuzzySearchWasmVite(): Plugin {
         },
       };
     },
-  };
+  } satisfies Plugin;
 }

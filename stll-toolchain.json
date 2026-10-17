@@ -1,0 +1,18 @@
+{
+  "cloud": {
+    "install": "bun install --frozen-lockfile",
+    "rust": {
+      "components": ["clippy", "rustfmt"],
+      "additionalToolchains": ["1.97.1"],
+      "toolchain": "1.99.0"
+    }
+  },
+  "rustExceptions": [
+    {
+      "pin": "1.97.1",
+      "reason": "The Hawk 0.1.12 prebuilt compiler plugin is built for Rust 1.97.1; its release rust-toolchain.toml pins channel 1.97.1 with rustc-dev.",
+      "tracking": "https://github.com/stella/tooling/issues/99",
+      "expires": "2026-11-11"
+    }
+  ]
+}

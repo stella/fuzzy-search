@@ -40,10 +40,10 @@ const isLoaderResult = (
 
   const result = Object.fromEntries(Object.entries(value));
   return (
-    isOptionalBoolean(result.causeEnumerable) &&
-    isOptionalBoolean(result.causePresent) &&
-    isOptionalString(result.error) &&
-    isOptionalString(result.source)
+    isOptionalBoolean(result["causeEnumerable"]) &&
+    isOptionalBoolean(result["causePresent"]) &&
+    isOptionalString(result["error"]) &&
+    isOptionalString(result["source"])
   );
 };
 

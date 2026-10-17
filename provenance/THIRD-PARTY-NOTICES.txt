@@ -8,7 +8,6 @@ Some licenses may require additional attribution text or redistribution steps.
 
 Project: root
 - @napi-rs/wasm-runtime 1.2.3 — MIT
-- @quansync/fs 1.0.0 — MIT
 - aho-corasick 1.1.5 — MIT OR Unlicense
 - alloca 0.4.0 — MIT
 - anes 0.1.6 — Apache-2.0 OR MIT
