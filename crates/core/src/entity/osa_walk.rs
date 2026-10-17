@@ -1,6 +1,6 @@
 //! Banded Unicode OSA automaton for byte-oriented FST traversal.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 
 use fst::Automaton;
 
@@ -45,6 +45,7 @@ pub(super) struct OsaAutomaton {
   limit: u64,
   matches: Cell<u64>,
   exhausted: Cell<bool>,
+  prefix: RefCell<Vec<(char, State)>>,
 }
 
 impl OsaAutomaton {
@@ -56,7 +57,37 @@ impl OsaAutomaton {
       limit,
       matches: Cell::new(0),
       exhausted: Cell::new(false),
+      prefix: RefCell::new(Vec::new()),
     }
+  }
+
+  /// Evaluate surviving candidates in lexical order, sharing their prefix rows.
+  /// Skipped tokens need no states; the cache is bounded by one candidate's length.
+  pub(super) fn distance_for(&self, text: &str) -> Option<usize> {
+    let start = self.start();
+    let mut prefix = self.prefix.borrow_mut();
+    let mut length = 0_usize;
+    for (index, character) in text.chars().enumerate() {
+      length = index.saturating_add(1);
+      if prefix
+        .get(index)
+        .is_some_and(|(cached, _)| *cached == character)
+      {
+        continue;
+      }
+      prefix.truncate(index);
+      let state = prefix.last().map_or(&start, |(_, state)| state);
+      if !self.can_match(state) {
+        return None;
+      }
+      let next = self.advance(state, character);
+      prefix.push((character, next));
+    }
+    prefix.truncate(length);
+    let state = prefix.last().map_or(&start, |(_, state)| state);
+    self
+      .is_match(state)
+      .then(|| state.distance(self.query.len(), self.budget.saturating_add(1)))
   }
 
   pub(super) const fn cells(&self) -> u64 {
