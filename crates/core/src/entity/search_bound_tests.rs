@@ -12,14 +12,17 @@ use super::super::{
   QueryUnit, SearchParams,
 };
 use super::{
-  Cost, SearchIndex, alias_bound, exact, frontier_bound, prepare, upper_product,
+  Cost, Prepared, SearchIndex, alias_bound, exact, frontier_bound, prepare,
+  upper_product,
 };
 
 const WORDS: [&str; 8] =
   ["alpha", "alhpa", "beta", "betas", "a", "日", "日本", "𐐀"];
 
 fn text(id: u8, form: u32) -> String {
-  let word = WORDS.get(usize::from(id) % WORDS.len()).unwrap();
+  let word = WORDS
+    .get(usize::from(id).checked_rem(WORDS.len()).unwrap())
+    .unwrap();
   if form == 0 {
     (*word).to_owned()
   } else {
@@ -30,7 +33,7 @@ fn text(id: u8, form: u32) -> String {
 // Always exercise self, reversed and nonconsecutive joins. Caller-supplied
 // join text is deliberately independent of position order, as the API permits.
 fn joins(count: usize) -> Vec<(u32, u32)> {
-  let last = u32::try_from(count - 1).unwrap();
+  let last = u32::try_from(count.checked_sub(1).unwrap()).unwrap();
   vec![(0, 0), (last, 0), (0, last)]
 }
 
@@ -53,7 +56,8 @@ fn fixture(rows: &[Vec<(u8, u16, u8)>], qualities: &[u16]) -> EntityIndex {
       for &(word, weight, discount) in row {
         let token_id = builder.intern(form, &text(word, form)).unwrap();
         let count = counts.get_mut(usize::try_from(form).unwrap()).unwrap();
-        *count = (*count).max(usize::try_from(token_id).unwrap() + 1);
+        *count = (*count)
+          .max(usize::try_from(token_id).unwrap().checked_add(1).unwrap());
         tokens.push(AliasToken {
           id: token_id,
           weight: f64::from(weight),
@@ -70,7 +74,8 @@ fn fixture(rows: &[Vec<(u8, u16, u8)>], qualities: &[u16]) -> EntityIndex {
         );
         let join_id = builder.intern(form, &joined).unwrap();
         let count = counts.get_mut(usize::try_from(form).unwrap()).unwrap();
-        *count = (*count).max(usize::try_from(join_id).unwrap() + 1);
+        *count = (*count)
+          .max(usize::try_from(join_id).unwrap().checked_add(1).unwrap());
         alias_joins.push(AliasJoin {
           id: join_id,
           left,
@@ -88,8 +93,11 @@ fn fixture(rows: &[Vec<(u8, u16, u8)>], qualities: &[u16]) -> EntityIndex {
       .add_alias(AliasInput {
         entry_id: u32::try_from(id).unwrap(),
         entity_group: 0,
-        quality: f64::from(*qualities.get(id % qualities.len()).unwrap())
-          / 1000.0,
+        quality: f64::from(
+          *qualities
+            .get(id.checked_rem(qualities.len()).unwrap())
+            .unwrap(),
+        ) / 1000.0,
         forms,
       })
       .unwrap();
@@ -109,7 +117,11 @@ fn query(ids: &[u8], weights: &[u16]) -> EntityQuery {
     .map(|(position, id)| QueryToken {
       form: 0,
       text: text(*id, 0),
-      weight: f64::from(*weights.get(position % weights.len()).unwrap()),
+      weight: f64::from(
+        *weights
+          .get(position.checked_rem(weights.len()).unwrap())
+          .unwrap(),
+      ),
     })
     .collect::<Vec<_>>();
   let mut units = Vec::new();
@@ -139,15 +151,11 @@ fn query(ids: &[u8], weights: &[u16]) -> EntityQuery {
   EntityQuery { tokens, units }
 }
 
-fn check(
+fn oracle_results(
   index: &EntityIndex,
   query: &EntityQuery,
-  quality: f64,
-  sampled_tau: f64,
-) {
-  let (mut prepared, exhausted) =
-    prepare(index, query, &mut Cost::default(), u64::MAX).unwrap();
-  assert!(!exhausted);
+  prepared: &Prepared,
+) -> (Vec<f64>, Vec<f64>) {
   let estimates = index
     .aliases
     .iter()
@@ -199,6 +207,19 @@ fn check(
       )
     })
     .collect::<Vec<_>>();
+  (estimates, scores)
+}
+
+fn check(
+  index: &EntityIndex,
+  query: &EntityQuery,
+  quality: f64,
+  sampled_tau: f64,
+) {
+  let (mut prepared, exhausted) =
+    prepare(index, query, &mut Cost::default(), u64::MAX).unwrap();
+  assert!(!exhausted);
+  let (estimates, scores) = oracle_results(index, query, &prepared);
   let mut seen = BTreeSet::new();
   loop {
     let bound = frontier_bound(index, query, &prepared.cursors).unwrap();
@@ -220,7 +241,7 @@ fn check(
     for cursor in &mut prepared.cursors {
       if let Some((id, _)) = index.posting(cursor.list, cursor.offset) {
         seen.insert(id);
-        cursor.offset += 1;
+        cursor.offset = cursor.offset.checked_add(1).unwrap();
         advanced = true;
       }
     }

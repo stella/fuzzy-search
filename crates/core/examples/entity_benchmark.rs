@@ -4,7 +4,8 @@
 //! All positions have weight 1 and minimum weight 0.8; forms preserve case and
 //! lowercase, and both aliases and queries include every adjacent joined pair.
 //! Timings exclude construction, run each query once, and retain its result.
-#![allow(clippy::print_stdout)]
+// This command-line benchmark emits CSV measurements for comparison.
+#![allow(clippy::print_stdout, clippy::disallowed_macros)]
 
 use std::hint::black_box;
 use std::time::Instant;
@@ -40,13 +41,13 @@ fn words(
     ],
     // Multiplicative permutations give reproducible, unrelated vocabulary
     // combinations without an external random-number dependency.
-    "random" => [31_usize, 127, 8191, 524_287]
+    "random" => [31_usize, 127, 8191, 0x0007_FFFF]
       .into_iter()
       .enumerate()
       .map(|(position, multiplier)| {
         format!(
           "Word{position}x{:06}",
-          row.wrapping_mul(multiplier) % 65_521
+          row.wrapping_mul(multiplier) % 0xFFF1
         )
       })
       .collect(),
@@ -54,7 +55,11 @@ fn words(
     // medium-frequency location and family tokens, and a rare identity token.
     // This specifies 652,560 token positions per form at the default size.
     "memory" => vec![
-      ["Company", "Holdings", "Limited", "Group"][row % 4].into(),
+      ["Company", "Holdings", "Limited", "Group"]
+        .get(row % 4)
+        .copied()
+        .ok_or("Missing benchmark suffix")?
+        .into(),
       format!("Region{:03}", row.wrapping_mul(31) % 257),
       format!("Family{:04}", row.wrapping_mul(127) % 4093),
       format!("Identity{:05}", row % MEMORY_ENTRIES),
@@ -83,10 +88,16 @@ fn build(
     for form in 0..FORMS {
       let mut tokens = Vec::new();
       let mut joins = Vec::new();
-      let vocabulary_size = &mut vocabulary_sizes[usize::try_from(form)?];
+      let vocabulary_size = vocabulary_sizes
+        .get_mut(usize::try_from(form)?)
+        .ok_or("Missing benchmark spelling form")?;
       for word in &words {
         let id = builder.intern(form, &spelling(word, form))?;
-        *vocabulary_size = (*vocabulary_size).max(usize::try_from(id)? + 1);
+        *vocabulary_size = (*vocabulary_size).max(
+          usize::try_from(id)?
+            .checked_add(1)
+            .ok_or("Benchmark vocabulary size overflow")?,
+        );
         tokens.push(AliasToken {
           id,
           weight: 1.0,
@@ -95,11 +106,19 @@ fn build(
       }
       for (left, pair) in words.windows(2).enumerate() {
         let id = builder.intern(form, &spelling(&pair.concat(), form))?;
-        *vocabulary_size = (*vocabulary_size).max(usize::try_from(id)? + 1);
+        *vocabulary_size = (*vocabulary_size).max(
+          usize::try_from(id)?
+            .checked_add(1)
+            .ok_or("Benchmark vocabulary size overflow")?,
+        );
         joins.push(AliasJoin {
           id,
           left: u32::try_from(left)?,
-          right: u32::try_from(left + 1)?,
+          right: u32::try_from(
+            left
+              .checked_add(1)
+              .ok_or("Benchmark join position overflow")?,
+          )?,
         });
       }
       forms.push(AliasForm {
@@ -122,7 +141,9 @@ fn build(
   }
   println!(
     "index,{mode},{count},token_positions_per_form={},vocabulary_per_form={vocabulary_sizes:?}",
-    count * 4
+    count
+      .checked_mul(4)
+      .ok_or("Benchmark token count overflow")?
   );
   Ok(
     builder.finish(
@@ -156,7 +177,14 @@ fn query(words: &[String]) -> Result<EntityQuery, Box<dyn std::error::Error>> {
       units.push(QueryUnit {
         form,
         text: spelling(&pair.concat(), form),
-        positions: vec![u32::try_from(left)?, u32::try_from(left + 1)?],
+        positions: vec![
+          u32::try_from(left)?,
+          u32::try_from(
+            left
+              .checked_add(1)
+              .ok_or("Benchmark join position overflow")?,
+          )?,
+        ],
       });
     }
   }
