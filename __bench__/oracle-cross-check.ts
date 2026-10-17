@@ -20,6 +20,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { FuzzySearch } from "../src/index";
+import { requiredAt } from "./required-at";
 
 // ─── Reference distance functions ────────────
 
@@ -90,7 +91,7 @@ function crossCheck(
   };
 
   for (const m of matches) {
-    const pat = patterns[m.pattern]!.pattern;
+    const pat = requiredAt(patterns, m.pattern).pattern;
     const matched = m.text;
 
     // Cross-check against js-levenshtein
@@ -209,13 +210,15 @@ function genText(): string {
   let size = 0;
   let i = 0;
   while (size < 64 * 1024) {
-    if (i % 200 === 50) parts.push("Gais1erová");
-    else if (i % 200 === 100) parts.push("Nowák");
-    else if (i % 200 === 150) parts.push("Pribram");
-    else if (i % 300 === 200) parts.push("Nvoák");
-    else if (i % 300 === 250) parts.push("Dvorak");
-    else parts.push(words[i % words.length]!);
-    size += parts.at(-1)!.length + 1;
+    let part: string;
+    if (i % 200 === 50) part = "Gais1erová";
+    else if (i % 200 === 100) part = "Nowák";
+    else if (i % 200 === 150) part = "Pribram";
+    else if (i % 300 === 200) part = "Nvoák";
+    else if (i % 300 === 250) part = "Dvorak";
+    else part = requiredAt(words, i % words.length);
+    parts.push(part);
+    size += part.length + 1;
     i++;
   }
   return parts.join(" ");

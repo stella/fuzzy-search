@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   napi-ci:
-    uses: stella/.github/.github/workflows/rust-napi-ci.yml@5b5e00c3fc77eda2d557815fb3ee148c69314480 # v1.8.0 + conditional parity (#142)
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
     with:
       trusted: "true"
       typecheck: true
