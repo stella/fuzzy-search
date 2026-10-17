@@ -1,7 +1,6 @@
 //! Validated caller-owned forward positions and posting projections.
 
 use std::collections::BTreeSet;
-use std::mem::size_of;
 use std::sync::Arc;
 
 use super::lexicon::Lexicon;
@@ -209,32 +208,4 @@ pub(super) fn post_alias(
     }
   }
   Ok(())
-}
-
-pub(super) fn nested_bytes(aliases: &[AliasInput]) -> usize {
-  aliases.iter().fold(0_usize, |bytes, alias| {
-    alias.forms.iter().fold(
-      bytes.saturating_add(
-        alias
-          .forms
-          .capacity()
-          .saturating_mul(size_of::<super::AliasForm>()),
-      ),
-      |bytes, form| {
-        bytes
-          .saturating_add(
-            form
-              .tokens
-              .capacity()
-              .saturating_mul(size_of::<super::AliasToken>()),
-          )
-          .saturating_add(
-            form
-              .joins
-              .capacity()
-              .saturating_mul(size_of::<super::AliasJoin>()),
-          )
-      },
-    )
-  })
 }

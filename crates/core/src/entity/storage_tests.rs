@@ -385,7 +385,7 @@ fn assert_oracle_completeness(
   for (alias_id, input) in index.aliases.iter().enumerate() {
     let pairs = super::oracle::candidate_pairs(
       query,
-      input,
+      &input,
       &result.unit_matches,
       |_, token_id| lexicon.token(token_id).unwrap().to_owned(),
       index.options.initial_similarity,

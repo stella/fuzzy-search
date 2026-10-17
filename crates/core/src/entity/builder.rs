@@ -23,11 +23,16 @@ enum BuildState {
     lexicons: Vec<Arc<Lexicon>>,
     postings: PostingBuilder,
   },
-  Prepared {
-    lexicons: Vec<Arc<Lexicon>>,
-    postings: Postings,
-  },
+  Prepared(Box<PreparedStorage>),
   Failed,
+}
+
+#[derive(Debug)]
+struct PreparedStorage {
+  lexicons: Vec<Arc<Lexicon>>,
+  postings: Postings,
+  aliases: super::packed_forward::ForwardStore,
+  maximum_alias_tokens: usize,
 }
 
 /// Caller-order interning and incremental preparation of immutable index data.
@@ -127,7 +132,7 @@ impl EntityIndexBuilder {
     Ok(id)
   }
 
-  /// One unit builds a vocabulary, projects one alias, or freezes the postings.
+  /// One unit builds a vocabulary, projects one alias, or freezes the storage.
   /// Final `finish` only validates and attaches the query-weight tables.
   pub fn finish_step(&mut self, max_units: u32) -> Result<bool> {
     if max_units == 0 {
@@ -195,19 +200,29 @@ impl EntityIndexBuilder {
               postings,
             };
           } else {
-            self.aliases.shrink_to_fit();
-            self.state = BuildState::Prepared {
+            let maximum_alias_tokens = self
+              .aliases
+              .iter()
+              .filter_map(|alias| alias.forms.first())
+              .map(|form| form.tokens.len())
+              .max()
+              .unwrap_or(0);
+            self.state = BuildState::Prepared(Box::new(PreparedStorage {
               lexicons,
               postings: postings.finish()?,
-            };
+              aliases: super::packed_forward::ForwardStore::new(
+                std::mem::take(&mut self.aliases),
+              )?,
+              maximum_alias_tokens,
+            }));
           }
         }
-        prepared @ BuildState::Prepared { .. } => {
+        prepared @ BuildState::Prepared(_) => {
           self.state = prepared;
           return Ok(true);
         }
       }
-      if matches!(self.state, BuildState::Prepared { .. }) {
+      if matches!(self.state, BuildState::Prepared(_)) {
         return Ok(true);
       }
     }
@@ -217,9 +232,15 @@ impl EntityIndexBuilder {
   /// Without prior stepping, prepares synchronously before attaching weights.
   pub fn finish(mut self, token_weights: Vec<Vec<f64>>) -> Result<EntityIndex> {
     while !self.finish_step(u32::MAX)? {}
-    let BuildState::Prepared { lexicons, postings } = self.state else {
+    let BuildState::Prepared(prepared) = self.state else {
       return Err(invalid("Entity index preparation did not complete"));
     };
+    let PreparedStorage {
+      lexicons,
+      postings,
+      aliases,
+      maximum_alias_tokens,
+    } = *prepared;
     if token_weights.len() != lexicons.len() {
       return Err(invalid("Entity weights must cover every spelling form"));
     }
@@ -233,18 +254,11 @@ impl EntityIndexBuilder {
         super::validate_weight(weight)?;
       }
     }
-    let maximum_alias_tokens = self
-      .aliases
-      .iter()
-      .filter_map(|alias| alias.forms.first())
-      .map(|form| form.tokens.len())
-      .max()
-      .unwrap_or(0);
     Ok(EntityIndex {
       maximum_alias_tokens,
       options: self.options,
       lexicons,
-      aliases: self.aliases,
+      aliases,
       postings,
       token_weights,
     })

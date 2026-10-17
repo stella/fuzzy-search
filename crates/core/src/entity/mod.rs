@@ -10,6 +10,7 @@ pub mod lexicon;
 #[cfg(test)]
 mod oracle;
 mod osa_walk;
+mod packed_forward;
 mod postings;
 pub mod search;
 mod serialize;
@@ -23,6 +24,7 @@ use std::mem::size_of;
 use std::sync::Arc;
 
 use lexicon::Lexicon;
+use packed_forward::{AliasView, ForwardStore};
 use postings::Postings;
 use search::{MAX_WEIGHT, MIN_WEIGHT, PostingList, SearchIndex};
 
@@ -167,7 +169,7 @@ pub struct EntityIndex {
   maximum_alias_tokens: usize,
   options: EntityIndexOptions,
   lexicons: Vec<Arc<Lexicon>>,
-  aliases: Vec<AliasInput>,
+  aliases: ForwardStore,
   postings: Postings,
   token_weights: Vec<Vec<f64>>,
 }
@@ -213,10 +215,9 @@ impl EntityIndex {
       .saturating_add(
         self
           .aliases
-          .capacity()
-          .saturating_mul(size_of::<AliasInput>()),
+          .native_bytes()
+          .saturating_sub(size_of::<ForwardStore>()),
       )
-      .saturating_add(forward::nested_bytes(&self.aliases))
       .saturating_add(
         self
           .postings
@@ -258,7 +259,7 @@ impl SearchIndex for EntityIndex {
   fn alias_count(&self) -> usize {
     self.aliases.len()
   }
-  fn alias(&self, id: AliasId) -> Option<&AliasInput> {
+  fn alias(&self, id: AliasId) -> Option<AliasView<'_>> {
     self.aliases.get(usize::try_from(id).ok()?)
   }
   fn lexicon(&self, form: FormId) -> Option<&Lexicon> {
