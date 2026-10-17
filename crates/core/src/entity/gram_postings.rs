@@ -7,6 +7,7 @@ use super::TokenId;
 use crate::{Error, Result};
 
 const BLOCK_IDS: usize = 128;
+const CONSTANT_GAP_WIDTH: u8 = 0;
 
 #[derive(Debug, Clone, Default)]
 pub(super) struct GramPostings {
@@ -33,22 +34,35 @@ impl GramPostings {
       for block in ids.chunks(BLOCK_IDS) {
         let Some(&base) = block.first() else { continue };
         let mut maximum_gap = 0_u32;
+        let mut minimum_gap = u32::MAX;
         for (&left, &right) in block.iter().zip(block.iter().skip(1)) {
           let gap = right
             .checked_sub(left)
             .filter(|gap| *gap > 0)
             .ok_or_else(invalid_postings)?;
           maximum_gap = maximum_gap.max(gap);
+          minimum_gap = minimum_gap.min(gap);
         }
-        let width =
+        let width = if minimum_gap == maximum_gap {
+          CONSTANT_GAP_WIDTH
+        } else {
           u8::try_from(u32::BITS.saturating_sub(maximum_gap.leading_zeros()))
-            .map_err(|_| invalid_postings())?;
+            .map_err(|_| invalid_postings())?
+        };
         store.data.push(
           u8::try_from(block.len().saturating_sub(1))
             .map_err(|_| invalid_postings())?,
         );
         store.data.push(width);
         store.data.extend_from_slice(&base.to_le_bytes());
+        // Width zero stores one stride for a constant-gap block; a singleton
+        // has no gaps and needs only its base.
+        if width == CONSTANT_GAP_WIDTH {
+          if block.len() > 1 {
+            store.data.extend_from_slice(&maximum_gap.to_le_bytes());
+          }
+          continue;
+        }
         let mut buffer = 0_u64;
         let mut available = 0_u8;
         for (&left, &right) in block.iter().zip(block.iter().skip(1)) {
@@ -109,6 +123,22 @@ impl GramPostings {
       let mut id = u32::from_le_bytes([a, b, c, d]);
       visit(id)?;
       bytes = bytes.get(6..).ok_or_else(invalid_postings)?;
+      if width == CONSTANT_GAP_WIDTH {
+        if gaps != 0 {
+          let stride = u32::from_le_bytes(
+            *bytes.first_chunk::<4>().ok_or_else(invalid_postings)?,
+          );
+          if stride == 0 {
+            return Err(invalid_postings());
+          }
+          for _ in 0..gaps {
+            id = id.checked_add(stride).ok_or_else(invalid_postings)?;
+            visit(id)?;
+          }
+          bytes = bytes.get(4..).ok_or_else(invalid_postings)?;
+        }
+        continue;
+      }
       let byte_count = gaps.saturating_mul(usize::from(width)).div_ceil(8);
       let mut payload =
         bytes.get(..byte_count).ok_or_else(invalid_postings)?.iter();
@@ -162,6 +192,19 @@ mod tests {
         store.for_each(key, |id| { actual.push(id); Ok(()) }).unwrap();
         prop_assert_eq!(actual, expected);
       }
+    }
+
+    #[test]
+    fn constant_strides_roundtrip_across_blocks(
+      base in any::<u32>(),
+      stride in prop_oneof![1_u32..1024, 1_u32..=u32::MAX],
+      count in 0_u32..400,
+    ) {
+      let ids = (0..count).map_while(|position| stride.checked_mul(position).and_then(|offset| base.checked_add(offset))).collect::<Vec<_>>();
+      let store = GramPostings::new(BTreeMap::from([(('𐐀', '$'), ids.clone())])).unwrap();
+      let mut actual = Vec::new();
+      store.for_each(('𐐀', '$'), |id| { actual.push(id); Ok(()) }).unwrap();
+      prop_assert_eq!(actual, ids);
     }
   }
 
