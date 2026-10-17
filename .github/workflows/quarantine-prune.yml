@@ -13,7 +13,7 @@ jobs:
     if: github.repository == 'stella/fuzzy-search'
     permissions:
       contents: read
-    uses: stella/.github/.github/workflows/quarantine-prune.yml@9e1915536efc226c5ec9d3ca0f2192be5aa6ec7e
+    uses: stella/.github/.github/workflows/quarantine-prune.yml@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
     secrets:
       CHANGELOG_APP_ID: ${{ secrets.CHANGELOG_APP_ID }}
       CHANGELOG_APP_PRIVATE_KEY: ${{ secrets.CHANGELOG_APP_PRIVATE_KEY }}
