@@ -1,10 +1,11 @@
 //! Compact vocabulary and complete, deterministically ordered OSA lookup.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::mem::size_of;
 
 use fst::{Map, MapBuilder};
 
+use super::gram_postings::GramPostings;
 use super::osa_walk::OsaAutomaton;
 use super::{BudgetBasis, Cost, EditBudget, TokenId};
 use crate::{Error, Result};
@@ -33,8 +34,8 @@ pub struct Lexicon {
   offsets: Vec<u32>,
   lengths: Vec<u16>,
   gram_counts: Vec<u32>,
-  gram_postings: HashMap<(char, char), Vec<TokenId>>,
-  lexical_order: Vec<usize>,
+  gram_postings: GramPostings,
+  lexical_order: Vec<TokenId>,
 }
 
 fn fst_error(error: &fst::Error) -> Error {
@@ -45,27 +46,6 @@ fn float_count(value: usize) -> Result<f64> {
   u32::try_from(value)
     .map(f64::from)
     .map_err(|_| Error::from_reason("Entity count exceeds u32"))
-}
-
-/// Bytes allocated by a std `HashMap` table holding `capacity` usable entries
-/// of `entry` bytes. The table keeps a power-of-two bucket count at a 7/8
-/// load factor (4 or 8 buckets below eight entries), one control byte per
-/// bucket and one trailing control group.
-fn hash_table_bytes(capacity: usize, entry: usize) -> usize {
-  const CONTROL_GROUP: usize = 16;
-  if capacity == 0 {
-    return 0;
-  }
-  let buckets = if capacity < 4 {
-    4
-  } else if capacity < 8 {
-    8
-  } else {
-    capacity.saturating_mul(8).div_ceil(7).next_power_of_two()
-  };
-  buckets
-    .saturating_mul(entry.saturating_add(1))
-    .saturating_add(CONTROL_GROUP)
 }
 
 fn bigrams(text: &str) -> BTreeSet<(char, char)> {
@@ -120,7 +100,13 @@ impl Lexicon {
         "Entity vocabulary tokens must be distinct",
       ));
     }
-    let lexical_order = ordered.iter().map(|(id, _)| *id).collect();
+    let lexical_order = ordered
+      .iter()
+      .map(|(id, _)| {
+        u32::try_from(*id)
+          .map_err(|_| Error::from_reason("Entity token id exceeds u32"))
+      })
+      .collect::<Result<Vec<_>>>()?;
     let mut builder = MapBuilder::memory();
     for (id, text) in ordered {
       builder
@@ -138,11 +124,12 @@ impl Lexicon {
       offsets: vec![0],
       lengths: Vec::with_capacity(tokens.len()),
       gram_counts: Vec::with_capacity(tokens.len()),
-      gram_postings: HashMap::new(),
+      gram_postings: GramPostings::default(),
       lexical_order,
     };
     u32::try_from(tokens.len())
       .map_err(|_| Error::from_reason("Entity vocabulary exceeds u32"))?;
+    let mut gram_postings: BTreeMap<_, Vec<TokenId>> = BTreeMap::new();
     for (id, text) in tokens.iter().enumerate() {
       lexicon
         .lengths
@@ -153,7 +140,7 @@ impl Lexicon {
       let id = u32::try_from(id)
         .map_err(|_| Error::from_reason("Entity token id exceeds u32"))?;
       for gram in &grams {
-        lexicon.gram_postings.entry(*gram).or_default().push(id);
+        gram_postings.entry(*gram).or_default().push(id);
       }
       lexicon
         .gram_counts
@@ -171,10 +158,7 @@ impl Lexicon {
       lexicon.text.extend_from_slice(text.as_bytes());
       lexicon.offsets.push(end);
     }
-    for postings in lexicon.gram_postings.values_mut() {
-      postings.shrink_to_fit();
-    }
-    lexicon.gram_postings.shrink_to_fit();
+    lexicon.gram_postings = GramPostings::new(gram_postings)?;
     lexicon.text.shrink_to_fit();
     lexicon.offsets.shrink_to_fit();
     Ok(lexicon)
@@ -207,23 +191,14 @@ impl Lexicon {
   /// Includes owned buffers and the lexicon's inline storage, without allocator overhead.
   #[must_use]
   pub fn native_bytes(&self) -> usize {
-    let postings_bytes =
-      self.gram_postings.values().fold(0_usize, |bytes, ids| {
-        bytes
-          .saturating_add(ids.capacity().saturating_mul(size_of::<TokenId>()))
-      });
     size_of::<Self>()
-      .saturating_add(postings_bytes)
+      .saturating_add(self.gram_postings.heap_bytes())
       .saturating_add(
         self
           .lexical_order
           .capacity()
-          .saturating_mul(size_of::<usize>()),
+          .saturating_mul(size_of::<TokenId>()),
       )
-      .saturating_add(hash_table_bytes(
-        self.gram_postings.capacity(),
-        size_of::<((char, char), Vec<TokenId>)>(),
-      ))
       .saturating_add(self.map.as_fst().as_inner().capacity())
       .saturating_add(self.text.capacity())
       .saturating_add(self.offsets.capacity().saturating_mul(size_of::<u32>()))
@@ -239,17 +214,16 @@ impl Lexicon {
   ) -> Result<Vec<u32>> {
     let mut shared_counts = vec![0_u32; self.len()];
     for gram in grams {
-      if let Some(postings) = self.gram_postings.get(gram) {
-        for &id in postings {
-          let shared = shared_counts
-            .get_mut(
-              usize::try_from(id)
-                .map_err(|_| Error::from_reason("Invalid entity token id"))?,
-            )
-            .ok_or_else(|| Error::from_reason("Missing entity bigram count"))?;
-          *shared = shared.saturating_add(1);
-        }
-      }
+      self.gram_postings.for_each(*gram, |id| {
+        let shared = shared_counts
+          .get_mut(
+            usize::try_from(id)
+              .map_err(|_| Error::from_reason("Invalid entity token id"))?,
+          )
+          .ok_or_else(|| Error::from_reason("Missing entity bigram count"))?;
+        *shared = shared.saturating_add(1);
+        Ok(())
+      })?;
     }
     Ok(shared_counts)
   }
@@ -296,14 +270,14 @@ impl Lexicon {
     let shared_counts = self.shared_bigram_counts(&grams)?;
     let automaton = OsaAutomaton::new(query, maximum_distance, remaining);
     let mut fuzzy = Vec::new();
-    for &index in &self.lexical_order {
+    for &id in &self.lexical_order {
+      let index = usize::try_from(id)
+        .map_err(|_| Error::from_reason("Invalid entity token id"))?;
       let (&length, (&gram_count, &shared)) = self
         .lengths
         .get(index)
         .zip(self.gram_counts.get(index).zip(shared_counts.get(index)))
         .ok_or_else(|| Error::from_reason("Missing entity lexicon metadata"))?;
-      let id = u32::try_from(index)
-        .map_err(|_| Error::from_reason("Invalid entity token id"))?;
       if exact == Some(u64::from(id)) {
         continue;
       }
@@ -378,23 +352,6 @@ mod tests {
   use crate::damerau_levenshtein;
   use proptest::prelude::*;
 
-  #[test]
-  fn hash_table_bytes_counts_allocated_buckets() {
-    assert_eq!(hash_table_bytes(0, 24), 0);
-    assert_eq!(hash_table_bytes(3, 24), 4 * 25 + 16);
-    assert_eq!(hash_table_bytes(7, 24), 8 * 25 + 16);
-    // 14 usable entries live in 16 buckets, 28 in 32.
-    assert_eq!(hash_table_bytes(14, 24), 16 * 25 + 16);
-    assert_eq!(hash_table_bytes(28, 24), 32 * 25 + 16);
-    let mut map: HashMap<(char, char), Vec<TokenId>> = HashMap::new();
-    map.insert(('a', 'b'), Vec::new());
-    let capacity = map.capacity();
-    assert!(
-      hash_table_bytes(capacity, size_of::<((char, char), Vec<TokenId>)>())
-        >= capacity.saturating_mul(size_of::<((char, char), Vec<TokenId>)>())
-    );
-  }
-
   fn default_budget() -> EditBudget {
     EditBudget {
       by_length: vec![0, 0, 0, 0, 1, 1, 2],
@@ -466,11 +423,10 @@ mod tests {
     #[test]
     fn prefilters_preserve_edited_queries_at_every_budget(
       query in word(),
-      vocabulary in prop::collection::btree_set(word(), 0..20),
+      mut vocabulary in prop::collection::btree_set(word(), 0..20),
       edits in prop::collection::vec((0_usize..16, any::<bool>()), 0..5),
       mut table in prop::collection::vec(0_u8..=12, 1..16),
     ) {
-      let mut vocabulary = vocabulary;
       let mut chars = query.chars().collect::<Vec<_>>();
       vocabulary.insert(query.clone());
       for (position, transpose) in edits {
