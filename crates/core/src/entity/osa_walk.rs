@@ -25,7 +25,7 @@ pub(super) struct State {
   row: Row,
   previous_row: Row,
   previous_char: Option<char>,
-  pub(super) length: usize,
+  length: usize,
   utf8: [u8; 4],
   filled: usize,
   expected: usize,
@@ -33,7 +33,7 @@ pub(super) struct State {
 }
 
 impl State {
-  pub(super) fn distance(&self, query_length: usize, infinity: usize) -> usize {
+  fn distance(&self, query_length: usize, infinity: usize) -> usize {
     self.row.get(query_length, infinity)
   }
 }
