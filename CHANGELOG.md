@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+
+### Minor Changes
+
+- [#187](https://github.com/stella/fuzzy-search/pull/187) [`85dbccd`](https://github.com/stella/fuzzy-search/commit/85dbccde72f5a9f2a293f3ef36387db66edb9635) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Tighten EntityIndex threshold retrieval for dense common-token indexes by deduplicating remaining query coverage across spelling forms and joined units, retiring exhausted posting cursors, and bounding candidate lookup cost independently of fuzzy vocabulary match counts.
+
 ## 1.2.0
 
 ### Minor Changes
