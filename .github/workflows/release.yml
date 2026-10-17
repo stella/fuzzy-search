@@ -379,7 +379,7 @@ jobs:
         && needs.attest.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@92c44f95faa3687d5766a9a63e79a340dbe3ef6a
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
@@ -401,7 +401,7 @@ jobs:
         && needs.verify.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@92c44f95faa3687d5766a9a63e79a340dbe3ef6a
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
@@ -478,7 +478,7 @@ jobs:
         && needs.preflight.outputs.already-released != 'true'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/npm-version-finalize.yml@92c44f95faa3687d5766a9a63e79a340dbe3ef6a
+    uses: stella/.github/.github/workflows/npm-version-finalize.yml@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
     with:
       package-files: |
         package.json

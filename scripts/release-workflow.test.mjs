@@ -35,3 +35,27 @@ describe("Rust release ordering", () => {
     expect(recovery).not.toMatch(/always\(\)|failure\(\)|cancelled\(\)/);
   });
 });
+
+test("privileged shared publishers match the release policy pin", () => {
+  const policy = readFileSync(
+    new URL(
+      "../.github/workflows/release-policy.yml",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const policyUse = policy.match(
+    /uses: stella\/\.github\/\.github\/workflows\/release-policy\.yml@([0-9a-f]{40})/u,
+  );
+  const pin = policyUse?.at(1);
+  if (pin === undefined)
+    throw new Error("Missing immutable release policy pin");
+  const publishers = [
+    ...workflow.matchAll(
+      /uses: stella\/\.github\/\.github\/workflows\/(?:crates-io-publish|npm-version-finalize)\.yml@([0-9a-f]{40})/gu,
+    ),
+  ];
+  expect(publishers).toHaveLength(3);
+  for (const publisher of publishers)
+    expect(publisher.at(1)).toBe(pin);
+});
