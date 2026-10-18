@@ -2,31 +2,49 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
 const readWorkflow = (name: string) =>
-  readFileSync(
-    new URL(
-      `../.github/workflows/${name}.yml`,
-      import.meta.url,
+  Bun.YAML.parse(
+    readFileSync(
+      new URL(
+        `../.github/workflows/${name}.yml`,
+        import.meta.url,
+      ),
+      "utf8",
     ),
-    "utf8",
   );
 
 test("optional parity is dispatch-only and retains toolchain verification", () => {
   const workflow = readWorkflow("optional-proofs");
-  expect(workflow).toContain("  workflow_dispatch:");
-  expect(workflow).not.toMatch(
-    /^  (push|pull_request|schedule):/m,
-  );
-  expect(workflow).toContain(
+  expect(Object.keys(workflow.on)).toEqual([
+    "workflow_dispatch",
+  ]);
+  const steps = workflow.jobs["typecheck-parity"].steps;
+  for (const command of [
     "bun install --frozen-lockfile",
-  );
-  expect(workflow).toContain("bun run check:toolchain");
-  expect(workflow).toContain(
+    "bun run check:toolchain",
     "bun run check:typecheck-parity",
-  );
+  ]) {
+    const step = steps.find(
+      (candidate: { run?: string }) =>
+        candidate.run === command,
+    );
+    expect(step).toBeDefined();
+    expect(step.if).toBeUndefined();
+  }
 });
 
-test("automatic parity stays conditional on toolchain changes", () => {
-  expect(readWorkflow("ci")).toContain(
-    "- run: bun run check:typecheck-parity\n        if: needs.check-changes.outputs.toolchain-changed == 'true'",
+test("automatic compiler checks use shared CI without duplicate parity steps", () => {
+  const workflow = readWorkflow("ci");
+  expect(Object.keys(workflow.on).sort()).toEqual([
+    "pull_request",
+    "push",
+    "workflow_dispatch",
+  ]);
+  expect(workflow.jobs["napi-ci"].with.typecheck).toBe(
+    true,
   );
+  const parity = workflow.jobs.checks.steps.find(
+    (step: { run?: string }) =>
+      step.run === "bun run check:typecheck-parity",
+  );
+  expect(parity).toBeUndefined();
 });
