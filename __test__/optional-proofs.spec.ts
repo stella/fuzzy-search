@@ -11,77 +11,80 @@ const isRecord = (
 const narrowWorkflow = (value: unknown, name: string) => {
   if (
     !isRecord(value) ||
-    !isRecord(value.on) ||
-    !isRecord(value.jobs)
+    !isRecord(value["on"]) ||
+    !isRecord(value["jobs"])
   ) {
     throw new Error(
       `${name}: expected workflow on/jobs mappings`,
     );
   }
-  const jobs = value.jobs;
+  const jobs = value["jobs"];
   return {
-    on: value.on,
+    on: value["on"],
     jobNames: Object.keys(jobs),
     job: (id: string) => {
       const job = jobs[id];
       if (!isRecord(job))
         throw new Error(`${name}: missing job ${id}`);
       if (
-        job.uses !== undefined &&
-        typeof job.uses !== "string"
+        job["uses"] !== undefined &&
+        typeof job["uses"] !== "string"
       ) {
         throw new Error(
           `${name}/${id}: expected string uses`,
         );
       }
-      if (job.with !== undefined && !isRecord(job.with)) {
+      if (
+        job["with"] !== undefined &&
+        !isRecord(job["with"])
+      ) {
         throw new Error(
           `${name}/${id}: expected with mapping`,
         );
       }
-      const steps = job.steps;
+      const steps = job["steps"];
       if (steps !== undefined && !Array.isArray(steps)) {
         throw new Error(
           `${name}/${id}: expected steps array`,
         );
       }
       return {
-        uses: job.uses,
-        with: job.with,
+        uses: job["uses"],
+        with: job["with"],
         steps: (steps ?? []).map((step: unknown) => {
           if (!isRecord(step))
             throw new Error(
               `${name}/${id}: expected step mapping`,
             );
           if (
-            step.run !== undefined &&
-            typeof step.run !== "string"
+            step["run"] !== undefined &&
+            typeof step["run"] !== "string"
           ) {
             throw new Error(
               `${name}/${id}: expected string run`,
             );
           }
           if (
-            step.uses !== undefined &&
-            typeof step.uses !== "string"
+            step["uses"] !== undefined &&
+            typeof step["uses"] !== "string"
           ) {
             throw new Error(
               `${name}/${id}: expected string step uses`,
             );
           }
           if (
-            step.with !== undefined &&
-            !isRecord(step.with)
+            step["with"] !== undefined &&
+            !isRecord(step["with"])
           ) {
             throw new Error(
               `${name}/${id}: expected step with mapping`,
             );
           }
           return {
-            run: step.run,
-            uses: step.uses,
-            if: step.if,
-            with: step.with,
+            run: step["run"],
+            uses: step["uses"],
+            if: step["if"],
+            with: step["with"],
           };
         }),
       };
@@ -129,7 +132,7 @@ test("automatic compiler checks use shared CI without duplicate parity steps", (
     "push",
     "workflow_dispatch",
   ]);
-  expect(workflow.job("napi-ci").with?.typecheck).toBe(
+  expect(workflow.job("napi-ci").with?.["typecheck"]).toBe(
     true,
   );
   const parity = workflow
