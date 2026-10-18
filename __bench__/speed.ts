@@ -8,7 +8,7 @@
  * - fuzzball (Python rapidfuzz port)
  *
  * Run: bun run bench:speed
- * Install deps first: bun run bench:install
+ * Benchmark dependencies install with the root `bun install`.
  * Download corpora: bun run bench:download
  */
 import { readFileSync } from "node:fs";
