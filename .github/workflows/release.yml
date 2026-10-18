@@ -240,7 +240,14 @@ jobs:
           done
           ls -la -- *.node 2>/dev/null || echo "No .node files"
           ls -la -- *.wasm 2>/dev/null || echo "No .wasm files"
-      - run: bun test
+      # Repository tooling tests run on Linux in CI; other platforms verify
+      # the packaged library against its runtime tests.
+      - name: Test
+        if: runner.os == 'Linux'
+        run: bun test
+      - name: Test package runtime
+        if: runner.os != 'Linux'
+        run: bun test ./__test__
       - name: Property tests
         if: matrix.os == 'ubuntu-latest'
         run: bun run test:props
