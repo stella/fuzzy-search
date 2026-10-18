@@ -17,6 +17,8 @@ on:
         ready_for_review,
         labeled,
       ]
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
 
 concurrency:
@@ -51,7 +53,7 @@ jobs:
       - name: Detect toolchain changes
         id: toolchain
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BASE_SHA: ${{ github.event.merge_group.base_sha || github.event.pull_request.base.sha || github.event.before }}
         run: |
           result=$(bunx --no-install stll-toolchain-changed --since "${BASE_SHA:-HEAD^}")
           echo "changed=$(printf '%s' "$result" | jq -r '.changed')" >> "$GITHUB_OUTPUT"
@@ -283,3 +285,43 @@ jobs:
       - name: Check internal Rust visibility
         if: needs.check-changes.outputs.rust-changed == 'true'
         run: bun run rust:hawk
+
+  ci-result:
+    if: always()
+    needs: [check-changes, trust-check, changeset, checks, napi-ci, core-package, hawk]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Reject untrusted pull request validation
+        if: >-
+          github.event_name == 'pull_request'
+          && needs.trust-check.outputs.trusted != 'true'
+        run: exit 1
+      - name: Require every selected validation job
+        if: >-
+          github.event_name != 'pull_request'
+          || needs.trust-check.outputs.trusted == 'true'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DETECTOR_RESULT: ${{ needs.check-changes.result }}
+          TRUST_RESULT: ${{ needs.trust-check.result }}
+          CHANGESET_RESULT: ${{ needs.changeset.result }}
+          CHECKS_RESULT: ${{ needs.checks.result }}
+          NAPI_RESULT: ${{ needs.napi-ci.result }}
+          CORE_PACKAGE_RESULT: ${{ needs.core-package.result }}
+          HAWK_RESULT: ${{ needs.hawk.result }}
+        run: |
+          set -euo pipefail
+          test "$DETECTOR_RESULT" = success
+          test "$CHECKS_RESULT" = success
+          test "$NAPI_RESULT" = success
+          test "$CORE_PACKAGE_RESULT" = success
+          test "$HAWK_RESULT" = success
+          if [ "$EVENT_NAME" = pull_request ]; then
+            test "$TRUST_RESULT" = success
+            test "$CHANGESET_RESULT" = success
+          else
+            case "$TRUST_RESULT" in success|skipped) ;; *) exit 1 ;; esac
+            case "$CHANGESET_RESULT" in success|skipped) ;; *) exit 1 ;; esac
+          fi
