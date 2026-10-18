@@ -22,6 +22,7 @@ import {
   printSpeedups,
 } from "./helpers";
 import type { PatternDef } from "./helpers";
+import { requiredAt } from "./required-at";
 
 const CORPUS = join(__dirname, "corpus");
 const load = (name: string): string => {
@@ -73,16 +74,18 @@ function generateLegalText(sizeKB: number): string {
   const target = sizeKB * 1024;
   let i = 0;
   while (size < target) {
+    let part: string;
     if (i % 200 === 50) {
-      parts.push("Gais1erová");
+      part = "Gais1erová";
     } else if (i % 200 === 100) {
-      parts.push("Nowák");
+      part = "Nowák";
     } else if (i % 200 === 150) {
-      parts.push("Pribram");
+      part = "Pribram";
     } else {
-      parts.push(words[i % words.length]!);
+      part = requiredAt(words, i % words.length);
     }
-    size += parts.at(-1)!.length + 1;
+    parts.push(part);
+    size += part.length + 1;
     i++;
   }
   return parts.join(" ");
@@ -124,16 +127,18 @@ function generateEnglishText(sizeKB: number): string {
   const target = sizeKB * 1024;
   let i = 0;
   while (size < target) {
+    let part: string;
     if (i % 200 === 50) {
-      parts.push("Jonhson");
+      part = "Jonhson";
     } else if (i % 200 === 100) {
-      parts.push("Willaims");
+      part = "Willaims";
     } else if (i % 200 === 150) {
-      parts.push("Tompson");
+      part = "Tompson";
     } else {
-      parts.push(words[i % words.length]!);
+      part = requiredAt(words, i % words.length);
     }
-    size += parts.at(-1)!.length + 1;
+    parts.push(part);
+    size += part.length + 1;
     i++;
   }
   return parts.join(" ");
@@ -179,8 +184,7 @@ const scenarios = [
 for (const s of scenarios) {
   console.log(`\n### ${s.label}\n`);
   const times: number[] = [];
-  for (let i = 0; i < libs.length; i++) {
-    const lib = libs[i]!;
+  for (const lib of libs) {
     // Skip slow libraries on large corpora
     if (
       s.skipSlow &&
@@ -203,7 +207,7 @@ for (const s of scenarios) {
       ),
     );
   }
-  printSpeedups(times.filter((t) => !Number.isNaN(t)));
+  printSpeedups(times);
 }
 
 // ─── Real corpus benchmarks ──────────────────
@@ -272,8 +276,7 @@ if (corpusScenarios.length > 0) {
   for (const s of corpusScenarios) {
     console.log(`\n### ${s.label}\n`);
     const times: number[] = [];
-    for (let i = 0; i < libs.length; i++) {
-      const lib = libs[i]!;
+    for (const lib of libs) {
       if (
         s.skipSlow &&
         (lib.name.includes("naive") ||
@@ -292,7 +295,7 @@ if (corpusScenarios.length > 0) {
         ),
       );
     }
-    printSpeedups(times.filter((t) => !Number.isNaN(t)));
+    printSpeedups(times);
   }
 } else {
   console.log(
