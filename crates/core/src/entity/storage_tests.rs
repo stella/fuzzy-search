@@ -150,7 +150,7 @@ fn astral_scalar_is_not_a_listed_utf16_initial() {
         prefix: high_surrogate
       }
     ),
-    [] as [(u32, f64); 0]
+    Vec::<(u32, f64)>::new()
   );
   assert_eq!(index.posting_count(), 2);
 }

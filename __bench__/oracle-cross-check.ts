@@ -1,6 +1,4 @@
-// @ts-expect-error — no type declarations
 import damNpm from "damerau-levenshtein";
-// @ts-expect-error — no type declarations
 import jsLev from "js-levenshtein";
 /**
  * Cross-check: verify our distance computations

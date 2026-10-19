@@ -1,4 +1,6 @@
 import { constants } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import {
   access,
   readFile,
@@ -6,6 +8,10 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
+import {
+  stripDirectiveComments,
+  transformNapiLoader,
+} from "./napi-loader-transform.mjs";
 
 const source = new URL("../index.js", import.meta.url);
 const target = new URL("../index.cjs", import.meta.url);
@@ -25,66 +31,32 @@ if (hasGeneratedLoader) {
 }
 
 const loader = await readFile(target, "utf8");
-const nativeBindingAssignment =
-  "nativeBinding = requireNative()";
-if (!loader.includes(nativeBindingAssignment)) {
-  throw new Error(
-    "Generated NAPI loader no longer initializes nativeBinding",
-  );
-}
+await writeFile(target, transformNapiLoader(loader));
 
-const causeAssignments = [
-  [
-    "wasiBindingError.cause = err",
-    "setErrorCause(wasiBindingError, err)",
-  ],
-  [
-    "error.cause = wasiBindingError",
-    "setErrorCause(error, wasiBindingError)",
-  ],
-  [
-    "error.cause = loadErrors.reduce((err, cur) => {",
-    "setErrorCause(error, loadErrors.reduce((err, cur) => {",
-  ],
-  ["cur.cause = err", "setErrorCause(cur, err)"],
-  ["    })\n    throw error", "    }))\n    throw error"],
+const generatedCompanions = [
+  new URL("../index.d.ts", import.meta.url),
+  new URL("../fuzzy-search.wasi.cjs", import.meta.url),
+  new URL("../wasi-worker-browser.mjs", import.meta.url),
+  new URL("../wasi-worker.mjs", import.meta.url),
 ];
-
-if (loader.includes("const setErrorCause =")) {
-  for (const [assignment] of causeAssignments) {
-    if (loader.includes(assignment)) {
-      throw new Error(
-        `Patched NAPI loader still contains: ${assignment}`,
-      );
+for (const generatedFile of generatedCompanions) {
+  try {
+    const generatedSource = await readFile(generatedFile, "utf8");
+    await writeFile(
+      generatedFile,
+      stripDirectiveComments(generatedSource),
+    );
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      throw error;
     }
   }
-  process.exit(0);
 }
 
-const withCauseHelper = loader.replace(
-  nativeBindingAssignment,
-  `${nativeBindingAssignment}
-
-const setErrorCause = (error, cause) => {
-  Object.defineProperty(error, 'cause', {
-    configurable: true,
-    value: cause,
-    writable: true,
-  })
-}`,
+execFileSync(
+  fileURLToPath(
+    new URL("../node_modules/oxfmt/bin/oxfmt", import.meta.url),
+  ),
+  ["wasi-worker-browser.mjs", "wasi-worker.mjs"],
+  { cwd: fileURLToPath(new URL("..", import.meta.url)) },
 );
-
-let patchedLoader = withCauseHelper;
-for (const [assignment, replacement] of causeAssignments) {
-  if (!patchedLoader.includes(assignment)) {
-    throw new Error(
-      `Generated NAPI loader no longer contains: ${assignment}`,
-    );
-  }
-  patchedLoader = patchedLoader.replace(
-    assignment,
-    replacement,
-  );
-}
-
-await writeFile(target, patchedLoader);
