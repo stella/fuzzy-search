@@ -1104,6 +1104,14 @@ describe("property: wholeWords candidate validity", () => {
     maxDist,
     (pats, hay, k) => {
       const matches = buildFS(pats, k, true).findIter(hay);
+      const unrestricted = buildFS(
+        pats,
+        k,
+        false,
+      ).findIter(hay);
+      if (matches.length > 0) {
+        expect(unrestricted.length).toBeGreaterThan(0);
+      }
       let previousEnd = 0;
       for (const m of matches) {
         const distance = levenshtein(

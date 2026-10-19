@@ -31,4 +31,6 @@ test("wholeWords preserves valid windows displaced by unrestricted selection", (
   expect(spans(unrestricted)).toEqual([
     { start: 0, end: 3, text: "0  ", distance: 1 },
   ]);
+  expect(wholeWords.isMatch(haystack)).toBe(true);
+  expect(unrestricted.isMatch(haystack)).toBe(true);
 });
