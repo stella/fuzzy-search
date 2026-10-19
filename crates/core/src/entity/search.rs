@@ -1565,7 +1565,7 @@ mod tests {
       },
     )
     .unwrap();
-    assert!(result.survivors.is_empty());
+    assert_eq!(result.survivors, [] as [u32; 0]);
     assert_eq!(result.cost.sorted_accesses, 0);
     assert_eq!(result.cost.random_access_pairs, 0);
   }

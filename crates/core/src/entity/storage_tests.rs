@@ -142,15 +142,15 @@ fn astral_scalar_is_not_a_listed_utf16_initial() {
     &[2.0],
   );
   let high_surrogate = "😀".encode_utf16().next().unwrap();
-  assert!(
+  assert_eq!(
     decoded(
       &index,
       PostingList::ListedInitial {
         form: 0,
         prefix: high_surrogate
       }
-    )
-    .is_empty()
+    ),
+    [] as [(u32, f64); 0]
   );
   assert_eq!(index.posting_count(), 2);
 }
