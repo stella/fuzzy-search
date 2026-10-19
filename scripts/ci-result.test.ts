@@ -34,3 +34,12 @@ test("CI and CLA workflows handle merge queue checks", () => {
     ]);
   }
 });
+
+test("CI runs the aggregate result regression tests", () => {
+  const workflow = parseWorkflow(".github/workflows/ci.yml");
+  expect(
+    workflow.jobs.checks.steps.some((step: { run?: string }) =>
+      step.run?.includes("scripts/ci-result.test.ts"),
+    ),
+  ).toBeTrue();
+});

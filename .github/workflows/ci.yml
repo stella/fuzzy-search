@@ -187,7 +187,7 @@ jobs:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
       - run: bun run check:toolchain
-      - run: bun test __test__/tooling-adoption.spec.ts __test__/benchmark-invariants.spec.ts scripts/shared-policy.test.ts
+      - run: bun test __test__/tooling-adoption.spec.ts __test__/benchmark-invariants.spec.ts scripts/shared-policy.test.ts scripts/ci-result.test.ts
 
   napi-ci:
     if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') }}

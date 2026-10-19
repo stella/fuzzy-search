@@ -128,6 +128,7 @@ test("optional parity is dispatch-only and retains toolchain verification", () =
 test("automatic compiler checks use shared CI without duplicate parity steps", () => {
   const workflow = readWorkflow("ci");
   expect(Object.keys(workflow.on).sort()).toEqual([
+    "merge_group",
     "pull_request",
     "push",
     "workflow_dispatch",
