@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0
+
+### Minor Changes
+
+- [#187](https://github.com/stella/fuzzy-search/pull/187) [`85dbccd`](https://github.com/stella/fuzzy-search/commit/85dbccde72f5a9f2a293f3ef36387db66edb9635) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Tighten EntityIndex threshold retrieval for dense common-token indexes by deduplicating remaining query coverage across spelling forms and joined units, retiring exhausted posting cursors, and bounding candidate lookup cost independently of fuzzy vocabulary match counts.
+
+### Patch Changes
+
+- [#184](https://github.com/stella/fuzzy-search/pull/184) [`0ae2fd0`](https://github.com/stella/fuzzy-search/commit/0ae2fd035bf0db3e7c8b2bd4d842c9f815c8eb0b) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Preserve the concrete callable Vite configuration hook in generated types.
+
 ## 1.2.0
 
 ### Minor Changes
