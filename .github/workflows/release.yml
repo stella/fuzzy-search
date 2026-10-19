@@ -40,7 +40,7 @@ jobs:
       github.event_name != 'workflow_dispatch'
       || inputs.publish_to_npm != true
       || github.ref == 'refs/heads/main'
-    uses: stella/.github/.github/workflows/npm-version-preflight.yml@48aacae31829ce15216a6b766b03a92fd2e84da3
+    uses: stella/.github/.github/workflows/npm-version-preflight.yml@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
     with:
       package-files: |
         package.json
@@ -127,7 +127,7 @@ jobs:
         env:
           RUSTDOCFLAGS: -Dwarnings
       - run: cargo test --workspace
-      - uses: stella/.github/actions/provenance-check@48aacae31829ce15216a6b766b03a92fd2e84da3
+      - uses: stella/.github/actions/provenance-check@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
         with:
           provenance-version: v0.1.3
       - run: cargo publish --dry-run --locked --package stella-fuzzy-search-core
@@ -390,7 +390,6 @@ jobs:
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
-      rust-toolchain: "1.99.0"
     permissions:
       contents: read
       attestations: write
@@ -412,7 +411,6 @@ jobs:
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
-      rust-toolchain: "1.99.0"
     permissions:
       contents: read
       attestations: write
