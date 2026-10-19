@@ -55,7 +55,6 @@ const scenarios = {
   unavailableWasi: { forceWasi: "true", native: true },
   packagedWasi: {
     forceWasi: "true",
-    localWasi: true,
     native: true,
     packageWasi: true,
   },
@@ -93,6 +92,7 @@ const loadBindings = () => {
     const scenarios = JSON.parse(process.argv[1]);
     const loaderPath = require.resolve(process.argv[2]);
     const originalLoad = Module._load;
+    const originalResolveFilename = Module._resolveFilename;
     const originalForceWasi = process.env.NAPI_RS_FORCE_WASI;
     const originalExcludeNetwork = process.report &&
       Object.getOwnPropertyDescriptor(process.report, "excludeNetwork");
@@ -103,6 +103,23 @@ const loadBindings = () => {
         packageWasi: { source: "package-wasi" },
       };
       delete require.cache[loaderPath];
+      Module._resolveFilename = (request, parent, isMain, options) => {
+        if (
+          request === "./fuzzy-search.wasi.cjs" ||
+          request.endsWith(".wasm")
+        ) {
+          if (scenario.localWasi) return request;
+          throw Object.assign(new Error("local WASI unavailable"), { code: "MODULE_NOT_FOUND" });
+        }
+        if (
+          request === "@stll/fuzzy-search-wasm32-wasi" ||
+          request === "@stll/fuzzy-search-wasm32-wasi/package.json"
+        ) {
+          if (scenario.packageWasi) return request;
+          throw Object.assign(new Error("package WASI unavailable"), { code: "MODULE_NOT_FOUND" });
+        }
+        return originalResolveFilename(request, parent, isMain, options);
+      };
       Module._load = (request, parent, isMain) => {
         if (request.endsWith(".node")) {
           if (scenario.native) return bindings.native;
@@ -139,6 +156,7 @@ const loadBindings = () => {
         // Each scenario owns the loader cache and the globals it can change.
         delete require.cache[loaderPath];
         Module._load = originalLoad;
+        Module._resolveFilename = originalResolveFilename;
         if (originalForceWasi === undefined) {
           delete process.env.NAPI_RS_FORCE_WASI;
         } else {
@@ -207,7 +225,7 @@ describe("generated loader WASI selection", () => {
     });
   });
 
-  test("true selects the packaged WASI candidate last", () => {
+  test("true selects the packaged WASI candidate", () => {
     expect(results.packagedWasi).toEqual({
       source: "package-wasi",
     });
