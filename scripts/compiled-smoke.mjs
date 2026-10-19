@@ -14,6 +14,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { parsePackageManifest } from "./release-json.mjs";
+
 const root = fileURLToPath(new URL("../", import.meta.url));
 const builtSource = readFileSync(
   join(root, "dist/index.mjs"),
@@ -51,9 +53,11 @@ try {
       platform,
       "package.json",
     );
-    const manifest = JSON.parse(
+    const manifest = parsePackageManifest(
       readFileSync(manifestPath, "utf8"),
     );
+    if (manifest.main === undefined)
+      throw new Error("Native package main is missing");
     if (!manifest.main.endsWith(".node")) continue;
     const artifact = join(root, manifest.main);
     if (!existsSync(artifact)) continue;

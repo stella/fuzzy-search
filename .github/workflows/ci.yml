@@ -17,6 +17,8 @@ on:
         ready_for_review,
         labeled,
       ]
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
 
 concurrency:
@@ -25,24 +27,41 @@ concurrency:
 
 jobs:
   check-changes:
-    runs-on: ubuntu-latest
+    needs: [trust-check]
+    if: >-
+      always() && !cancelled()
+      && (github.event_name != 'pull_request'
+          || needs.trust-check.outputs.trusted == 'true')
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
     outputs:
-      rust-changed: ${{ steps.filter.outputs.rust }}
-      build-changed: ${{ steps.filter.outputs.build }}
-      provenance-changed: ${{ steps.filter.outputs.provenance }}
+      rust-changed: ${{ (steps.filter.outputs.rust == 'true' || steps.toolchain.outputs.changed == 'true') && 'true' || 'false' }}
+      build-changed: ${{ (steps.filter.outputs.build == 'true' || steps.toolchain.outputs.changed == 'true') && 'true' || 'false' }}
+      provenance-changed: ${{ (steps.filter.outputs.provenance == 'true' || steps.toolchain.outputs.changed == 'true') && 'true' || 'false' }}
+      toolchain-changed: ${{ steps.toolchain.outputs.changed }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - name: Detect toolchain changes
+        id: toolchain
+        env:
+          BASE_SHA: ${{ github.event.merge_group.base_sha || github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          result=$(bunx --no-install stll-toolchain-changed --since "${BASE_SHA:-HEAD^}")
+          echo "changed=$(printf '%s' "$result" | jq -r '.changed')" >> "$GITHUB_OUTPUT"
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           filters: |
             rust:
-              - '.github/workflows/**'
               - 'VERSION'
               - 'hawk.toml'
               - 'package.json'
@@ -51,10 +70,8 @@ jobs:
               - 'Cargo.toml'
               - 'Cargo.lock'
               - 'deny.toml'
-              - '.github/workflows/ci.yml'
             build:
               - '__test__/**'
-              - '.github/workflows/**'
               - 'VERSION'
               - 'src/**'
               - 'crates/**'
@@ -67,10 +84,7 @@ jobs:
               - 'scripts/**'
               - 'wasm/**'
               - 'npm/**'
-              - '.github/workflows/ci.yml'
-              - '.github/workflows/release.yml'
             provenance:
-              - '.github/workflows/**'
               - 'VERSION'
               - 'bun.lock'
               - 'Cargo.lock'
@@ -84,11 +98,10 @@ jobs:
               - '*.mjs'
               - '.provenance.yml'
               - 'provenance/**'
-              - '.github/workflows/ci.yml'
 
   trust-check:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -100,10 +113,12 @@ jobs:
           HEAD_REPO: >-
             ${{ github.event.pull_request.head.repo.full_name }}
           BASE_REPO: ${{ github.repository }}
+          HAS_RUN_CI_LABEL: >-
+            ${{ contains(github.event.pull_request.labels.*.name, 'run-ci') }}
         run: |
           if [[ "$HEAD_REPO" == "$BASE_REPO" ]]; then
             echo "trusted=true" >> "$GITHUB_OUTPUT"
-          elif [[ '${{ contains(github.event.pull_request.labels.*.name, 'run-ci') }}' == 'true' ]]; then
+          elif [[ "$HAS_RUN_CI_LABEL" == 'true' ]]; then
             echo "trusted=true" >> "$GITHUB_OUTPUT"
           else
             echo "trusted=false" >> "$GITHUB_OUTPUT"
@@ -116,7 +131,7 @@ jobs:
       github.event_name == 'pull_request'
       && needs.trust-check.outputs.trusted == 'true'
     needs: [trust-check]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -152,7 +167,7 @@ jobs:
           package-files: package.json
 
   checks:
-    name: Typecheck and parity
+    name: Tooling invariants
     if: >-
       always()
       && !cancelled()
@@ -160,27 +175,27 @@ jobs:
       && (github.event_name != 'pull_request'
           || needs.trust-check.outputs.trusted == 'true')
     needs: [check-changes, trust-check]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
       - run: bun run check:toolchain
-      - run: bun run typecheck
-      - run: bun run check:typecheck-parity
+      - run: bun test __test__/tooling-adoption.spec.ts __test__/benchmark-invariants.spec.ts scripts/shared-policy.test.ts scripts/ci-result.test.ts
 
   napi-ci:
-    if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (needs.trust-check.result == 'success' || needs.trust-check.result == 'skipped') }}
+    if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') }}
     needs: [check-changes, trust-check]
     uses: stella/.github/.github/workflows/rust-napi-ci.yml@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
     with:
-      node-version: "22"
+      typecheck: true
+      node-version: "26.10.0"
       trusted: ${{ (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') && 'true' || 'false' }}
       rust-changed: ${{ needs.check-changes.outputs.rust-changed }}
       build-changed: ${{ needs.check-changes.outputs.build-changed }}
@@ -199,7 +214,7 @@ jobs:
       && (github.event_name != 'pull_request'
           || needs.trust-check.outputs.trusted == 'true')
     needs: [check-changes, trust-check]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -207,6 +222,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: "1.99.0"
       - name: Verify publication boundary
         run: |
           set -euo pipefail
@@ -227,7 +244,7 @@ jobs:
       && (github.event_name != 'pull_request'
           || needs.trust-check.outputs.trusted == 'true')
     needs: [check-changes, trust-check]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -235,14 +252,13 @@ jobs:
         if: needs.check-changes.outputs.rust-changed != 'true'
         run: echo "No trusted Rust changes; Hawk skipped."
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: needs.check-changes.outputs.rust-changed == 'true'
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         if: needs.check-changes.outputs.rust-changed == 'true'
         with:
-          toolchain: ${{ env.HAWK_RUST_TOOLCHAIN }}
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+          toolchain: "1.97.1"
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: package.json
         if: needs.check-changes.outputs.rust-changed == 'true'
@@ -269,3 +285,43 @@ jobs:
       - name: Check internal Rust visibility
         if: needs.check-changes.outputs.rust-changed == 'true'
         run: bun run rust:hawk
+
+  ci-result:
+    if: always()
+    needs: [check-changes, trust-check, changeset, checks, napi-ci, core-package, hawk]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Reject untrusted pull request validation
+        if: >-
+          github.event_name == 'pull_request'
+          && needs.trust-check.outputs.trusted != 'true'
+        run: exit 1
+      - name: Require every selected validation job
+        if: >-
+          github.event_name != 'pull_request'
+          || needs.trust-check.outputs.trusted == 'true'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DETECTOR_RESULT: ${{ needs.check-changes.result }}
+          TRUST_RESULT: ${{ needs.trust-check.result }}
+          CHANGESET_RESULT: ${{ needs.changeset.result }}
+          CHECKS_RESULT: ${{ needs.checks.result }}
+          NAPI_RESULT: ${{ needs.napi-ci.result }}
+          CORE_PACKAGE_RESULT: ${{ needs.core-package.result }}
+          HAWK_RESULT: ${{ needs.hawk.result }}
+        run: |
+          set -euo pipefail
+          test "$DETECTOR_RESULT" = success
+          test "$CHECKS_RESULT" = success
+          test "$NAPI_RESULT" = success
+          test "$CORE_PACKAGE_RESULT" = success
+          test "$HAWK_RESULT" = success
+          if [ "$EVENT_NAME" = pull_request ]; then
+            test "$TRUST_RESULT" = success
+            test "$CHANGESET_RESULT" = success
+          else
+            case "$TRUST_RESULT" in success|skipped) ;; *) exit 1 ;; esac
+            case "$CHANGESET_RESULT" in success|skipped) ;; *) exit 1 ;; esac
+          fi

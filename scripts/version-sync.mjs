@@ -6,12 +6,18 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
+import {
+  parsePackageManifest,
+  formatSbomVersion,
+} from "./release-json.mjs";
+
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 
 function repoPath(...segments) {
   return path.join(ROOT, ...segments);
 }
 
+/** @param {string} filePath */
 function readText(filePath) {
   return fs.readFileSync(filePath, "utf8");
 }
@@ -20,8 +26,8 @@ function writeText(filePath, content) {
   fs.writeFileSync(filePath, content);
 }
 
-function readJson(filePath) {
-  return JSON.parse(readText(filePath));
+function readPackageManifest(filePath) {
+  return parsePackageManifest(readText(filePath));
 }
 
 function writeJson(filePath, value) {
@@ -35,6 +41,7 @@ function readVersion() {
   return readText(repoPath("VERSION")).trim();
 }
 
+/** @param {string} filePath */
 function fileExists(filePath) {
   return fs.existsSync(filePath);
 }
@@ -43,6 +50,7 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** @param {string} content @param {RegExp} matcher @param {string} replacement @param {string} filePath */
 function replaceRequired(
   content,
   matcher,
@@ -57,12 +65,14 @@ function replaceRequired(
   return content.replace(matcher, replacement);
 }
 
+/** @param {string} content @param {RegExp} matcher @param {string} replacement */
 function replaceIfPresent(content, matcher, replacement) {
   return matcher.test(content)
     ? content.replace(matcher, replacement)
     : content;
 }
 
+/** @param {{command: string, explicitVersion?: string, packageVersion: string, tag?: string, versionFileVersion: string}} options */
 export const resolveVersion = ({
   command,
   explicitVersion,
@@ -72,8 +82,11 @@ export const resolveVersion = ({
 }) =>
   explicitVersion ??
   tag?.replace(/^v/, "") ??
-  (command === "sync" ? packageVersion : versionFileVersion);
+  (command === "sync"
+    ? packageVersion
+    : versionFileVersion);
 
+/** @param {{ content: string, filePath: string, sourceVersion: string, targetVersion: string }} options */
 export const replaceLoaderVersion = ({
   content,
   filePath,
@@ -88,6 +101,7 @@ export const replaceLoaderVersion = ({
   return content.replaceAll(sourceVersion, targetVersion);
 };
 
+/** @param {string} name */
 function encodedScopedPackageName(name) {
   if (!name.startsWith("@")) {
     return name;
@@ -111,6 +125,7 @@ function npmPurlPrefixes(name) {
   ];
 }
 
+/** @param {string} bunLock @param {string} packageName */
 function readBunLockVersion(bunLock, packageName) {
   const escaped = escapeRegex(packageName);
   const patterns = [
@@ -128,6 +143,12 @@ function readBunLockVersion(bunLock, packageName) {
   return null;
 }
 
+/**
+ * @param {unknown} value
+ * @param {Set<string>} expectedPurls
+ * @param {string} expectedVersion
+ * @param {string[]} results
+ */
 function collectSbomVersionDrift(
   value,
   expectedPurls,
@@ -150,13 +171,16 @@ function collectSbomVersionDrift(
     return;
   }
 
+  const purl = "purl" in value ? value.purl : undefined;
+  const version =
+    "version" in value ? value.version : undefined;
   if (
-    typeof value.purl === "string" &&
-    expectedPurls.has(value.purl) &&
-    value.version !== expectedVersion
+    typeof purl === "string" &&
+    expectedPurls.has(purl) &&
+    version !== expectedVersion
   ) {
     results.push(
-      `${value.purl}: version=${value.version ?? "<missing>"}`,
+      `${purl}: version=${formatSbomVersion(version)}`,
     );
   }
 
@@ -185,7 +209,9 @@ function replaceSbomVersionForPurl(
 }
 
 function packageMeta() {
-  const root = readJson(repoPath("package.json"));
+  const root = readPackageManifest(
+    repoPath("package.json"),
+  );
   const cargoTomlPath = repoPath("Cargo.toml");
   const cargoToml = readText(cargoTomlPath);
   const cargoNameMatch = cargoToml.match(
@@ -276,7 +302,7 @@ function platformPackageManifests() {
       );
       return {
         manifestPath,
-        manifest: readJson(manifestPath),
+        manifest: readPackageManifest(manifestPath),
       };
     })
     .sort((left, right) =>
@@ -284,6 +310,7 @@ function platformPackageManifests() {
     );
 }
 
+/** @param {string} expectedVersion */
 function mismatches(expectedVersion) {
   const meta = packageMeta();
   const platforms = platformPackageManifests();
@@ -317,7 +344,7 @@ function mismatches(expectedVersion) {
     );
   }
 
-  const wasm = readJson(meta.wasmManifestPath);
+  const wasm = readPackageManifest(meta.wasmManifestPath);
   if (wasm.version !== expectedVersion) {
     results.push(
       `${meta.wasmManifestPath}: version=${wasm.version}`,
@@ -495,6 +522,7 @@ function mismatches(expectedVersion) {
   return results;
 }
 
+/** @param {string} nextVersion */
 function syncVersion(nextVersion) {
   const meta = packageMeta();
   const platforms = platformPackageManifests();
@@ -502,7 +530,7 @@ function syncVersion(nextVersion) {
 
   writeText(repoPath("VERSION"), `${nextVersion}\n`);
   meta.root.version = nextVersion;
-  if (meta.root.optionalDependencies) {
+  if (meta.root.optionalDependencies !== undefined) {
     const platformPackageNames = new Set(
       platforms.map(({ manifest }) => manifest.name),
     );
@@ -524,7 +552,9 @@ function syncVersion(nextVersion) {
   }
   writeJson(meta.packageJsonPath, meta.root);
 
-  const wasmManifest = readJson(meta.wasmManifestPath);
+  const wasmManifest = readPackageManifest(
+    meta.wasmManifestPath,
+  );
   wasmManifest.version = nextVersion;
   writeJson(meta.wasmManifestPath, wasmManifest);
 
@@ -630,6 +660,7 @@ function syncVersion(nextVersion) {
 
 function parseArgs() {
   const [command, ...rest] = process.argv.slice(2);
+  /** @type {Map<string, string>} */
   const args = new Map();
   for (let i = 0; i < rest.length; i += 1) {
     const token = rest[i];
@@ -679,22 +710,20 @@ function main() {
     return;
   }
 
-  if (command === "check") {
-    const drift = mismatches(version);
-    if (drift.length > 0) {
-      console.error("Version drift detected:");
-      for (const mismatch of drift) {
-        console.error(`- ${mismatch}`);
-      }
-      process.exit(1);
+  const drift = mismatches(version);
+  if (drift.length > 0) {
+    console.error("Version drift detected:");
+    for (const mismatch of drift) {
+      console.error(`- ${mismatch}`);
     }
-    return;
+    process.exit(1);
   }
 }
 
 if (
   process.argv[1] &&
-  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  path.resolve(process.argv[1]) ===
+    fileURLToPath(import.meta.url)
 ) {
   main();
 }

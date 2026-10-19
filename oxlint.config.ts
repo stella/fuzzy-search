@@ -1,4 +1,8 @@
 import { library } from "@stll/oxlint-config";
+import {
+  portableSafetyPluginSpecifiers,
+  portableSafetyRules,
+} from "@stll/oxlint-plugin";
 
 export default library({
   ignorePatterns: [
@@ -12,21 +16,6 @@ export default library({
     "wasi-worker-browser.mjs",
     "wasi-worker.mjs",
   ],
-  overrides: [
-    {
-      files: ["scripts/**"],
-      rules: {
-        "typescript/no-unnecessary-condition": "off",
-        "typescript/strict-boolean-expressions": "off",
-      },
-    },
-    {
-      files: ["__bench__/**", "__test__/**"],
-      rules: {
-        "no-console": "off",
-        "no-non-null-assertion": "off",
-        "require-await": "off",
-      },
-    },
-  ],
+  jsPlugins: [...portableSafetyPluginSpecifiers],
+  rules: { ...portableSafetyRules },
 });

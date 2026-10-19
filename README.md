@@ -182,7 +182,6 @@ are public and the scripts are reproducible from the
 repo. Run them locally:
 
 ```bash
-bun run bench:install
 bun run bench:download
 bun run bench:speed
 bun run bench:correctness
@@ -326,7 +325,6 @@ bun run build           # native module (requires Rust)
 bun test                # 36 unit tests
 bun run test:props      # 36 property tests × 1000 runs
 
-bun run bench:install   # benchmark dependencies
 bun run bench:download  # download corpora
 bun run bench:speed     # speed comparison
 bun run bench:correctness  # oracle verification
@@ -336,7 +334,7 @@ bun run format          # oxfmt + rustfmt
 ```
 
 Run `bun run typecheck` to check types with `bun check --no-pretty --all --project=tsconfig.json`.
-Run `bun run check:typecheck-parity` to compare repository diagnostics and seeded diagnostic classes with TypeScript; CI runs both checks.
+Run `bun run check:typecheck-parity` to compare repository diagnostics and seeded diagnostic classes with TypeScript. CI runs the normal typecheck; compiler parity runs for toolchain changes and on demand in the Optional proofs workflow.
 Editors continue to use the TypeScript language service because Bun has no language server.
 The `typescript` dependency also supports declaration generation through tsdown.
 

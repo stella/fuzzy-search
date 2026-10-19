@@ -5,6 +5,8 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
+import { parsePackageManifest } from "./release-json.mjs";
+
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 
 function repoPath(...segments) {
@@ -16,7 +18,7 @@ function readText(filePath) {
 }
 
 function readJson(filePath) {
-  return JSON.parse(readText(filePath));
+  return parsePackageManifest(readText(filePath));
 }
 
 function writeJson(filePath, value) {

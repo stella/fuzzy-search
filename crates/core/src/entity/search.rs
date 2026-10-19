@@ -1,10 +1,13 @@
 //! Complete threshold retrieval over impact-ordered postings.
 //!
-//! Every unseen alias is bounded by the sum of the current list heads. On
+//! Every unseen alias is bounded by the maximum active similarity at each
+//! query position and the listed coverage of the current posting heads. On
 //! first sight, forward data supplies the tighter per-position maxima bound.
 //! Stopping is strict: an alias exactly at the threshold must survive.
 
-use std::collections::{BTreeMap, BTreeSet};
+#[cfg(test)]
+use std::collections::BTreeMap;
+use std::collections::{BTreeSet, HashMap};
 
 use super::cost::Work;
 use super::lexicon::Lexicon;
@@ -125,17 +128,25 @@ pub fn threshold(cutoff: f64, boost_product: f64) -> Result<f64> {
   Ok((1.0 - (1.0 - cutoff) / boost_product - 1e-9).max(0.0))
 }
 
+#[derive(Clone, Copy)]
+enum QueryCoverage {
+  Unit(usize),
+  Initial(usize),
+}
+
+#[derive(Clone, Copy)]
 struct Cursor {
   list: PostingList,
   similarity: f64,
+  query_similarity: f64,
+  coverage: QueryCoverage,
   offset: usize,
 }
 
 struct Prepared {
   matches: Vec<UnitMatch>,
-  similarities: BTreeMap<(usize, FormId, TokenId), f64>,
+  similarities: HashMap<(usize, FormId, TokenId), f64>,
   cursors: Vec<Cursor>,
-  q_max: f64,
 }
 
 fn invalid(message: &str) -> Error {
@@ -215,11 +226,9 @@ fn prepare(
 ) -> Result<(Prepared, bool)> {
   let mut prepared = Prepared {
     matches: Vec::new(),
-    similarities: BTreeMap::new(),
+    similarities: HashMap::new(),
     cursors: Vec::new(),
-    q_max: 0.0,
   };
-  let mut maxima = vec![0.0_f64; query.tokens.len()];
   for (unit_index, unit) in query.units.iter().enumerate() {
     let lexicon = index
       .lexicon(unit.form)
@@ -237,15 +246,6 @@ fn prepare(
         id: hit.id,
         similarity: hit.similarity,
       });
-      for position in &unit.positions {
-        let maximum = maxima
-          .get_mut(
-            usize::try_from(*position)
-              .map_err(|_| invalid("Entity position exceeds usize"))?,
-          )
-          .ok_or_else(|| invalid("Missing entity query position"))?;
-        *maximum = maximum.max(hit.similarity);
-      }
       for list in [
         PostingList::Token {
           form: unit.form,
@@ -259,6 +259,8 @@ fn prepare(
         prepared.cursors.push(Cursor {
           list,
           similarity: hit.similarity,
+          query_similarity: hit.similarity,
+          coverage: QueryCoverage::Unit(unit_index),
           offset: 0,
         });
       }
@@ -267,25 +269,13 @@ fn prepare(
       return Ok((prepared, true));
     }
   }
-  add_initial_cursors(index, query, &mut maxima, &mut prepared.cursors)?;
-  let total = query.tokens.iter().map(|token| token.weight).sum::<f64>();
-  if total > 0.0 {
-    prepared.q_max = weighted_share(
-      query
-        .tokens
-        .iter()
-        .zip(maxima)
-        .map(|(token, similarity)| (token.weight, similarity)),
-      total,
-    );
-  }
+  add_initial_cursors(index, query, &mut prepared.cursors)?;
   Ok((prepared, false))
 }
 
 fn add_initial_cursors(
   index: &impl SearchIndex,
   query: &EntityQuery,
-  maxima: &mut [f64],
   cursors: &mut Vec<Cursor>,
 ) -> Result<()> {
   for (position, token) in query.tokens.iter().enumerate() {
@@ -314,17 +304,15 @@ fn add_initial_cursors(
     // A query initial may match an identical listed initial with similarity 1.
     // Noninitial words may still match a listed initial without a lexicon hit.
     if index.posting(list, 0).is_some() {
-      let maximum = maxima
-        .get_mut(position)
-        .ok_or_else(|| invalid("Missing entity query maximum"))?;
-      *maximum = maximum.max(if initial {
-        1.0
-      } else {
-        index.options().initial_similarity
-      });
       cursors.push(Cursor {
         list,
         similarity: 1.0,
+        query_similarity: if initial {
+          1.0
+        } else {
+          index.options().initial_similarity
+        },
+        coverage: QueryCoverage::Initial(position),
         offset: 0,
       });
     }
@@ -573,7 +561,7 @@ fn initial_rounding_factor(index: &impl SearchIndex) -> f64 {
   upper_add(1.0, upper_ratio(MIN_SUBNORMAL, denominator))
 }
 
-fn frontier_bound(index: &impl SearchIndex, cursors: &[Cursor]) -> f64 {
+fn listed_frontier_bound(index: &impl SearchIndex, cursors: &[Cursor]) -> f64 {
   let product_error = upper_ratio(MIN_SUBNORMAL, index.minimum_token_weight());
   let initial_factor = initial_rounding_factor(index);
   let frontier = upper_sum(cursors.iter().filter_map(|cursor| {
@@ -594,6 +582,63 @@ fn frontier_bound(index: &impl SearchIndex, cursors: &[Cursor]) -> f64 {
   upper_product(frontier, summation_factor(index.maximum_alias_tokens()))
 }
 
+/// Alternate spelling forms and joined units explain the same query positions.
+/// For an unseen alias, only lists with a remaining head can explain a position;
+/// their maximum similarity bounds its coverage independently of list count.
+/// Listed coverage still sums impacts: a query position can explain several
+/// listed positions in the optimistic candidate estimate.
+fn frontier_bound(
+  index: &impl SearchIndex,
+  query: &EntityQuery,
+  cursors: &[Cursor],
+) -> Result<f64> {
+  let mut maxima = vec![0.0_f64; query.tokens.len()];
+  for cursor in cursors {
+    if index.posting(cursor.list, cursor.offset).is_none() {
+      continue;
+    }
+    match cursor.coverage {
+      QueryCoverage::Unit(unit) => {
+        let unit = query
+          .units
+          .get(unit)
+          .ok_or_else(|| invalid("Missing entity query unit"))?;
+        for position in &unit.positions {
+          let position = usize::try_from(*position)
+            .map_err(|_| invalid("Entity position exceeds usize"))?;
+          let maximum = maxima
+            .get_mut(position)
+            .ok_or_else(|| invalid("Missing entity query position"))?;
+          *maximum = maximum.max(cursor.query_similarity);
+        }
+      }
+      QueryCoverage::Initial(position) => {
+        let maximum = maxima
+          .get_mut(position)
+          .ok_or_else(|| invalid("Missing entity query position"))?;
+        *maximum = maximum.max(cursor.query_similarity);
+      }
+    }
+  }
+  let total = query.tokens.iter().map(|token| token.weight).sum::<f64>();
+  let query_share = if total > 0.0 {
+    weighted_share(
+      query
+        .tokens
+        .iter()
+        .zip(maxima)
+        .map(|(token, similarity)| (token.weight, similarity)),
+      total,
+    )
+  } else {
+    0.0
+  };
+  Ok(geometric_ceiling(
+    query_share,
+    listed_frontier_bound(index, cursors).min(1.0),
+  ))
+}
+
 pub(super) fn search(
   index: &impl SearchIndex,
   query: &EntityQuery,
@@ -605,11 +650,7 @@ pub(super) fn search(
     prepare(index, query, &mut cost, params.max_cost)?;
   let mut survivors = Vec::new();
   let mut seen = BTreeSet::new();
-  let mut cursors = prepared
-    .cursors
-    .iter()
-    .map(|cursor| Cursor { ..*cursor })
-    .collect::<Vec<_>>();
+  let mut cursors = prepared.cursors.clone();
   if params.tau <= 0.0 && !exhausted {
     // At zero threshold even disjoint aliases qualify. There is no posting
     // discovery proof for zero-score aliases, so enumerate the forward store.
@@ -624,11 +665,10 @@ pub(super) fn search(
     }
   } else if !exhausted && !query.tokens.is_empty() {
     'walk: loop {
-      let frontier = frontier_bound(index, &cursors);
-      let ceiling = upper_product(
-        geometric_ceiling(prepared.q_max, frontier.min(1.0)),
-        params.quality,
-      );
+      cursors
+        .retain(|cursor| index.posting(cursor.list, cursor.offset).is_some());
+      let ceiling =
+        upper_product(frontier_bound(index, query, &cursors)?, params.quality);
       if ceiling + 1e-12 < params.tau {
         break;
       }
@@ -1120,10 +1160,7 @@ mod tests {
     let mut cursors = prepared.cursors;
     let mut seen = BTreeSet::new();
     loop {
-      let ceiling = geometric_ceiling(
-        prepared.q_max,
-        frontier_bound(fixture, &cursors).min(1.0),
-      );
+      let ceiling = frontier_bound(fixture, query, &cursors).unwrap();
       for (alias_id, score) in scores.iter().enumerate() {
         if !seen.contains(&u32::try_from(alias_id).unwrap()) {
           assert!(
@@ -1528,7 +1565,7 @@ mod tests {
       },
     )
     .unwrap();
-    assert!(result.survivors.is_empty());
+    assert_eq!(result.survivors, [] as [u32; 0]);
     assert_eq!(result.cost.sorted_accesses, 0);
     assert_eq!(result.cost.random_access_pairs, 0);
   }
@@ -1639,3 +1676,7 @@ mod tests {
     );
   }
 }
+
+#[cfg(test)]
+#[path = "search_bound_tests.rs"]
+mod bound_tests;
