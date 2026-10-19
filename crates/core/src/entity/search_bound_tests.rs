@@ -162,7 +162,7 @@ fn oracle_results(
     .map(|alias| {
       oracle::candidate_estimate(
         query,
-        alias,
+        &alias,
         &prepared.matches,
         |form, id| index.lexicon(form).unwrap().token(id).unwrap().to_owned(),
         index.options.initial_similarity,
@@ -178,13 +178,15 @@ fn oracle_results(
   let scores = index
     .aliases
     .iter()
-    .map(|alias| {
-      if exact(index, query, alias).unwrap() {
+    .enumerate()
+    .map(|(id, alias)| {
+      let view = index.alias(u32::try_from(id).unwrap()).unwrap();
+      if exact(index, query, view).unwrap() {
         return alias.quality;
       }
       let pairs = oracle::candidate_pairs(
         query,
-        alias,
+        &alias,
         &prepared.matches,
         |form, id| index.lexicon(form).unwrap().token(id).unwrap().to_owned(),
         index.options.initial_similarity,
@@ -266,10 +268,11 @@ fn check(
       .iter()
       .enumerate()
       .filter_map(|(id, alias)| {
-        let bound = if exact(index, query, alias).unwrap() {
+        let view = index.alias(u32::try_from(id).unwrap()).unwrap();
+        let bound = if exact(index, query, view).unwrap() {
           1.0
         } else {
-          alias_bound(index, query, &prepared, alias).unwrap()
+          alias_bound(index, query, &prepared, view).unwrap()
         };
         (tau <= 0.0
           || upper_product(upper_product(bound, alias.quality), quality)
@@ -326,10 +329,10 @@ fn one_query_position_can_explain_multiple_listed_positions() {
   let (prepared, exhausted) =
     prepare(&index, &query, &mut Cost::default(), u64::MAX).unwrap();
   assert!(!exhausted);
-  let alias = index.aliases.first().unwrap();
+  let alias = index.aliases.iter().next().unwrap();
   let estimate = oracle::candidate_estimate(
     &query,
-    alias,
+    &alias,
     &prepared.matches,
     |form, id| index.lexicon(form).unwrap().token(id).unwrap().to_owned(),
     index.options.initial_similarity,

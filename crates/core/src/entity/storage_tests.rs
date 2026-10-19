@@ -385,7 +385,7 @@ fn assert_oracle_completeness(
   for (alias_id, input) in index.aliases.iter().enumerate() {
     let pairs = super::oracle::candidate_pairs(
       query,
-      input,
+      &input,
       &result.unit_matches,
       |_, token_id| lexicon.token(token_id).unwrap().to_owned(),
       index.options.initial_similarity,
@@ -519,7 +519,7 @@ proptest! {
 proptest! {
   #![proptest_config(ProptestConfig::with_cases(64))]
   #[test]
-  fn rejects_crossed_form_position_models(left in 1_u16..400, right in 401_u16..800) {
+  fn shares_position_weights_and_preserves_independent_form_minima(left in 1_u16..400, right in 401_u16..800) {
     for crossed_minimums in [false, true] {
       let mut builder = EntityIndexBuilder::new(options(2)).unwrap();
       for form in 0..2 { builder.intern(form, "alpha").unwrap(); builder.intern(form, "beta").unwrap(); }
@@ -541,7 +541,15 @@ proptest! {
       } else {
         for (token, value) in other_form.tokens.iter_mut().zip([right, left]) { token.weight = f64::from(value); }
       }
-      prop_assert!(builder.add_alias(input).is_err());
+      if crossed_minimums {
+        prop_assert_eq!(builder.add_alias(input.clone()).unwrap(), 1);
+        let index = builder.finish(vec![vec![1.0; 2]; 2]).unwrap();
+        let restored = EntityIndex::from_bytes(&index.to_bytes().unwrap()).unwrap();
+        prop_assert_eq!(index.aliases.iter().nth(1).unwrap(), input.clone());
+        prop_assert_eq!(restored.aliases.iter().nth(1).unwrap(), input);
+      } else {
+        prop_assert!(builder.add_alias(input).is_err());
+      }
     }
   }
 
@@ -675,5 +683,54 @@ proptest! {
     weight in prop_oneof![f64::MIN_POSITIVE..1e-150_f64, 1e151_f64..=f64::MAX],
   ) {
     assert_out_of_range_weight(weight);
+  }
+}
+
+proptest! {
+  #![proptest_config(ProptestConfig::with_cases(48))]
+  #[test]
+  fn form_specific_minima_preserve_original_inputs_and_every_posting(
+    rows in prop::collection::vec((prop::collection::vec((0_u32..3, 1_u16..1000, any::<u8>()), 3..7), 0_u16..=1000), 1..12),
+    form_count in 2_u32..4,
+  ) {
+    let mut builder = EntityIndexBuilder::new(options(form_count)).unwrap();
+    for form in 0..form_count {
+      for word in ["alpha", "a", "beta", "alphaalpha", "alphabeta", "日本"] {
+        builder.intern(form, word).unwrap();
+      }
+    }
+    let inputs = rows.into_iter().enumerate().map(|(entry_id, (positions, quality))| {
+      let forms = (0..form_count).map(|form| {
+        let tokens = positions.iter().map(|&(id, weight, discount)| AliasToken {
+          id,
+          weight: f64::from(weight),
+          minimum_weight: f64::from(weight) * (f64::from(discount) + 1.0) / (256.0 * f64::from(form.checked_add(1).unwrap())),
+        }).collect::<Vec<_>>();
+        let last = u32::try_from(tokens.len().checked_sub(1).unwrap()).unwrap();
+        AliasForm {
+          form,
+          minimum_total: tokens.iter().map(|token| token.minimum_weight).sum(),
+          tokens,
+          joins: vec![AliasJoin { id: 3, left: 0, right: 0 }, AliasJoin { id: 4, left: last, right: 0 }, AliasJoin { id: 4, left: 0, right: last }],
+        }
+      }).collect();
+      AliasInput { entry_id: u32::try_from(entry_id).unwrap(), entity_group: 0, quality: f64::from(quality) / 1000.0, forms }
+    }).collect::<Vec<_>>();
+    for input in &inputs { builder.add_alias(input.clone()).unwrap(); }
+    let index = builder.finish(vec![vec![1.0; 6]; usize::try_from(form_count).unwrap()]).unwrap();
+    let restored = EntityIndex::from_bytes(&index.to_bytes().unwrap()).unwrap();
+    prop_assert_eq!(&index.aliases.iter().collect::<Vec<_>>(), &inputs);
+    prop_assert_eq!(&restored.aliases.iter().collect::<Vec<_>>(), &inputs);
+    let original_keys = index.postings.list_keys().into_iter().collect::<std::collections::BTreeSet<_>>();
+    let rebuilt_keys = restored.postings.list_keys().into_iter().collect::<std::collections::BTreeSet<_>>();
+    prop_assert_eq!(&original_keys, &rebuilt_keys);
+    let mut exercised_postings = 0_u64;
+    for list in original_keys {
+      let original = decoded(&index, list);
+      exercised_postings = exercised_postings.checked_add(u64::try_from(original.len()).unwrap()).unwrap();
+      prop_assert_eq!(original, decoded(&restored, list));
+    }
+    prop_assert_eq!(exercised_postings, index.posting_count());
+    prop_assert_eq!(exercised_postings, restored.posting_count());
   }
 }
