@@ -7,6 +7,7 @@ use super::{
 use crate::{Error, Result};
 
 const MAGIC: &[u8; 8] = b"STLLEIDX";
+const MIN_SUPPORTED_VERSION: u32 = 1;
 const VERSION: u32 = 2;
 
 fn invalid(reason: &str) -> Error {
@@ -222,7 +223,7 @@ pub(super) fn from_bytes(bytes: &[u8]) -> Result<EntityIndex> {
     return Err(invalid("unknown magic"));
   }
   let version = reader.u32()?;
-  if version != VERSION {
+  if !(MIN_SUPPORTED_VERSION..=VERSION).contains(&version) {
     return Err(Error {
       reason: format!(
         "Unsupported entity index version {version}; expected {VERSION}"
@@ -268,8 +269,9 @@ mod tests {
   use super::super::{EntityQuery, QueryToken, QueryUnit, SearchParams};
   use super::{
     AliasForm, AliasInput, AliasJoin, AliasToken, BudgetBasis, EditBudget,
-    EntityIndex, EntityIndexBuilder, EntityIndexOptions, MAGIC, Reader, Result,
-    VERSION, Writer, from_bytes, invalid, read_options, to_bytes,
+    EntityIndex, EntityIndexBuilder, EntityIndexOptions, MAGIC,
+    MIN_SUPPORTED_VERSION, Reader, Result, VERSION, Writer, from_bytes,
+    invalid, read_options, to_bytes,
   };
 
   fn fixture() -> Result<EntityIndex> {
@@ -505,7 +507,7 @@ mod tests {
   #[allow(clippy::expect_used)]
   fn rejects_all_other_versions_with_typed_error() -> Result<()> {
     let bytes = to_bytes(&fixture()?)?;
-    for version in [0_u32, 1, VERSION.saturating_add(1), u32::MAX] {
+    for version in [0_u32, VERSION.saturating_add(1), u32::MAX] {
       let mut malformed = bytes.clone();
       replace(&mut malformed, MAGIC.len(), &version.to_le_bytes())?;
       let error =
@@ -516,6 +518,59 @@ mod tests {
       );
       assert!(error.reason().contains(&version.to_string()));
     }
+    Ok(())
+  }
+
+  #[test]
+  fn reads_version_one_payload_with_unchanged_search_results() -> Result<()> {
+    let index = fixture()?;
+    let mut bytes = to_bytes(&index)?;
+    replace(
+      &mut bytes,
+      MAGIC.len(),
+      &MIN_SUPPORTED_VERSION.to_le_bytes(),
+    )?;
+    let restored = from_bytes(&bytes)?;
+    let query = EntityQuery {
+      tokens: vec![
+        QueryToken {
+          form: 0,
+          text: "álpha".to_owned(),
+          weight: 2.0,
+        },
+        QueryToken {
+          form: 0,
+          text: "東京".to_owned(),
+          weight: 3.0,
+        },
+      ],
+      units: vec![
+        QueryUnit {
+          form: 0,
+          text: "álpha".to_owned(),
+          positions: vec![0],
+        },
+        QueryUnit {
+          form: 0,
+          text: "東京".to_owned(),
+          positions: vec![1],
+        },
+        QueryUnit {
+          form: 0,
+          text: "álpha東京".to_owned(),
+          positions: vec![0, 1],
+        },
+      ],
+    };
+    let params = SearchParams {
+      tau: 0.0,
+      quality: 1.0,
+      max_cost: u64::MAX,
+    };
+    assert_eq!(
+      restored.search(&query, &params)?,
+      index.search(&query, &params)?
+    );
     Ok(())
   }
 
