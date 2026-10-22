@@ -17,6 +17,7 @@ Project: root
 - bit-set 0.11.1 — Apache-2.0 OR MIT
 - bit-vec 0.10.1 — Apache-2.0 OR MIT
 - bitflags 2.13.1 — Apache-2.0 OR MIT
+- block-buffer 0.10.4 — Apache-2.0 OR MIT
 - bon 3.9.3 — Apache-2.0 OR MIT
 - bon-macros 3.9.3 — Apache-2.0 OR MIT
 - borsh 1.8.1 — Apache-2.0 OR MIT
@@ -35,14 +36,17 @@ Project: root
 - clap_lex 1.1.1 — Apache-2.0 OR MIT
 - convert_case 0.11.0 — MIT
 - core_detect 1.0.0 — MIT/Apache-2.0
+- cpufeatures 0.2.17 — Apache-2.0 OR MIT
 - cpufeatures 0.3.1 — Apache-2.0 OR MIT
 - criterion 0.8.2 — Apache-2.0 OR MIT
 - criterion-plot 0.8.2 — Apache-2.0 OR MIT
 - crunchy 0.2.4 — MIT
+- crypto-common 0.1.7 — Apache-2.0 OR MIT
 - ctor 1.0.13 — Apache-2.0 OR MIT
 - darling 0.23.0 — MIT
 - darling_core 0.23.0 — MIT
 - darling_macro 0.23.0 — MIT
+- digest 0.10.7 — Apache-2.0 OR MIT
 - either 1.19.0 — Apache-2.0 OR MIT
 - equivalent 1.0.3 — Apache-2.0 OR MIT
 - errno 0.3.14 — Apache-2.0 OR MIT
@@ -59,6 +63,7 @@ Project: root
 - futures-sink 0.3.34 — Apache-2.0 OR MIT
 - futures-task 0.3.34 — Apache-2.0 OR MIT
 - futures-util 0.3.34 — Apache-2.0 OR MIT
+- generic-array 0.14.7 — MIT
 - getrandom 0.4.3 — Apache-2.0 OR MIT
 - half 2.7.1 — Apache-2.0 OR MIT
 - hashbrown 0.17.1 — Apache-2.0 OR MIT
@@ -104,6 +109,7 @@ Project: root
 - serde_core 1.0.229 — Apache-2.0 OR MIT
 - serde_derive 1.0.229 — Apache-2.0 OR MIT
 - serde_json 1.0.151 — Apache-2.0 OR MIT
+- sha2 0.10.9 — Apache-2.0 OR MIT
 - shlex 2.0.1 — Apache-2.0 OR MIT
 - slab 0.4.12 — MIT
 - strsim 0.11.1 — MIT
@@ -116,11 +122,13 @@ Project: root
 - toml_datetime 1.1.2+spec-1.1.0 — Apache-2.0 OR MIT
 - toml_edit 0.25.17+spec-1.1.0 — Apache-2.0 OR MIT
 - toml_parser 1.1.5+spec-1.1.0 — Apache-2.0 OR MIT
+- typenum 1.20.1 — Apache-2.0 OR MIT
 - unarray 0.1.4 — Apache-2.0 OR MIT
 - unicode-case-mapping 1.0.0 — Apache-2.0
 - unicode-ident 1.0.24 — (MIT OR Apache-2.0) AND Unicode-3.0
 - unicode-normalization 0.1.25 — Apache-2.0 OR MIT
 - unicode-segmentation 1.13.3 — Apache-2.0 OR MIT
+- version_check 0.9.5 — MIT/Apache-2.0
 - vite 8.2.1 — MIT
 - wait-timeout 0.2.1 — MIT/Apache-2.0
 - walkdir 2.5.0 — Unlicense/MIT
