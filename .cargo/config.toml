@@ -6,3 +6,6 @@ protocol = "sparse"
 ci-fmt = "fmt --all -- --check"
 ci-clippy = "clippy --workspace --all-targets --all-features --locked -- -D warnings"
 ci-test = "test --workspace --all-features --locked"
+
+[registry]
+global-min-publish-age = "5 days"
