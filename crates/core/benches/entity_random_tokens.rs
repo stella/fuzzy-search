@@ -116,6 +116,8 @@ fn bench_search(c: &mut Criterion) {
     });
   }
   let mut lookup_index = 0;
+  // Built once so the measured lookups time traversal, not budget allocation.
+  let lookup_budget = budget();
   c.bench_function("entity_random_tokens/two_lexicon_lookups", |b| {
     b.iter(|| {
       let query = queries.get(lookup_index).expect("query index wraps");
@@ -126,7 +128,7 @@ fn bench_search(c: &mut Criterion) {
         .iter()
         .map(|token| {
           lexicon
-            .lookup(&token.text, &budget(), &mut cost, u64::MAX)
+            .lookup(&token.text, &lookup_budget, &mut cost, u64::MAX)
             .expect("valid lookup")
         })
         .collect::<Vec<_>>()
