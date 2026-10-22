@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.0
+
+### Minor Changes
+
+- [#210](https://github.com/stella/fuzzy-search/pull/210) [`cf85802`](https://github.com/stella/fuzzy-search/commit/cf8580282761f92b985c80cbf2e572b5674de2f8) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Speed up entity vocabulary traversal with a bit-parallel optimal string alignment step for query units up to 64 characters.
+
+- [#189](https://github.com/stella/fuzzy-search/pull/189) [`f709b32`](https://github.com/stella/fuzzy-search/commit/f709b3287cc6b960168878bc8d64bc00c43bf280) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Reduce EntityIndex retained native memory with bit-packed posting ids, shared posting payloads, and flat forward arrays that share position weights and join layouts. Each form preserves its complete position weight and minimum-weight sequence; identical sequences share storage. Version 1 payloads remain readable; new payloads use version 2.
+
+### Patch Changes
+
+- [#209](https://github.com/stella/fuzzy-search/pull/209) [`29c57d5`](https://github.com/stella/fuzzy-search/commit/29c57d58ea99cfc00326ae1c54f67ab0976bfbb5) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Speed up entity searches for long tokens by keeping the common narrow edit-distance rows inline and storing their bounded values compactly during vocabulary traversal. Search results and deterministic work accounting are unchanged.
+
 ## 1.3.0
 
 ### Minor Changes
