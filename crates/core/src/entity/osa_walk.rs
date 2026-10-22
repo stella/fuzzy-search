@@ -1,6 +1,7 @@
 //! Banded Unicode OSA automaton for byte-oriented FST traversal.
 
 use std::cell::Cell;
+use std::collections::HashMap;
 
 use fst::Automaton;
 
@@ -101,19 +102,42 @@ impl Row {
 
 #[derive(Clone, Debug)]
 pub(super) struct State {
-  row: Row,
-  previous_row: Row,
+  row: Option<Box<Row>>,
+  previous_row: Option<Box<Row>>,
   previous_char: Option<char>,
   pub(super) length: usize,
   utf8: [u8; 4],
   filled: usize,
   expected: usize,
   live: bool,
+  bits: Option<BitState>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct BitState {
+  positive: u64,
+  negative: u64,
+  previous_matches: u64,
+  previous_zeroes: u64,
+  distance: usize,
+}
+
+struct CharacterMasks {
+  ascii: [u64; 128],
+  unicode: HashMap<char, u64>,
 }
 
 impl State {
   pub(super) fn distance(&self, query_length: usize, infinity: usize) -> usize {
-    self.row.get(query_length, infinity)
+    self.bits.map_or_else(
+      || {
+        self
+          .row
+          .as_deref()
+          .map_or(infinity, |row| row.get(query_length, infinity))
+      },
+      |bits| bits.distance,
+    )
   }
 }
 
@@ -124,17 +148,43 @@ pub(super) struct OsaAutomaton {
   limit: u64,
   matches: Cell<u64>,
   exhausted: Cell<bool>,
+  masks: Option<CharacterMasks>,
 }
 
 impl OsaAutomaton {
   pub(super) fn new(query: &str, budget: u8, limit: u64) -> Self {
+    let query = query.chars().collect::<Vec<_>>();
+    let masks = (!query.is_empty() && query.len() <= 64).then(|| {
+      let mut masks = CharacterMasks {
+        ascii: [0; 128],
+        unicode: HashMap::new(),
+      };
+      for (column, character) in query.iter().copied().enumerate() {
+        if character.is_ascii() {
+          if let Some(mask) = masks
+            .ascii
+            .get_mut(usize::try_from(u32::from(character)).unwrap_or(0))
+          {
+            *mask |= 1_u64 << column;
+          }
+        } else {
+          masks
+            .unicode
+            .entry(character)
+            .and_modify(|mask| *mask |= 1_u64 << column)
+            .or_insert(1_u64 << column);
+        }
+      }
+      masks
+    });
     Self {
-      query: query.chars().collect(),
+      query,
       budget: usize::from(budget),
       cells: Cell::new(0),
       limit,
       matches: Cell::new(0),
       exhausted: Cell::new(false),
+      masks,
     }
   }
 
@@ -162,6 +212,119 @@ impl OsaAutomaton {
   /// Complete one Unicode scalar; only the diagonal band is materialized.
   #[allow(clippy::arithmetic_side_effects, clippy::indexing_slicing)]
   fn advance(&self, state: &State, character: char) -> State {
+    if let (Some(masks), Some(bits)) = (&self.masks, state.bits) {
+      return self.advance_bits(state, bits, masks, character);
+    }
+    self.advance_row(state, character)
+  }
+
+  /// Hyyrö's bit-parallel OSA recurrence. Work is still charged as if the
+  /// diagonal row cells were visited, preserving the public deterministic cost.
+  #[allow(clippy::arithmetic_side_effects)]
+  fn advance_bits(
+    &self,
+    state: &State,
+    bits: BitState,
+    masks: &CharacterMasks,
+    character: char,
+  ) -> State {
+    let length = state.length + 1;
+    let start = length.saturating_sub(self.budget);
+    let end = (length + self.budget).min(self.query.len());
+    if start > end {
+      return Self::dead_state(length);
+    }
+    let charged = end.saturating_sub(start.max(1)).saturating_add(1);
+    let available = self
+      .limit
+      .saturating_sub(self.cells.get().saturating_add(self.matches.get()));
+    if u64::try_from(charged).unwrap_or(u64::MAX) > available {
+      self.cells.set(self.cells.get().saturating_add(available));
+      self.exhausted.set(true);
+      return Self::dead_state(length);
+    }
+    self.cells.set(
+      self
+        .cells
+        .get()
+        .saturating_add(u64::try_from(charged).unwrap_or(u64::MAX)),
+    );
+
+    let matches = if character.is_ascii() {
+      masks
+        .ascii
+        .get(usize::try_from(u32::from(character)).unwrap_or(0))
+        .copied()
+        .unwrap_or(0)
+    } else {
+      masks.unicode.get(&character).copied().unwrap_or(0)
+    };
+    let x = matches | bits.negative;
+    let mut zeroes =
+      (((x & bits.positive).wrapping_add(bits.positive)) ^ bits.positive) | x;
+    // A zero two rows ago followed by crossed character matches represents
+    // one adjacent transposition rather than two substitutions.
+    zeroes |= ((!bits.previous_zeroes & matches) << 1) & bits.previous_matches;
+    let positive_horizontal = bits.negative | !(zeroes | bits.positive);
+    let negative_horizontal = bits.positive & zeroes;
+    let top = 1_u64 << self.query.len().saturating_sub(1);
+    let distance = bits
+      .distance
+      .saturating_add(usize::from(positive_horizontal & top != 0))
+      .saturating_sub(usize::from(negative_horizontal & top != 0));
+    let shifted = (positive_horizontal << 1) | 1;
+    let negative = shifted & zeroes;
+    let positive = (negative_horizontal << 1) | !(shifted | zeroes);
+
+    // Recover the minimum DP cell from the horizontal difference vectors.
+    let query_bits = if self.query.len() == 64 {
+      u64::MAX
+    } else {
+      (1_u64 << self.query.len()) - 1
+    };
+    let after_end = if end == 64 {
+      0
+    } else {
+      query_bits & (u64::MAX << end)
+    };
+    let mut cell = distance
+      .saturating_sub(
+        usize::try_from((positive & after_end).count_ones())
+          .unwrap_or(usize::MAX),
+      )
+      .saturating_add(
+        usize::try_from((negative & after_end).count_ones())
+          .unwrap_or(usize::MAX),
+      );
+    let mut minimum = cell;
+    for column in (start..end).rev() {
+      let bit = 1_u64 << column;
+      cell = cell
+        .saturating_sub(usize::from(positive & bit != 0))
+        .saturating_add(usize::from(negative & bit != 0));
+      minimum = minimum.min(cell);
+    }
+    State {
+      row: None,
+      previous_row: None,
+      previous_char: Some(character),
+      length,
+      utf8: [0; 4],
+      filled: 0,
+      expected: 0,
+      live: minimum <= self.budget,
+      bits: Some(BitState {
+        positive,
+        negative,
+        previous_matches: matches,
+        previous_zeroes: zeroes,
+        distance,
+      }),
+    }
+  }
+
+  #[allow(clippy::arithmetic_side_effects, clippy::indexing_slicing)]
+  fn advance_row(&self, state: &State, character: char) -> State {
     let length = state.length + 1;
     let start = length.saturating_sub(self.budget);
     let end = (length + self.budget).min(self.query.len());
@@ -180,22 +343,35 @@ impl OsaAutomaton {
         return Self::dead_state(length);
       }
       self.cells.set(self.cells.get() + 1);
-      let deletion = state.row.get(column, infinity) + 1;
+      let deletion = state
+        .row
+        .as_deref()
+        .map_or(infinity, |row| row.get(column, infinity))
+        + 1;
       let insertion = cells.last().unwrap_or(infinity) + 1;
-      let substitution = state.row.get(column - 1, infinity)
+      let substitution = state
+        .row
+        .as_deref()
+        .map_or(infinity, |row| row.get(column - 1, infinity))
         + usize::from(self.query[column - 1] != character);
       let mut value = deletion.min(insertion).min(substitution);
       if column > 1
         && state.previous_char == Some(self.query[column - 1])
         && character == self.query[column - 2]
       {
-        value = value.min(state.previous_row.get(column - 2, infinity) + 1);
+        value = value.min(
+          state
+            .previous_row
+            .as_deref()
+            .map_or(infinity, |row| row.get(column - 2, infinity))
+            + 1,
+        );
       }
       cells.push(value.min(infinity));
     }
     let live = cells.iter().any(|value| value <= self.budget);
     State {
-      row: Row { start, cells },
+      row: Some(Box::new(Row { start, cells })),
       previous_row: state.row.clone(),
       previous_char: Some(character),
       length,
@@ -203,31 +379,21 @@ impl OsaAutomaton {
       filled: 0,
       expected: 0,
       live,
+      bits: None,
     }
   }
 
   const fn dead_state(length: usize) -> State {
     State {
-      row: Row {
-        start: 0,
-        cells: Cells::Inline {
-          values: [0; INLINE_CELLS],
-          len: 0,
-        },
-      },
-      previous_row: Row {
-        start: 0,
-        cells: Cells::Inline {
-          values: [0; INLINE_CELLS],
-          len: 0,
-        },
-      },
+      row: None,
+      previous_row: None,
       previous_char: None,
       length,
       utf8: [0; 4],
       filled: 0,
       expected: 0,
       live: false,
+      bits: None,
     }
   }
 }
@@ -237,28 +403,36 @@ impl Automaton for OsaAutomaton {
 
   fn start(&self) -> State {
     State {
-      row: Row {
-        start: 0,
-        cells: Cells::initial(self.query.len().min(self.budget)),
-      },
-      previous_row: Row {
-        start: 0,
-        cells: Cells::with_capacity(0),
-      },
+      row: self.masks.is_none().then(|| {
+        Box::new(Row {
+          start: 0,
+          cells: Cells::initial(self.query.len().min(self.budget)),
+        })
+      }),
+      previous_row: None,
       previous_char: None,
       length: 0,
       utf8: [0; 4],
       filled: 0,
       expected: 0,
       live: true,
+      bits: self.masks.as_ref().map(|_| BitState {
+        positive: u64::MAX,
+        negative: 0,
+        previous_matches: 0,
+        previous_zeroes: 0,
+        distance: self.query.len(),
+      }),
     }
   }
 
   fn is_match(&self, state: &State) -> bool {
     state.live
       && state.filled == 0
-      && state.distance(self.query.len(), self.budget.saturating_add(1))
-        <= self.budget
+      && state.bits.map_or_else(
+        || state.distance(self.query.len(), self.budget.saturating_add(1)),
+        |bits| bits.distance,
+      ) <= self.budget
   }
 
   fn can_match(&self, state: &State) -> bool {

@@ -281,6 +281,7 @@ mod tests {
   use super::*;
   use crate::damerau_levenshtein;
   use proptest::prelude::*;
+  use sha2::{Digest, Sha256};
 
   fn default_budget() -> EditBudget {
     EditBudget {
@@ -441,6 +442,56 @@ mod tests {
           oracle(&tokens, query, &budget),
           "query {query:?}, budget {maximum}"
         );
+      }
+    }
+  }
+
+  #[test]
+  fn six_unit_random_token_shape_matches_reference_rows() {
+    let names = (0..256)
+      .map(|index| {
+        let letters = Sha256::digest(format!("synthetic-person-{index}"))
+          .iter()
+          .take(16)
+          .flat_map(|byte| [byte >> 4, byte & 0x0f])
+          .map(|nibble| char::from(b'a' + nibble))
+          .collect::<String>();
+        [
+          letters.chars().take(16).collect::<String>(),
+          letters.chars().skip(16).collect::<String>(),
+        ]
+      })
+      .collect::<Vec<_>>();
+    let collapse = |text: &str| {
+      text.chars().fold(String::new(), |mut result, character| {
+        if !result.ends_with(character) {
+          result.push(character);
+        }
+        result
+      })
+    };
+    for form in 0..2 {
+      let unique = names
+        .iter()
+        .flat_map(|raw| {
+          let words = if form == 0 {
+            raw.clone().map(|word| collapse(&word))
+          } else {
+            raw.clone()
+          };
+          [words[0].clone(), words[1].clone(), words.concat()]
+        })
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+      let lexicon = Lexicon::new(&unique).unwrap();
+      for query in unique.iter().take(96) {
+        let mut cost = Cost::default();
+        let actual = lexicon
+          .lookup(query, &default_budget(), &mut cost, u64::MAX)
+          .unwrap();
+        assert_eq!(actual.matches, oracle(&unique, query, &default_budget()));
+        assert!(!actual.exhausted);
       }
     }
   }
