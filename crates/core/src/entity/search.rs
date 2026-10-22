@@ -737,6 +737,8 @@ mod tests {
   use proptest::prelude::*;
   use sha2::{Digest, Sha256};
 
+  use crate::damerau_levenshtein;
+
   struct Fixture {
     options: EntityIndexOptions,
     lexicon: Lexicon,
@@ -1690,6 +1692,35 @@ mod tests {
     ]
   }
 
+  fn fuzzy_variants(text: &str) -> [String; 5] {
+    let mut substituted = text.chars().collect::<Vec<_>>();
+    let character = substituted.get_mut(3).unwrap();
+    *character = if *character == 'a' { 'b' } else { 'a' };
+    let mut inserted = text.chars().collect::<Vec<_>>();
+    inserted.insert(5, 'q');
+    let mut deleted = text.chars().collect::<Vec<_>>();
+    deleted.remove(7);
+    let mut transposed = text.chars().collect::<Vec<_>>();
+    let position = transposed
+      .windows(2)
+      .position(|pair| pair.first() != pair.get(1))
+      .unwrap();
+    transposed.swap(position, position.checked_add(1).unwrap());
+    let mut two_edits = text.chars().collect::<Vec<_>>();
+    let second_character = two_edits.get_mut(2).unwrap();
+    *second_character = if *second_character == 'a' { 'b' } else { 'a' };
+    two_edits.insert(10, 'q');
+    [substituted, inserted, deleted, transposed, two_edits]
+      .map(|characters| characters.into_iter().collect())
+  }
+
+  fn unit_match_set(matches: &[UnitMatch]) -> BTreeSet<(u32, TokenId, u64)> {
+    matches
+      .iter()
+      .map(|hit| (hit.unit, hit.id, hit.similarity.to_bits()))
+      .collect()
+  }
+
   #[test]
   fn long_small_alphabet_tokens_match_the_exact_survivor_oracle() {
     const ENTITY_COUNT: usize = 20_000;
@@ -1770,6 +1801,158 @@ mod tests {
           .unwrap();
         assert_eq!(result.survivors, [u32::try_from(selected).unwrap()]);
         assert!(!result.exhausted);
+      }
+    }
+  }
+
+  #[test]
+  #[expect(
+    clippy::too_many_lines,
+    reason = "the complete parity fixture and both oracle comparisons stay together"
+  )]
+  fn long_small_alphabet_fuzzy_tokens_match_the_full_oracle() {
+    const ENTITY_COUNT: usize = 2_000;
+    let budget = EditBudget {
+      by_length: vec![0, 0, 0, 1, 2, 3, 4],
+      basis: BudgetBasis::Shorter,
+    };
+    let options = EntityIndexOptions {
+      forms: 1,
+      budget: budget.clone(),
+      initial_weight: 1.0,
+      initial_similarity: 0.8,
+    };
+    let mut builder = EntityIndexBuilder::new(options.clone()).unwrap();
+    let mut vocabulary = Vec::<String>::new();
+    let mut aliases = Vec::with_capacity(ENTITY_COUNT);
+    let mut vocabulary_size = 0;
+    for entity in 0..ENTITY_COUNT {
+      let tokens = synthetic_name(entity)
+        .into_iter()
+        .map(|text| {
+          let id = builder.intern(0, &text).unwrap();
+          let index = usize::try_from(id).unwrap();
+          vocabulary_size = vocabulary_size.max(index + 1);
+          if vocabulary.len() <= index {
+            vocabulary.resize(index + 1, String::new());
+          }
+          *vocabulary.get_mut(index).unwrap() = text;
+          AliasToken {
+            id,
+            weight: 1.0,
+            minimum_weight: 0.8,
+          }
+        })
+        .collect::<Vec<_>>();
+      let alias = AliasInput {
+        entry_id: u32::try_from(entity).unwrap(),
+        entity_group: 0,
+        quality: 1.0,
+        forms: vec![AliasForm {
+          form: 0,
+          tokens,
+          joins: vec![],
+          minimum_total: 1.6,
+        }],
+      };
+      builder.add_alias(alias.clone()).unwrap();
+      aliases.push(alias);
+    }
+    let index = builder.finish(vec![vec![1.0; vocabulary_size]]).unwrap();
+
+    for tau in [0.799_999_999_999_998_3, 0.9] {
+      for selected in [7_usize, 613, 1_337] {
+        let indexed = synthetic_name(selected);
+        for fuzzy in fuzzy_variants(&indexed[0]) {
+          let words = [fuzzy, indexed[1].clone()];
+          let query = EntityQuery {
+            tokens: words
+              .iter()
+              .map(|text| QueryToken {
+                form: 0,
+                text: text.clone(),
+                weight: 1.0,
+              })
+              .collect(),
+            units: words
+              .iter()
+              .enumerate()
+              .map(|(position, text)| QueryUnit {
+                form: 0,
+                text: text.clone(),
+                positions: vec![u32::try_from(position).unwrap()],
+              })
+              .collect(),
+          };
+          let params = SearchParams {
+            tau,
+            quality: 1.0,
+            max_cost: u64::MAX,
+          };
+          let result = index.search(&query, &params).unwrap();
+          assert!(!result.exhausted);
+
+          let mut expected_matches = BTreeSet::new();
+          for (unit, text) in words.iter().enumerate() {
+            let query_chars = text.chars().collect::<Vec<_>>();
+            for (token_id, token) in vocabulary.iter().enumerate() {
+              let token_chars = token.chars().collect::<Vec<_>>();
+              let distance = damerau_levenshtein(&query_chars, &token_chars);
+              let allowed = usize::from(
+                budget.for_length(query_chars.len().min(token_chars.len())),
+              );
+              if distance <= allowed {
+                let similarity = 1.0
+                  - f64::from(u32::try_from(distance).unwrap())
+                    / f64::from(
+                      u32::try_from(query_chars.len().max(token_chars.len()))
+                        .unwrap(),
+                    );
+                expected_matches.insert((
+                  u32::try_from(unit).unwrap(),
+                  u32::try_from(token_id).unwrap(),
+                  similarity.to_bits(),
+                ));
+              }
+            }
+          }
+          assert_eq!(unit_match_set(&result.unit_matches), expected_matches);
+
+          let weights = [1.0, 1.0];
+          let listed = [1.0, 1.0];
+          let minimum = [0.8, 0.8];
+          let expected_survivors = aliases
+            .iter()
+            .enumerate()
+            .filter_map(|(alias_id, alias)| {
+              let pairs = oracle::candidate_pairs(
+                &query,
+                alias,
+                &result.unit_matches,
+                |_, token_id| {
+                  vocabulary
+                    .get(usize::try_from(token_id).unwrap())
+                    .unwrap()
+                    .clone()
+                },
+                options.initial_similarity,
+              );
+              let score = oracle::score(
+                &pairs,
+                &weights,
+                &listed,
+                &minimum,
+                alias.quality,
+              );
+              (score >= tau).then(|| u32::try_from(alias_id).unwrap())
+            })
+            .collect::<Vec<_>>();
+          assert!(
+            expected_survivors.contains(&u32::try_from(selected).unwrap()),
+            "fuzzy query has no expected source survivor: {words:?}"
+          );
+          assert_eq!(result.survivors, expected_survivors);
+        }
       }
     }
   }
