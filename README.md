@@ -30,8 +30,9 @@ bundled plugin so the generated WASM loader is not
 pre-bundled into broken asset URLs:
 
 ```typescript
-import stllFuzzySearchWasm from "@stll/fuzzy-search-wasm/vite";
 import { defineConfig } from "vite";
+
+import stllFuzzySearchWasm from "@stll/fuzzy-search-wasm/vite";
 
 export default defineConfig({
   plugins: [stllFuzzySearchWasm()],
@@ -247,8 +248,7 @@ mixed option combinations over randomized inputs.
 
 ```typescript
 type PatternEntry =
-  | string
-  | { pattern: string; distance?: number; name?: string };
+  string | { pattern: string; distance?: number; name?: string };
 
 type Options = {
   normalizeDiacritics?: boolean; // default: false
@@ -330,7 +330,7 @@ bun run bench:speed     # speed comparison
 bun run bench:correctness  # oracle verification
 
 bun run lint            # oxlint
-bun run format          # oxfmt + rustfmt
+bun run format          # bun fmt + rustfmt
 ```
 
 Run `bun run typecheck` to check types with `bun check --no-pretty --all --project=tsconfig.json`.
@@ -355,10 +355,7 @@ error code `InvalidArg`). `minimumTotal` is an aggregate: it must be positive,
 finite, and no greater than the sum of position minimum weights.
 
 ```typescript
-import {
-  EntityIndex,
-  EntityIndexBuilder,
-} from "@stll/fuzzy-search";
+import { EntityIndex, EntityIndexBuilder } from "@stll/fuzzy-search";
 
 const builder = new EntityIndexBuilder({
   forms: 1,
@@ -383,9 +380,7 @@ builder.addAlias({
     },
   ],
 });
-const index = await builder.finishAsync([
-  new Float64Array([1]),
-]);
+const index = await builder.finishAsync([new Float64Array([1])]);
 const result = index.search(
   {
     tokens: [{ form: 0, text: "alhpa", weight: 1 }],
@@ -396,11 +391,7 @@ const result = index.search(
 
 // Each matchKeys triple is [query unit, spelling form, token id].
 // similarities[i] belongs to matchKeys.subarray(i * 3, i * 3 + 3).
-console.log(
-  result.survivors,
-  result.cost,
-  result.exhausted,
-);
+console.log(result.survivors, result.cost, result.exhausted);
 const restored = EntityIndex.fromBytes(index.toBytes());
 ```
 

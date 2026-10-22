@@ -63,8 +63,6 @@ test("invalid replay configuration is refused", () => {
     { PROPERTY_TEST_NUM_RUNS_FACTOR: "0" },
     { PROPERTY_TEST_NUM_RUNS_FACTOR: "1.5" },
   ]) {
-    expect(() => propertyConfig({ env })).toThrow(
-      PropertyTestConfigError,
-    );
+    expect(() => propertyConfig({ env })).toThrow(PropertyTestConfigError);
   }
 });

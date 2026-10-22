@@ -29,7 +29,11 @@ const collapseRuns = (text: string) => text.replace(/(.)\1+/gu, "$1");
 const query = (index: number): EntityQuery => {
   const words = name(index);
   return {
-    tokens: words.map((text) => ({ form: 0, text, weight: 1 })),
+    tokens: words.map((text) => ({
+      form: 0,
+      text,
+      weight: 1,
+    })),
     units: words.map((text, position) => ({
       form: 0,
       text,
@@ -40,7 +44,10 @@ const query = (index: number): EntityQuery => {
 
 const builder = new EntityIndexBuilder({
   forms: 1,
-  budget: { byLength: [0, 0, 0, 1, 1, 2], basis: "shorter" },
+  budget: {
+    byLength: [0, 0, 0, 1, 1, 2],
+    basis: "shorter",
+  },
   initialWeight: 1,
   initialSimilarity: 0.8,
 });
@@ -60,7 +67,9 @@ for (let index = 0; index < ENTITY_COUNT; index++) {
   });
 }
 const index = builder.finish([new Float64Array(vocabularySize).fill(1)]);
-const queries = Array.from({ length: QUERY_COUNT }, (_, offset) => query(offset));
+const queries = Array.from({ length: QUERY_COUNT }, (_, offset) =>
+  query(offset),
+);
 for (const tau of THRESHOLDS) {
   const timings: number[] = [];
   for (let run = 0; run < RUNS; run++) {
@@ -77,7 +86,9 @@ for (const tau of THRESHOLDS) {
         result.survivors.length !== 1 ||
         result.survivors[0] !== expected
       ) {
-        throw new Error(`Unexpected result for query ${expected} at tau ${tau}`);
+        throw new Error(
+          `Unexpected result for query ${expected} at tau ${tau}`,
+        );
       }
     }
   }
@@ -88,10 +99,12 @@ for (const tau of THRESHOLDS) {
   );
 }
 
-
 const sixBuilder = new EntityIndexBuilder({
   forms: 2,
-  budget: { byLength: [0, 0, 0, 0, 1, 1, 2], basis: "shorter" },
+  budget: {
+    byLength: [0, 0, 0, 0, 1, 1, 2],
+    basis: "shorter",
+  },
   initialWeight: 1,
   initialSimilarity: 0.8,
 });
@@ -102,14 +115,27 @@ for (let entity = 0; entity < ENTITY_COUNT; entity++) {
   const forms = [folded, raw].map((words, form) => {
     const tokens = words.map((text) => {
       const id = sixBuilder.intern(form, text);
-      sixVocabularySizes[form] = Math.max(sixVocabularySizes[form] ?? 0, id + 1);
+      sixVocabularySizes[form] = Math.max(
+        sixVocabularySizes[form] ?? 0,
+        id + 1,
+      );
       return { id, weight: 1, minimumWeight: 0.8 };
     });
     const id = sixBuilder.intern(form, words.join(""));
     sixVocabularySizes[form] = Math.max(sixVocabularySizes[form] ?? 0, id + 1);
-    return { form, tokens, joins: [{ id, left: 0, right: 1 }], minimumTotal: 1.6 };
+    return {
+      form,
+      tokens,
+      joins: [{ id, left: 0, right: 1 }],
+      minimumTotal: 1.6,
+    };
   });
-  sixBuilder.addAlias({ entryId: entity, entityGroup: 0, quality: 1, forms });
+  sixBuilder.addAlias({
+    entryId: entity,
+    entityGroup: 0,
+    quality: 1,
+    forms,
+  });
 }
 const sixIndex = sixBuilder.finish(
   sixVocabularySizes.map((size) => new Float64Array(size).fill(1)),
@@ -118,7 +144,11 @@ const sixQueries = Array.from({ length: QUERY_COUNT }, (_, entity) => {
   const raw = name(entity);
   const folded = raw.map(collapseRuns) as [string, string];
   return {
-    tokens: folded.map((text) => ({ form: 0, text, weight: 1 })),
+    tokens: folded.map((text) => ({
+      form: 0,
+      text,
+      weight: 1,
+    })),
     units: [folded, raw].flatMap((words, form) => [
       { form, text: words[0], positions: [0] },
       { form, text: words[1], positions: [1] },

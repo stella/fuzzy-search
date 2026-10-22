@@ -27,9 +27,7 @@ function fail(message) {
 
 function sortObject(value) {
   return Object.fromEntries(
-    Object.entries(value).sort(([left], [right]) =>
-      left.localeCompare(right),
-    ),
+    Object.entries(value).sort(([left], [right]) => left.localeCompare(right)),
   );
 }
 
@@ -47,14 +45,8 @@ function platformManifests() {
   return fs
     .readdirSync(npmDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) =>
-      readJson(
-        path.join(npmDir, entry.name, "package.json"),
-      ),
-    )
-    .sort((left, right) =>
-      left.name.localeCompare(right.name),
-    );
+    .map((entry) => readJson(path.join(npmDir, entry.name, "package.json")))
+    .sort((left, right) => left.name.localeCompare(right.name));
 }
 
 const [rootTarball, ...auxTarballs] = process.argv.slice(2);
@@ -66,44 +58,33 @@ if (!rootTarball || auxTarballs.length === 0) {
 
 const version = readText(repoPath("VERSION")).trim();
 const sourceRoot = readJson(repoPath("package.json"));
-const sourceWasm = readJson(
-  repoPath("wasm", "package.json"),
-);
+const sourceWasm = readJson(repoPath("wasm", "package.json"));
 const platforms = platformManifests();
 const platformPackageNames = new Set(
   platforms.map((manifest) => manifest.name),
 );
 const sourceOptionalDependencies = Object.fromEntries(
-  Object.entries(
-    sourceRoot.optionalDependencies ?? {},
-  ).filter(([name]) => !platformPackageNames.has(name)),
+  Object.entries(sourceRoot.optionalDependencies ?? {}).filter(
+    ([name]) => !platformPackageNames.has(name),
+  ),
 );
 const expectedOptionalDependencies = sortObject({
   ...sourceOptionalDependencies,
-  ...Object.fromEntries(
-    platforms.map((manifest) => [manifest.name, version]),
-  ),
+  ...Object.fromEntries(platforms.map((manifest) => [manifest.name, version])),
 });
 
 const root = packageFromTarball(rootTarball);
 if (root.name !== sourceRoot.name) {
-  fail(
-    `${rootTarball}: name=${root.name}; expected ${sourceRoot.name}`,
-  );
+  fail(`${rootTarball}: name=${root.name}; expected ${sourceRoot.name}`);
 }
 if (root.version !== version) {
-  fail(
-    `${rootTarball}: version=${root.version}; expected ${version}`,
-  );
+  fail(`${rootTarball}: version=${root.version}; expected ${version}`);
 }
 if (
-  JSON.stringify(
-    sortObject(root.optionalDependencies ?? {}),
-  ) !== JSON.stringify(expectedOptionalDependencies)
+  JSON.stringify(sortObject(root.optionalDependencies ?? {})) !==
+  JSON.stringify(expectedOptionalDependencies)
 ) {
-  fail(
-    `${rootTarball}: optionalDependencies do not match platform packages`,
-  );
+  fail(`${rootTarball}: optionalDependencies do not match platform packages`);
 }
 
 const expectedAuxiliaryNames = new Set([
@@ -120,15 +101,13 @@ for (const tarball of auxTarballs) {
     fail(`${tarball}: duplicate package ${manifest.name}`);
   }
   if (manifest.version !== version) {
-    fail(
-      `${tarball}: version=${manifest.version}; expected ${version}`,
-    );
+    fail(`${tarball}: version=${manifest.version}; expected ${version}`);
   }
   seenAuxiliaryNames.add(manifest.name);
 }
 
-for (const name of [...expectedAuxiliaryNames].sort(
-  (left, right) => left.localeCompare(right),
+for (const name of [...expectedAuxiliaryNames].sort((left, right) =>
+  left.localeCompare(right),
 )) {
   if (!seenAuxiliaryNames.has(name)) {
     fail(`Missing release tarball for ${name}`);

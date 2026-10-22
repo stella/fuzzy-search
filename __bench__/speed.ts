@@ -200,10 +200,7 @@ for (const s of scenarios) {
       bench(
         lib.name,
         () => lib.search(engine, s.haystack),
-        lib.name.includes("naive") ||
-          lib.name.includes("fuzzball")
-          ? 3
-          : N,
+        lib.name.includes("naive") || lib.name.includes("fuzzball") ? 3 : N,
       ),
     );
   }
@@ -287,20 +284,12 @@ if (corpusScenarios.length > 0) {
         continue;
       }
       const engine = lib.build(s.patterns);
-      times.push(
-        bench(
-          lib.name,
-          () => lib.search(engine, s.haystack),
-          N,
-        ),
-      );
+      times.push(bench(lib.name, () => lib.search(engine, s.haystack), N));
     }
     printSpeedups(times);
   }
 } else {
-  console.log(
-    "\nNo corpora found. " + "Run: bun run bench:download",
-  );
+  console.log("\nNo corpora found. " + "Run: bun run bench:download");
 }
 
 console.log("\n" + "=".repeat(62));

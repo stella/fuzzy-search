@@ -1,13 +1,8 @@
 /** Read a benchmark invariant; a missing value must fail instead of biasing results. */
-export const requiredAt = <T>(
-  values: readonly T[],
-  index: number,
-): T => {
+export const requiredAt = <T>(values: readonly T[], index: number): T => {
   const value = values[index];
   if (value === undefined) {
-    throw new RangeError(
-      `Missing benchmark value at index ${index}`,
-    );
+    throw new RangeError(`Missing benchmark value at index ${index}`);
   }
   return value;
 };
@@ -24,9 +19,7 @@ export const speedupRows = (
   }
   const baseline = requiredAt(times, 0);
   if (!Number.isFinite(baseline) || baseline <= 0) {
-    throw new RangeError(
-      "Benchmark baseline must be positive and finite",
-    );
+    throw new RangeError("Benchmark baseline must be positive and finite");
   }
   const rows: { name: string; multiple: number }[] = [];
   for (const [index, name] of names.entries()) {

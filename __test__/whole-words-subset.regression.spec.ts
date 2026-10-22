@@ -15,14 +15,12 @@ test("wholeWords preserves valid windows displaced by unrestricted selection", (
     wholeWords: false,
   });
   const spans = (search: FuzzySearch) =>
-    search
-      .findIter(haystack)
-      .map(({ start, end, text, distance }) => ({
-        start,
-        end,
-        text,
-        distance,
-      }));
+    search.findIter(haystack).map(({ start, end, text, distance }) => ({
+      start,
+      end,
+      text,
+      distance,
+    }));
 
   expect(spans(wholeWords)).toEqual([
     { start: 0, end: 2, text: "0 ", distance: 2 },

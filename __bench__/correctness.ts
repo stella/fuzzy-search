@@ -82,8 +82,7 @@ function verify(
     })),
     {
       wholeWords: opts.wholeWords ?? true,
-      normalizeDiacritics:
-        opts.normalizeDiacritics ?? false,
+      normalizeDiacritics: opts.normalizeDiacritics ?? false,
       caseInsensitive: opts.caseInsensitive ?? false,
     },
   );
@@ -117,9 +116,7 @@ function verify(
     let pat = requiredAt(patterns, m.pattern).pattern;
     let matchedText = m.text;
     if (opts.normalizeDiacritics) {
-      pat = pat
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+      pat = pat.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       matchedText = matchedText
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
@@ -128,10 +125,7 @@ function verify(
       pat = pat.toLowerCase();
       matchedText = matchedText.toLowerCase();
     }
-    const maxDist = requiredAt(
-      patterns,
-      m.pattern,
-    ).distance;
+    const maxDist = requiredAt(patterns, m.pattern).distance;
     const actualDist = levenshtein(pat, matchedText);
 
     if (actualDist !== m.distance) {
@@ -189,9 +183,7 @@ function printResult(label: string, result: VerifyResult) {
     );
   }
   if (result.failures.length > 5) {
-    console.log(
-      `    ... and ${result.failures.length - 5} more`,
-    );
+    console.log(`    ... and ${result.failures.length - 5} more`);
   }
 }
 
@@ -199,9 +191,7 @@ function printResult(label: string, result: VerifyResult) {
 
 console.log("=".repeat(62));
 console.log(" CORRECTNESS VERIFICATION");
-console.log(
-  " Every match checked against Levenshtein oracle",
-);
+console.log(" Every match checked against Levenshtein oracle");
 console.log("=".repeat(62));
 
 // ── 1. Synthetic Czech legal text ────────────
@@ -270,10 +260,7 @@ const CZECH_PATTERNS = [
   { pattern: "Dvořák", distance: 1 },
 ];
 
-printResult(
-  "dist 1-2, wholeWords",
-  verify("czech-ww", CZECH_PATTERNS, czText),
-);
+printResult("dist 1-2, wholeWords", verify("czech-ww", CZECH_PATTERNS, czText));
 
 printResult(
   "dist 1-2, no wholeWords",
@@ -364,9 +351,7 @@ if (bible) {
     ),
   );
 } else {
-  console.log(
-    "\n### Canterbury bible.txt (not downloaded)\n",
-  );
+  console.log("\n### Canterbury bible.txt (not downloaded)\n");
   console.log("  Run: bun run bench:download");
 }
 
@@ -405,9 +390,7 @@ if (cesNews) {
     }),
   );
 } else {
-  console.log(
-    "\n### Leipzig Czech news (not downloaded)\n",
-  );
+  console.log("\n### Leipzig Czech news (not downloaded)\n");
   console.log("  Run: bun run bench:download");
 }
 
@@ -439,9 +422,7 @@ if (deuNews) {
     }),
   );
 } else {
-  console.log(
-    "\n### Leipzig German news (not downloaded)\n",
-  );
+  console.log("\n### Leipzig German news (not downloaded)\n");
   console.log("  Run: bun run bench:download");
 }
 

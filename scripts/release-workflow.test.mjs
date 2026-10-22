@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 
 const workflow = readFileSync(
   new URL("../.github/workflows/release.yml", import.meta.url),
@@ -24,13 +24,21 @@ describe("Rust release ordering", () => {
     const publish = readJob("publish-core");
     const recovery = readJob("recover-core");
 
-    expect(publish).toContain("needs: [preflight, core-preflight, verify, pack, attest]");
-    expect(publish).toContain("needs.preflight.outputs.already-released != 'true'");
+    expect(publish).toContain(
+      "needs: [preflight, core-preflight, verify, pack, attest]",
+    );
+    expect(publish).toContain(
+      "needs.preflight.outputs.already-released != 'true'",
+    );
     expect(publish).toContain("needs.pack.result == 'success'");
     expect(publish).toContain("needs.attest.result == 'success'");
     expect(recovery).toContain("needs: [preflight, core-preflight, verify]");
-    expect(recovery).toContain("needs.preflight.outputs.already-released == 'true'");
-    expect(recovery).toContain("needs.core-preflight.outputs.already-released != 'true'");
+    expect(recovery).toContain(
+      "needs.preflight.outputs.already-released == 'true'",
+    );
+    expect(recovery).toContain(
+      "needs.core-preflight.outputs.already-released != 'true'",
+    );
     expect(publish).not.toMatch(/always\(\)|failure\(\)|cancelled\(\)/);
     expect(recovery).not.toMatch(/always\(\)|failure\(\)|cancelled\(\)/);
   });
@@ -38,10 +46,7 @@ describe("Rust release ordering", () => {
 
 test("privileged shared publishers match the release policy pin", () => {
   const policy = readFileSync(
-    new URL(
-      "../.github/workflows/release-policy.yml",
-      import.meta.url,
-    ),
+    new URL("../.github/workflows/release-policy.yml", import.meta.url),
     "utf8",
   );
   const policyUse = policy.match(
@@ -56,6 +61,5 @@ test("privileged shared publishers match the release policy pin", () => {
     ),
   ];
   expect(publishers).toHaveLength(3);
-  for (const publisher of publishers)
-    expect(publisher.at(1)).toBe(pin);
+  for (const publisher of publishers) expect(publisher.at(1)).toBe(pin);
 });

@@ -6,12 +6,7 @@ import { initBinding } from "./core";
 
 initBinding(native);
 
-export {
-  EntityIndex,
-  EntityIndexBuilder,
-  FuzzySearch,
-  distance,
-} from "./core";
+export { EntityIndex, EntityIndexBuilder, FuzzySearch, distance } from "./core";
 
 export type {
   EntityIndexOptions,

@@ -1,26 +1,17 @@
-import {
-  afterEach,
-  describe,
-  expect,
-  test,
-} from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 
 import {
+  type EntityAliasInput,
   EntityIndex,
   EntityIndexBuilder,
-  type EntityAliasInput,
   initBinding,
   type NativeBinding,
 } from "../src/core";
 
 type IndexBackend = ReturnType<
-  InstanceType<
-    NativeBinding["EntityIndexBuilder"]
-  >["finish"]
+  InstanceType<NativeBinding["EntityIndexBuilder"]>["finish"]
 >;
-type PackedResult = ReturnType<
-  IndexBackend["_searchPacked"]
->;
+type PackedResult = ReturnType<IndexBackend["_searchPacked"]>;
 
 const packedResult = () =>
   ({
@@ -107,16 +98,16 @@ describe("entity packed backend contract", () => {
     for (const length of [0, 1, 2, 4, 5, 6]) {
       const packed = packedResult();
       packed.matchKeys = new Uint32Array(length);
-      expect(() =>
-        bindResult(packed).search(query, params),
-      ).toThrow("Malformed packed entity result");
+      expect(() => bindResult(packed).search(query, params)).toThrow(
+        "Malformed packed entity result",
+      );
     }
     for (const length of [0, 1, 2, 3, 4, 6]) {
       const packed = packedResult();
       packed.cost = new Float64Array(length);
-      expect(() =>
-        bindResult(packed).search(query, params),
-      ).toThrow("Malformed packed entity result");
+      expect(() => bindResult(packed).search(query, params)).toThrow(
+        "Malformed packed entity result",
+      );
     }
   });
 });
@@ -126,9 +117,7 @@ const builderOptions = {
   budget: { byLength: [0], basis: "shorter" },
   initialWeight: 1,
   initialSimilarity: 0.8,
-} satisfies ConstructorParameters<
-  typeof EntityIndexBuilder
->[0];
+} satisfies ConstructorParameters<typeof EntityIndexBuilder>[0];
 
 const aliasInput = () =>
   ({
@@ -162,21 +151,12 @@ test("entity unsigned inputs reject values NAPI would coerce", () => {
           forms: value,
         }),
     ).toThrow(RangeError);
-    expect(() => builder.intern(value, "alpha")).toThrow(
-      RangeError,
-    );
-    expect(() => builder.finishStep(value)).toThrow(
-      RangeError,
-    );
-    for (const field of [
-      "entryId",
-      "entityGroup",
-    ] as const) {
+    expect(() => builder.intern(value, "alpha")).toThrow(RangeError);
+    expect(() => builder.finishStep(value)).toThrow(RangeError);
+    for (const field of ["entryId", "entityGroup"] as const) {
       const alias = aliasInput();
       alias[field] = value;
-      expect(() => builder.addAlias(alias)).toThrow(
-        RangeError,
-      );
+      expect(() => builder.addAlias(alias)).toThrow(RangeError);
     }
     for (const alias of [
       {
@@ -195,9 +175,7 @@ test("entity unsigned inputs reject values NAPI would coerce", () => {
         forms: [
           {
             form: 0,
-            tokens: [
-              { id: value, weight: 1, minimumWeight: 1 },
-            ],
+            tokens: [{ id: value, weight: 1, minimumWeight: 1 }],
             joins: [],
             minimumTotal: 1,
           },
@@ -206,21 +184,16 @@ test("entity unsigned inputs reject values NAPI would coerce", () => {
       ...(["id", "left", "right"] as const).map((field) => {
         const changed = aliasInput();
         for (const form of changed.forms) {
-          for (const join of form.joins)
-            join[field] = value;
+          for (const join of form.joins) join[field] = value;
         }
         return changed;
       }),
     ])
-      expect(() => builder.addAlias(alias)).toThrow(
-        RangeError,
-      );
+      expect(() => builder.addAlias(alias)).toThrow(RangeError);
     expect(() =>
       index.search(
         {
-          tokens: [
-            { form: value, text: "alpha", weight: 1 },
-          ],
+          tokens: [{ form: value, text: "alpha", weight: 1 }],
           units: [],
         },
         params,
@@ -230,9 +203,7 @@ test("entity unsigned inputs reject values NAPI would coerce", () => {
       index.search(
         {
           tokens: [],
-          units: [
-            { form: value, text: "alpha", positions: [] },
-          ],
+          units: [{ form: value, text: "alpha", positions: [] }],
         },
         params,
       ),
@@ -241,21 +212,13 @@ test("entity unsigned inputs reject values NAPI would coerce", () => {
       index.search(
         {
           tokens: [],
-          units: [
-            { form: 0, text: "alpha", positions: [value] },
-          ],
+          units: [{ form: 0, text: "alpha", positions: [value] }],
         },
         params,
       ),
     ).toThrow(RangeError);
   }
-  for (const value of [
-    -1,
-    0.5,
-    256,
-    Number.NaN,
-    Number.POSITIVE_INFINITY,
-  ]) {
+  for (const value of [-1, 0.5, 256, Number.NaN, Number.POSITIVE_INFINITY]) {
     expect(
       () =>
         new EntityIndexBuilder({

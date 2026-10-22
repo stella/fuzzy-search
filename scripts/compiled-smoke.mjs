@@ -5,8 +5,8 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -17,45 +17,23 @@ import { fileURLToPath } from "node:url";
 import { parsePackageManifest } from "./release-json.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const builtSource = readFileSync(
-  join(root, "dist/index.mjs"),
-  "utf8",
-);
-const directory = mkdtempSync(
-  join(tmpdir(), "fuzzy-compiled-"),
-);
+const builtSource = readFileSync(join(root, "dist/index.mjs"), "utf8");
+const directory = mkdtempSync(join(tmpdir(), "fuzzy-compiled-"));
 try {
   // Stage the shipped native package layout. The checkout additionally has
   // build-only WASI fallbacks that are not published in the root package.
   const modules = join(directory, "node_modules");
-  const packageDirectory = join(
-    modules,
-    "@stll/fuzzy-search",
-  );
+  const packageDirectory = join(modules, "@stll/fuzzy-search");
   mkdirSync(join(packageDirectory, "dist"), {
     recursive: true,
   });
-  for (const file of [
-    "package.json",
-    "index.cjs",
-    "dist/index.mjs",
-  ]) {
-    copyFileSync(
-      join(root, file),
-      join(packageDirectory, file),
-    );
+  for (const file of ["package.json", "index.cjs", "dist/index.mjs"]) {
+    copyFileSync(join(root, file), join(packageDirectory, file));
   }
   let nativePackages = 0;
   for (const platform of readdirSync(join(root, "npm"))) {
-    const manifestPath = join(
-      root,
-      "npm",
-      platform,
-      "package.json",
-    );
-    const manifest = parsePackageManifest(
-      readFileSync(manifestPath, "utf8"),
-    );
+    const manifestPath = join(root, "npm", platform, "package.json");
+    const manifest = parsePackageManifest(readFileSync(manifestPath, "utf8"));
     if (manifest.main === undefined)
       throw new Error("Native package main is missing");
     if (!manifest.main.endsWith(".node")) continue;
@@ -63,14 +41,8 @@ try {
     if (!existsSync(artifact)) continue;
     const nativeDirectory = join(modules, manifest.name);
     mkdirSync(nativeDirectory, { recursive: true });
-    copyFileSync(
-      manifestPath,
-      join(nativeDirectory, "package.json"),
-    );
-    copyFileSync(
-      artifact,
-      join(nativeDirectory, manifest.main),
-    );
+    copyFileSync(manifestPath, join(nativeDirectory, "package.json"));
+    copyFileSync(artifact, join(nativeDirectory, manifest.main));
     nativePackages += 1;
   }
   assert.ok(
@@ -110,10 +82,7 @@ try {
   assert.ifError(executed.error);
   assert.equal(executed.status, 0, executed.stderr);
   assert.equal(executed.stdout.trim(), "1");
-  assert.match(
-    builtSource,
-    /import\s+[^;]+from\s*["']\.\.\/index\.cjs["']/,
-  );
+  assert.match(builtSource, /import\s+[^;]+from\s*["']\.\.\/index\.cjs["']/);
   assert.doesNotMatch(builtSource, /createRequire/);
 } finally {
   rmSync(directory, { recursive: true, force: true });

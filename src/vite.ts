@@ -23,20 +23,14 @@ export function buildFuzzySearchWasmViteConfig(
     ...config,
     optimizeDeps: {
       ...config.optimizeDeps,
-      exclude: mergeStrings(
-        config.optimizeDeps?.exclude,
-        WASM_VITE_PACKAGES,
-      ),
+      exclude: mergeStrings(config.optimizeDeps?.exclude, WASM_VITE_PACKAGES),
     },
     ssr: {
       ...config.ssr,
       external:
         config.ssr?.external === true
           ? true
-          : mergeStrings(
-              config.ssr?.external,
-              WASM_VITE_PACKAGES,
-            ),
+          : mergeStrings(config.ssr?.external, WASM_VITE_PACKAGES),
     },
   };
 }

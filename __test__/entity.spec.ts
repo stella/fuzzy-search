@@ -19,12 +19,7 @@ const options = {
 
 const fixture = () => {
   const builder = new EntityIndexBuilder(options);
-  const spellings = [
-    "alpha",
-    "álpha",
-    "東京会社",
-    "😀abcd",
-  ];
+  const spellings = ["alpha", "álpha", "東京会社", "😀abcd"];
   for (let form = 0; form < options.forms; form++) {
     for (const [entryId, text] of spellings.entries()) {
       const id = builder.intern(form, text);
@@ -46,10 +41,7 @@ const fixture = () => {
   }
   return {
     builder,
-    weights: [
-      new Float64Array(4).fill(1),
-      new Float64Array(4).fill(1),
-    ],
+    weights: [new Float64Array(4).fill(1), new Float64Array(4).fill(1)],
   };
 };
 
@@ -80,34 +72,17 @@ describe("EntityIndex", () => {
       { text: "😀abdc", ids: [3], similarities: [0.8] },
     ]) {
       for (const form of [0, 1]) {
-        const result = index.search(
-          query(text, form),
-          params,
-        );
-        expect(
-          restored.search(query(text, form), params),
-        ).toEqual(result);
-        expect(result.matchKeys).toBeInstanceOf(
-          Uint32Array,
-        );
-        expect(result.similarities).toBeInstanceOf(
-          Float64Array,
-        );
-        expect(result.queryWeights).toBeInstanceOf(
-          Float64Array,
-        );
-        expect(result.survivors).toBeInstanceOf(
-          Uint32Array,
-        );
-        expect(result.matchKeys.length).toBe(
-          result.similarities.length * 3,
-        );
+        const result = index.search(query(text, form), params);
+        expect(restored.search(query(text, form), params)).toEqual(result);
+        expect(result.matchKeys).toBeInstanceOf(Uint32Array);
+        expect(result.similarities).toBeInstanceOf(Float64Array);
+        expect(result.queryWeights).toBeInstanceOf(Float64Array);
+        expect(result.survivors).toBeInstanceOf(Uint32Array);
+        expect(result.matchKeys.length).toBe(result.similarities.length * 3);
         expect(Array.from(result.matchKeys)).toEqual(
           ids.flatMap((id) => [0, form, id]),
         );
-        expect(Array.from(result.similarities)).toEqual(
-          similarities,
-        );
+        expect(Array.from(result.similarities)).toEqual(similarities);
         expect(Array.from(result.survivors)).toEqual(
           ids.map((id) => id + form * 4),
         );
@@ -118,21 +93,15 @@ describe("EntityIndex", () => {
         }
       }
     }
-    expect(() => builder.intern(0, "later")).toThrow(
-      "consumed",
-    );
+    expect(() => builder.intern(0, "later")).toThrow("consumed");
   });
 
   test("async finish transfers ownership immediately and matches sync finish", async () => {
     const first = fixture();
     const second = fixture();
     const expected = first.builder.finish(first.weights);
-    const pending = second.builder.finishAsync(
-      second.weights,
-    );
-    expect(() => second.builder.intern(0, "later")).toThrow(
-      "consumed",
-    );
+    const pending = second.builder.finishAsync(second.weights);
+    expect(() => second.builder.intern(0, "later")).toThrow("consumed");
     for (const weights of second.weights) weights.fill(99);
     const actual = await pending;
     expect(actual.toBytes()).toEqual(expected.toBytes());
@@ -145,15 +114,10 @@ describe("EntityIndex", () => {
     const first = fixture();
     const second = fixture();
     const expected = first.builder.finish(first.weights);
-    const steps = second.builder.finishSteps(
-      second.weights,
-      1,
-    );
+    const steps = second.builder.finishSteps(second.weights, 1);
     let step = steps.next();
     while (!step.done) step = steps.next();
-    expect(step.value.toBytes()).toEqual(
-      expected.toBytes(),
-    );
+    expect(step.value.toBytes()).toEqual(expected.toBytes());
   });
 
   test("weight bounds reject with InvalidArg at every construction boundary", () => {
@@ -182,10 +146,7 @@ describe("EntityIndex", () => {
             initialWeight: value,
           }),
       );
-      for (const field of [
-        "weight",
-        "minimumWeight",
-      ] as const) {
+      for (const field of ["weight", "minimumWeight"] as const) {
         const builder = new EntityIndexBuilder({
           ...options,
           forms: 1,
@@ -241,16 +202,12 @@ describe("EntityIndex", () => {
           },
         ],
       });
-      expect(() =>
-        builder.finish([new Float64Array([weight])]),
-      ).not.toThrow();
+      expect(() => builder.finish([new Float64Array([weight])])).not.toThrow();
     }
   });
 
   test("rejects invalid bytes and unsafe work budgets", () => {
-    expect(() =>
-      EntityIndex.fromBytes(new Uint8Array([1, 2, 3])),
-    ).toThrow();
+    expect(() => EntityIndex.fromBytes(new Uint8Array([1, 2, 3]))).toThrow();
     const { builder, weights } = fixture();
     const index = builder.finish(weights);
     for (const maxCost of [

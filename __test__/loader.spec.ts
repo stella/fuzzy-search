@@ -1,15 +1,8 @@
-import {
-  beforeAll,
-  describe,
-  expect,
-  test,
-} from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const loaderPath = fileURLToPath(
-  new URL("../index.cjs", import.meta.url),
-);
+const loaderPath = fileURLToPath(new URL("../index.cjs", import.meta.url));
 
 type LoaderScenario = {
   forceWasi?: string;
@@ -31,9 +24,7 @@ const isOptionalBoolean = (value: unknown) =>
 const isOptionalString = (value: unknown) =>
   value === undefined || typeof value === "string";
 
-const isLoaderResult = (
-  value: unknown,
-): value is LoaderResult => {
+const isLoaderResult = (value: unknown): value is LoaderResult => {
   if (typeof value !== "object" || value === null) {
     return false;
   }
@@ -64,14 +55,9 @@ const scenarios = {
   unavailable: {},
 } satisfies Record<string, LoaderScenario>;
 
-type LoaderResults = Record<
-  keyof typeof scenarios,
-  LoaderResult
->;
+type LoaderResults = Record<keyof typeof scenarios, LoaderResult>;
 
-const isLoaderResults = (
-  value: unknown,
-): value is LoaderResults => {
+const isLoaderResults = (value: unknown): value is LoaderResults => {
   if (typeof value !== "object" || value === null) {
     return false;
   }
@@ -80,9 +66,7 @@ const isLoaderResults = (
   return (
     Object.keys(results).length === keys.length &&
     keys.every(
-      (key) =>
-        Object.hasOwn(results, key) &&
-        isLoaderResult(results[key]),
+      (key) => Object.hasOwn(results, key) && isLoaderResult(results[key]),
     )
   );
 };
@@ -169,9 +153,7 @@ const loadBindings = () => {
   expect(result.status).toBe(0);
   const parsed: unknown = JSON.parse(result.stdout);
   if (!isLoaderResults(parsed)) {
-    throw new Error(
-      `Unexpected loader results: ${result.stdout}`,
-    );
+    throw new Error(`Unexpected loader results: ${result.stdout}`);
   }
   return parsed;
 };
@@ -223,8 +205,7 @@ describe("generated loader WASI selection", () => {
     expect(results.requiredWasi).toEqual({
       causeEnumerable: false,
       causePresent: true,
-      error:
-        "WASI binding not found and NAPI_RS_FORCE_WASI is set to error",
+      error: "WASI binding not found and NAPI_RS_FORCE_WASI is set to error",
     });
   });
 
@@ -233,8 +214,6 @@ describe("generated loader WASI selection", () => {
 
     expect(result.causePresent).toBe(true);
     expect(result.causeEnumerable).toBe(false);
-    expect(result.error).toContain(
-      "Cannot find native binding",
-    );
+    expect(result.error).toContain("Cannot find native binding");
   });
 });

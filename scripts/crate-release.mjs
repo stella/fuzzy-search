@@ -10,10 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import {
-  parseCargoMetadata,
-  parseRegistryVersion,
-} from "./release-json.mjs";
+import { parseCargoMetadata, parseRegistryVersion } from "./release-json.mjs";
 
 const CRATE_NAME = "stella-fuzzy-search-core";
 const ROOT_PACKAGE_NAME = "stella-fuzzy-search";
@@ -43,10 +40,7 @@ const packageCrate = () => {
   const corePackage = cargoMetadata.packages.find(
     ({ name }) => name === CRATE_NAME,
   );
-  if (
-    rootPackage === undefined ||
-    corePackage === undefined
-  ) {
+  if (rootPackage === undefined || corePackage === undefined) {
     fail("Expected the NAPI root and core Cargo packages");
   }
   if (rootPackage.publish?.length !== 0) {
@@ -59,38 +53,22 @@ const packageCrate = () => {
     fail(`${CRATE_NAME} must publish only to crates.io`);
   }
 
-  const releaseVersion = readFileSync(
-    "VERSION",
-    "utf8",
-  ).trim();
+  const releaseVersion = readFileSync("VERSION", "utf8").trim();
   if (
     rootPackage.version !== releaseVersion ||
     corePackage.version !== releaseVersion
   ) {
-    fail(
-      `VERSION ${releaseVersion} must match both Cargo packages`,
-    );
+    fail(`VERSION ${releaseVersion} must match both Cargo packages`);
   }
 
-  execFileSync(
-    "cargo",
-    ["package", "--locked", "--package", CRATE_NAME],
-    { stdio: "inherit" },
-  );
+  execFileSync("cargo", ["package", "--locked", "--package", CRATE_NAME], {
+    stdio: "inherit",
+  });
 
-  const packageRoot = resolve(
-    cargoMetadata.target_directory,
-    "package",
-  );
+  const packageRoot = resolve(cargoMetadata.target_directory, "package");
   return {
-    crateFile: join(
-      packageRoot,
-      `${CRATE_NAME}-${releaseVersion}.crate`,
-    ),
-    expandedDirectory: join(
-      packageRoot,
-      `${CRATE_NAME}-${releaseVersion}`,
-    ),
+    crateFile: join(packageRoot, `${CRATE_NAME}-${releaseVersion}.crate`),
+    expandedDirectory: join(packageRoot, `${CRATE_NAME}-${releaseVersion}`),
     releaseVersion,
   };
 };
@@ -125,8 +103,7 @@ const verifyPublishedContents = async ({
   expandedDirectory,
   releaseVersion,
 }) => {
-  const registryVersion =
-    await publishedVersion(releaseVersion);
+  const registryVersion = await publishedVersion(releaseVersion);
   if (registryVersion === null) {
     return false;
   }
@@ -150,16 +127,11 @@ const verifyPublishedContents = async ({
     join(tmpdir(), "stella-fuzzy-search-crate-"),
   );
   try {
-    const archivePath = join(
-      temporaryDirectory,
-      "published.crate",
-    );
+    const archivePath = join(temporaryDirectory, "published.crate");
     writeFileSync(archivePath, archive);
-    execFileSync(
-      "tar",
-      ["-xzf", archivePath, "-C", temporaryDirectory],
-      { stdio: "inherit" },
-    );
+    execFileSync("tar", ["-xzf", archivePath, "-C", temporaryDirectory], {
+      stdio: "inherit",
+    });
     const publishedDirectory = join(
       temporaryDirectory,
       `${CRATE_NAME}-${releaseVersion}`,
@@ -199,22 +171,17 @@ const writeOutputs = ({ crateFile, alreadyReleased }) => {
 };
 
 const wait = (milliseconds) =>
-  new Promise((resolvePromise) =>
-    setTimeout(resolvePromise, milliseconds),
-  );
+  new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds));
 
 const main = async () => {
   const command = process.argv.at(2);
   if (command !== "preflight" && command !== "verify") {
-    fail(
-      "Usage: node scripts/crate-release.mjs <preflight|verify>",
-    );
+    fail("Usage: node scripts/crate-release.mjs <preflight|verify>");
   }
 
   const packageDetails = packageCrate();
   if (command === "preflight") {
-    const alreadyReleased =
-      await verifyPublishedContents(packageDetails);
+    const alreadyReleased = await verifyPublishedContents(packageDetails);
     writeOutputs({
       crateFile: packageDetails.crateFile,
       alreadyReleased,

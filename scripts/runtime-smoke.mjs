@@ -3,10 +3,10 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import {
+  distance,
   EntityIndex,
   EntityIndexBuilder,
   FuzzySearch,
-  distance,
 } from "../dist/index.mjs";
 
 const haystack = "Smlouva s Gais1erová v Pribram";
@@ -32,10 +32,7 @@ assert.equal(matches[1]?.name, "city");
 assert.equal(matches[1]?.text, "Pribram");
 assert.equal(distance("kitten", "sitting"), 3);
 
-const replaced = fuzzy.replaceAll(haystack, [
-  "[SURNAME]",
-  "[CITY]",
-]);
+const replaced = fuzzy.replaceAll(haystack, ["[SURNAME]", "[CITY]"]);
 assert.equal(replaced, "Smlouva s [SURNAME] v [CITY]");
 
 const entityBuilder = new EntityIndexBuilder({
@@ -74,13 +71,8 @@ const entityIndex = await entityBuilder.finishAsync([
   new Float64Array(4).fill(1),
   new Float64Array(4).fill(1),
 ]);
-assert.throws(
-  () => entityBuilder.intern(0, "later"),
-  /consumed/,
-);
-const entityRestored = EntityIndex.fromBytes(
-  entityIndex.toBytes(),
-);
+assert.throws(() => entityBuilder.intern(0, "later"), /consumed/);
+const entityRestored = EntityIndex.fromBytes(entityIndex.toBytes());
 for (const { text, ids, similarities } of [
   { text: "alpha", ids: [0, 1], similarities: [1, 0.8] },
   { text: "alhpa", ids: [0], similarities: [0.8] },
@@ -102,34 +94,24 @@ for (const { text, ids, similarities } of [
       Array.from(result.matchKeys),
       ids.flatMap((id) => [0, form, id]),
     );
-    assert.deepEqual(
-      Array.from(result.similarities),
-      similarities,
-    );
+    assert.deepEqual(Array.from(result.similarities), similarities);
     assert.deepEqual(
       Array.from(result.survivors),
       ids.map((id) => id + form * 4),
     );
     assert.equal(result.exhausted, false);
-    assert.deepEqual(
-      entityRestored.search(query, params),
-      result,
-    );
+    assert.deepEqual(entityRestored.search(query, params), result);
   }
 }
 
 // build:js provides the WASM artifact in runtime CI. Force the loader's strict
 // WASI mode in a fresh Node process so a native fallback cannot pass this check.
 if (process.env.NAPI_RS_FORCE_WASI !== "error") {
-  const wasi = spawnSync(
-    "node",
-    [fileURLToPath(import.meta.url)],
-    {
-      env: { ...process.env, NAPI_RS_FORCE_WASI: "error" },
-      stdio: "inherit",
-      timeout: 30_000,
-    },
-  );
+  const wasi = spawnSync("node", [fileURLToPath(import.meta.url)], {
+    env: { ...process.env, NAPI_RS_FORCE_WASI: "error" },
+    stdio: "inherit",
+    timeout: 30_000,
+  });
   if (wasi.error) throw wasi.error;
   assert.equal(wasi.status, 0, "WASI runtime smoke failed");
 }

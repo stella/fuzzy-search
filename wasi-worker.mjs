@@ -23,9 +23,7 @@ Object.assign(globalThis, {
   require,
   Worker,
   importScripts: function (f) {
-    (0, eval)(
-      fs.readFileSync(f, "utf8") + "//# sourceURL=" + f,
-    );
+    (0, eval)(fs.readFileSync(f, "utf8") + "//# sourceURL=" + f);
   },
   postMessage: function (msg) {
     if (parentPort) {
