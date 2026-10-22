@@ -164,7 +164,14 @@ fn oracle_results(
         query,
         &alias,
         &prepared.matches,
-        |form, id| index.lexicon(form).unwrap().token(id).unwrap().to_owned(),
+        |form, token_id| {
+          index
+            .lexicon(form)
+            .unwrap()
+            .token(token_id)
+            .unwrap()
+            .to_owned()
+        },
         index.options.initial_similarity,
         alias.quality,
       )
@@ -188,7 +195,14 @@ fn oracle_results(
         query,
         &alias,
         &prepared.matches,
-        |form, id| index.lexicon(form).unwrap().token(id).unwrap().to_owned(),
+        |form, token_id| {
+          index
+            .lexicon(form)
+            .unwrap()
+            .token(token_id)
+            .unwrap()
+            .to_owned()
+        },
         index.options.initial_similarity,
       );
       let form = alias.forms.first().unwrap();
@@ -334,7 +348,14 @@ fn one_query_position_can_explain_multiple_listed_positions() {
     &query,
     &alias,
     &prepared.matches,
-    |form, id| index.lexicon(form).unwrap().token(id).unwrap().to_owned(),
+    |form, token_id| {
+      index
+        .lexicon(form)
+        .unwrap()
+        .token(token_id)
+        .unwrap()
+        .to_owned()
+    },
     index.options.initial_similarity,
     1.0,
   );

@@ -4,10 +4,90 @@ use std::cell::Cell;
 
 use fst::Automaton;
 
+const INLINE_CELLS: usize = 8;
+
+#[derive(Clone, Debug)]
+enum Cells {
+  Inline {
+    values: [u16; INLINE_CELLS],
+    len: usize,
+  },
+  Heap(Vec<u16>),
+}
+
+impl Cells {
+  fn with_capacity(capacity: usize) -> Self {
+    if capacity <= INLINE_CELLS {
+      Self::Inline {
+        values: [0; INLINE_CELLS],
+        len: 0,
+      }
+    } else {
+      Self::Heap(Vec::with_capacity(capacity))
+    }
+  }
+
+  fn push(&mut self, value: usize) {
+    let value = u16::try_from(value).unwrap_or(u16::MAX);
+    match self {
+      Self::Inline { values, len } => {
+        if let Some(slot) = values.get_mut(*len) {
+          *slot = value;
+          *len = len.saturating_add(1);
+        } else {
+          let mut heap = values.to_vec();
+          heap.push(value);
+          *self = Self::Heap(heap);
+        }
+      }
+      Self::Heap(values) => values.push(value),
+    }
+  }
+
+  fn get(&self, index: usize) -> Option<usize> {
+    match self {
+      Self::Inline { values, len } => {
+        values.get(..*len)?.get(index).copied().map(usize::from)
+      }
+      Self::Heap(values) => values.get(index).copied().map(usize::from),
+    }
+  }
+
+  fn last(&self) -> Option<usize> {
+    match self {
+      Self::Inline { values, len } => len
+        .checked_sub(1)
+        .and_then(|index| values.get(index))
+        .copied()
+        .map(usize::from),
+      Self::Heap(values) => values.last().copied().map(usize::from),
+    }
+  }
+
+  fn iter(&self) -> impl Iterator<Item = usize> + '_ {
+    let slice = match self {
+      // SAFETY: `push` transitions to heap storage instead of incrementing
+      // `len` beyond the inline array.
+      #[allow(clippy::indexing_slicing)]
+      Self::Inline { values, len } => &values[..*len],
+      Self::Heap(values) => values,
+    };
+    slice.iter().copied().map(usize::from)
+  }
+
+  fn initial(length: usize) -> Self {
+    let mut cells = Self::with_capacity(length.saturating_add(1));
+    for value in 0..=length {
+      cells.push(value);
+    }
+    cells
+  }
+}
+
 #[derive(Clone, Debug)]
 struct Row {
   start: usize,
-  cells: Vec<usize>,
+  cells: Cells,
 }
 
 impl Row {
@@ -15,7 +95,6 @@ impl Row {
     column
       .checked_sub(self.start)
       .and_then(|index| self.cells.get(index))
-      .copied()
       .unwrap_or(infinity)
   }
 }
@@ -87,15 +166,10 @@ impl OsaAutomaton {
     let start = length.saturating_sub(self.budget);
     let end = (length + self.budget).min(self.query.len());
     let infinity = self.budget + 1;
-    let mut next = state.clone();
-    next.filled = 0;
-    next.expected = 0;
-    next.length = length;
     if start > end {
-      next.live = false;
-      return next;
+      return Self::dead_state(length);
     }
-    let mut cells = Vec::with_capacity(end - start + 1);
+    let mut cells = Cells::with_capacity(end - start + 1);
     for column in start..=end {
       if column == 0 {
         cells.push(length.min(infinity));
@@ -103,12 +177,11 @@ impl OsaAutomaton {
       }
       if self.cells.get().saturating_add(self.matches.get()) >= self.limit {
         self.exhausted.set(true);
-        next.live = false;
-        return next;
+        return Self::dead_state(length);
       }
       self.cells.set(self.cells.get() + 1);
       let deletion = state.row.get(column, infinity) + 1;
-      let insertion = cells.last().copied().unwrap_or(infinity) + 1;
+      let insertion = cells.last().unwrap_or(infinity) + 1;
       let substitution = state.row.get(column - 1, infinity)
         + usize::from(self.query[column - 1] != character);
       let mut value = deletion.min(insertion).min(substitution);
@@ -120,11 +193,42 @@ impl OsaAutomaton {
       }
       cells.push(value.min(infinity));
     }
-    next.live = cells.iter().any(|&value| value <= self.budget);
-    next.row = Row { start, cells };
-    next.previous_row = state.row.clone();
-    next.previous_char = Some(character);
-    next
+    let live = cells.iter().any(|value| value <= self.budget);
+    State {
+      row: Row { start, cells },
+      previous_row: state.row.clone(),
+      previous_char: Some(character),
+      length,
+      utf8: [0; 4],
+      filled: 0,
+      expected: 0,
+      live,
+    }
+  }
+
+  const fn dead_state(length: usize) -> State {
+    State {
+      row: Row {
+        start: 0,
+        cells: Cells::Inline {
+          values: [0; INLINE_CELLS],
+          len: 0,
+        },
+      },
+      previous_row: Row {
+        start: 0,
+        cells: Cells::Inline {
+          values: [0; INLINE_CELLS],
+          len: 0,
+        },
+      },
+      previous_char: None,
+      length,
+      utf8: [0; 4],
+      filled: 0,
+      expected: 0,
+      live: false,
+    }
   }
 }
 
@@ -135,11 +239,11 @@ impl Automaton for OsaAutomaton {
     State {
       row: Row {
         start: 0,
-        cells: (0..=self.query.len().min(self.budget)).collect(),
+        cells: Cells::initial(self.query.len().min(self.budget)),
       },
       previous_row: Row {
         start: 0,
-        cells: Vec::new(),
+        cells: Cells::with_capacity(0),
       },
       previous_char: None,
       length: 0,

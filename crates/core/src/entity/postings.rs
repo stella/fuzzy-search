@@ -528,7 +528,7 @@ mod tests {
     let postings = builder.finish().unwrap();
     assert_eq!(postings.ranges.len(), 1);
     assert_eq!(postings.quanta.len(), 1);
-    assert!(postings.data.is_empty());
+    assert_eq!(postings.data, []);
     assert_eq!(postings.len(), 4);
     for key in lists {
       let (alias, impact) = postings.get(key, 0).unwrap();
