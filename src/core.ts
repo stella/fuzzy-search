@@ -15,21 +15,14 @@ export type NativeBinding = {
     entries: NormalizedEntry[],
     options?: Options,
   ) => NativeFuzzySearch;
-  distance: (
-    a: string,
-    b: string,
-    metric: Metric | null,
-  ) => number;
+  distance: (a: string, b: string, metric: Metric | null) => number;
 };
 
 type NativeFuzzySearch = {
   patternCount: number;
   isMatch(haystack: string): boolean;
   _findIterPacked(haystack: string): Uint32Array;
-  replaceAll(
-    haystack: string,
-    replacements: string[],
-  ): string;
+  replaceAll(haystack: string, replacements: string[]): string;
 };
 
 type NormalizedEntry = {
@@ -174,19 +167,12 @@ const resolveDistance = (
   return 2;
 };
 
-const normalizeEntry = (
-  p: unknown,
-  i: number,
-): NormalizedEntry => {
+const normalizeEntry = (p: unknown, i: number): NormalizedEntry => {
   if (typeof p === "string") {
     return { pattern: p };
   }
 
-  if (
-    typeof p !== "object" ||
-    p === null ||
-    !("pattern" in p)
-  ) {
+  if (typeof p !== "object" || p === null || !("pattern" in p)) {
     throw new TypeError(
       `Pattern at index ${i} must be a string ` +
         `or { pattern, distance?, name? }`,
@@ -203,10 +189,7 @@ const normalizeEntry = (
 
   if ("distance" in p && p.distance !== undefined) {
     if (p.distance === "auto") {
-      entry.distance = resolveDistance(
-        "auto",
-        p.pattern.length,
-      );
+      entry.distance = resolveDistance("auto", p.pattern.length);
     } else if (typeof p.distance === "number") {
       if (!Number.isInteger(p.distance) || p.distance < 0) {
         throw new TypeError(
@@ -234,10 +217,7 @@ const normalizeEntry = (
 };
 
 /** Score formula: clamped `1 - distance / patternLength`. */
-const computeScore = (
-  distance: number,
-  patternLength: number,
-): number => {
+const computeScore = (distance: number, patternLength: number): number => {
   if (patternLength <= 0) return 0;
   const raw = 1 - distance / patternLength;
   return raw < 0 ? 0 : raw;
@@ -248,10 +228,7 @@ const computeScore = (
  * ties go to lower `start`, then pattern
  * index ascending.
  */
-const compareForKBest = (
-  a: FuzzyMatch,
-  b: FuzzyMatch,
-): number => {
+const compareForKBest = (a: FuzzyMatch, b: FuzzyMatch): number => {
   if (a.score !== b.score) return b.score - a.score;
   if (a.start !== b.start) return a.start - b.start;
   return a.pattern - b.pattern;
@@ -276,9 +253,7 @@ const unpack = (
       end === undefined ||
       distance === undefined
     ) {
-      throw new Error(
-        `Malformed packed array at offset ${String(i)}`,
-      );
+      throw new Error(`Malformed packed array at offset ${String(i)}`);
     }
     const pat = patterns[idx];
     if (pat === undefined) {
@@ -389,9 +364,7 @@ export class FuzzySearch {
     if (kBest === undefined) return filtered;
     if (kBest <= 0) return [];
     const sorted = filtered.sort(compareForKBest);
-    return sorted.length <= kBest
-      ? sorted
-      : sorted.slice(0, kBest);
+    return sorted.length <= kBest ? sorted : sorted.slice(0, kBest);
   }
 
   /**
@@ -406,10 +379,7 @@ export class FuzzySearch {
    * @throws {Error} If `replacements.length`
    *   does not equal `patternCount`.
    */
-  replaceAll(
-    haystack: string,
-    replacements: string[],
-  ): string {
+  replaceAll(haystack: string, replacements: string[]): string {
     return this._inner.replaceAll(haystack, replacements);
   }
 }
@@ -429,11 +399,8 @@ export class FuzzySearch {
  *   "damerau-levenshtein");          // 1
  * ```
  */
-export const distance = (
-  a: string,
-  b: string,
-  metric?: Metric,
-): number => binding.distance(a, b, metric ?? null);
+export const distance = (a: string, b: string, metric?: Metric): number =>
+  binding.distance(a, b, metric ?? null);
 
 /** Construction options. All text must already be normalized by the caller. */
 export type EntityIndexOptions = {
@@ -496,10 +463,9 @@ export type EntitySearchResult = {
   cost: EntitySearchCost;
   exhausted: boolean;
 };
-type NativeEntitySearchResult = Omit<
-  EntitySearchResult,
-  "cost"
-> & { cost: Float64Array };
+type NativeEntitySearchResult = Omit<EntitySearchResult, "cost"> & {
+  cost: Float64Array;
+};
 type NativeEntityIndex = {
   nativeBytes: number;
   postingCount: number;
@@ -514,9 +480,7 @@ type NativeEntityIndexBuilder = {
   addAlias(alias: EntityAliasInput): number;
   finishStep(maxUnits: number): boolean;
   finish(weights: Float64Array[]): NativeEntityIndex;
-  finishAsync(
-    weights: Float64Array[],
-  ): Promise<NativeEntityIndex>;
+  finishAsync(weights: Float64Array[]): Promise<NativeEntityIndex>;
 };
 
 const MAX_U32 = 0xffff_ffff;
@@ -532,11 +496,7 @@ const assertUnsignedInteger = ({
   maximum,
   field,
 }: UnsignedIntegerOptions) => {
-  if (
-    !Number.isInteger(value) ||
-    value < 0 ||
-    value > maximum
-  ) {
+  if (!Number.isInteger(value) || value < 0 || value > maximum) {
     throw new RangeError(
       `${field} must be an integer in [0, ${String(maximum)}]`,
     );
@@ -639,17 +599,11 @@ export class EntityIndexBuilder {
     return this._inner.addAlias(alias);
   }
   finish(tokenWeights: Float64Array[]): EntityIndex {
-    return EntityIndex._fromNative(
-      this._inner.finish(tokenWeights),
-    );
+    return EntityIndex._fromNative(this._inner.finish(tokenWeights));
   }
   /** Build on the native worker pool; weights are copied before returning. */
-  async finishAsync(
-    tokenWeights: Float64Array[],
-  ): Promise<EntityIndex> {
-    return EntityIndex._fromNative(
-      await this._inner.finishAsync(tokenWeights),
-    );
+  async finishAsync(tokenWeights: Float64Array[]): Promise<EntityIndex> {
+    return EntityIndex._fromNative(await this._inner.finishAsync(tokenWeights));
   }
   /** Advance construction by at most maxUnits work units. */
   finishStep(maxUnits: number): boolean {
@@ -658,8 +612,7 @@ export class EntityIndexBuilder {
       maximum: MAX_U32,
       field: "maxUnits",
     });
-    if (maxUnits === 0)
-      throw new RangeError("maxUnits must be positive");
+    if (maxUnits === 0) throw new RangeError("maxUnits must be positive");
     return this._inner.finishStep(maxUnits);
   }
   /** Yield between bounded construction steps, then return the finished index. */
@@ -667,14 +620,8 @@ export class EntityIndexBuilder {
     tokenWeights: Float64Array[],
     maxUnits = 10_000,
   ): Generator<void, EntityIndex> {
-    if (
-      !Number.isInteger(maxUnits) ||
-      maxUnits <= 0 ||
-      maxUnits > MAX_U32
-    ) {
-      throw new RangeError(
-        "maxUnits must be a positive u32 integer",
-      );
+    if (!Number.isInteger(maxUnits) || maxUnits <= 0 || maxUnits > MAX_U32) {
+      throw new RangeError("maxUnits must be a positive u32 integer");
     }
     while (!this.finishStep(maxUnits)) yield;
     return this.finish(tokenWeights);
@@ -689,15 +636,11 @@ export class EntityIndex {
     this._inner = inner;
   }
   /** @internal */
-  static _fromNative(
-    inner: NativeEntityIndex,
-  ): EntityIndex {
+  static _fromNative(inner: NativeEntityIndex): EntityIndex {
     return new EntityIndex(inner);
   }
   static fromBytes(bytes: Uint8Array): EntityIndex {
-    return new EntityIndex(
-      binding.EntityIndex.fromBytes(bytes),
-    );
+    return new EntityIndex(binding.EntityIndex.fromBytes(bytes));
   }
   toBytes(): Uint8Array {
     return this._inner.toBytes();
@@ -708,10 +651,7 @@ export class EntityIndex {
   get postingCount(): number {
     return this._inner.postingCount;
   }
-  search(
-    query: EntityQuery,
-    params: EntitySearchParams,
-  ): EntitySearchResult {
+  search(query: EntityQuery, params: EntitySearchParams): EntitySearchResult {
     validateEntityQuery(query);
     const result = this._inner._searchPacked(query, params);
     const [
@@ -728,8 +668,7 @@ export class EntityIndex {
       sortedAccesses === undefined ||
       randomAccessPairs === undefined ||
       survivors === undefined ||
-      result.matchKeys.length !==
-        result.similarities.length * 3
+      result.matchKeys.length !== result.similarities.length * 3
     ) {
       throw new Error("Malformed packed entity result");
     }

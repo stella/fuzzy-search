@@ -14,9 +14,7 @@ let code;
 try {
   code = readFileSync(WASM_DIST, "utf8");
 } catch {
-  console.error(
-    `\u2717 ${WASM_DIST} not found \u2014 run build:js first`,
-  );
+  console.error(`\u2717 ${WASM_DIST} not found \u2014 run build:js first`);
   process.exit(1);
 }
 
@@ -68,9 +66,7 @@ for (const { pattern, name } of BANNED) {
 }
 
 if (issues.length > 0) {
-  console.error(
-    `\u2717 ${WASM_DIST} contains Node.js-only APIs:\n`,
-  );
+  console.error(`\u2717 ${WASM_DIST} contains Node.js-only APIs:\n`);
   for (const { name, line, snippet } of issues) {
     console.error(`  line ${line}: ${name}`);
     console.error(`    ${snippet}`);

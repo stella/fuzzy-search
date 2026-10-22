@@ -9,19 +9,11 @@
  * Run manually: bun test __test__/properties.spec.ts
  * Every tier uses deterministic generated runs plus pinned counterexample replay.
  */
-import {
-  describe,
-  expect,
-  setDefaultTimeout,
-  test,
-} from "bun:test";
+import { describe, expect, setDefaultTimeout, test } from "bun:test";
 import fc from "fast-check";
 
 import { FuzzySearch } from "../src/index";
-import {
-  assertProperty,
-  propertyTestTimeout,
-} from "./property-testing";
+import { assertProperty, propertyTestTimeout } from "./property-testing";
 import "./property-testing.spec";
 import "./property-conventions.spec";
 import "./unicode.properties";
@@ -72,11 +64,7 @@ function levenshtein(a: string, b: string): number {
     curr[0] = i;
     for (let j = 1; j <= n; j++) {
       const cost = ac[i - 1] === bc[j - 1] ? 0 : 1;
-      curr[j] = Math.min(
-        curr[j - 1]! + 1,
-        prev[j]! + 1,
-        prev[j - 1]! + cost,
-      );
+      curr[j] = Math.min(curr[j - 1]! + 1, prev[j]! + 1, prev[j - 1]! + cost);
     }
     prev = curr;
   }
@@ -115,21 +103,10 @@ function oracleSinglePatternCandidates(
   const minLen = Math.max(1, m - k);
   const maxLen = m + k;
 
-  for (
-    let start = 0;
-    start <= hay.length - minLen;
-    start++
-  ) {
-    for (
-      let len = minLen;
-      len <= maxLen && start + len <= hay.length;
-      len++
-    ) {
+  for (let start = 0; start <= hay.length - minLen; start++) {
+    for (let len = minLen; len <= maxLen && start + len <= hay.length; len++) {
       const end = start + len;
-      const distance = levenshtein(
-        pat,
-        hay.slice(start, end),
-      );
+      const distance = levenshtein(pat, hay.slice(start, end));
       if (distance <= k) {
         matches.push({ start, end, distance });
       }
@@ -165,11 +142,7 @@ function oracleFuzzySearch(
       let bestEnd = i;
       let bestLen = 0;
 
-      for (
-        let len = minLen;
-        len <= maxLen && i + len <= hay.length;
-        len++
-      ) {
+      for (let len = minLen; len <= maxLen && i + len <= hay.length; len++) {
         const window = hay.slice(i, i + len);
         const d = levenshtein(pat, window);
         if (d > k) continue;
@@ -178,8 +151,7 @@ function oracleFuzzySearch(
         // our library's find_start strategy).
         if (
           d < bestDist ||
-          (d === bestDist &&
-            Math.abs(len - m) < Math.abs(bestLen - m))
+          (d === bestDist && Math.abs(len - m) < Math.abs(bestLen - m))
         ) {
           bestDist = d;
           bestEnd = i + len;
@@ -237,21 +209,14 @@ const isCjk = (ch: string) =>
     ch,
   );
 
-function buildFS(
-  pats: string[],
-  k: number,
-  wholeWords: boolean,
-): FuzzySearch {
+function buildFS(pats: string[], k: number, wholeWords: boolean): FuzzySearch {
   // Filter out patterns too short for the
   // distance (dist must be < pattern length).
-  const valid = pats.filter(
-    (p) => Array.from(p).length > k,
-  );
+  const valid = pats.filter((p) => Array.from(p).length > k);
   // If nothing valid, use a dummy pattern that
   // won't match anything (avoids skip logic in
   // all 30+ callers).
-  const entries =
-    valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
+  const entries = valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
   return new FuzzySearch(
     entries.map((p) => ({
       pattern: p,
@@ -267,17 +232,12 @@ describe("property: text field", () => {
   test("slice(start, end) === text for every match", () => {
     assertProperty(
       "slice-start-end-text-for-every-match",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const fs = buildFS(pats, k, false);
-          for (const m of fs.findIter(hay)) {
-            expect(hay.slice(m.start, m.end)).toBe(m.text);
-          }
-        },
-      ),
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const fs = buildFS(pats, k, false);
+        for (const m of fs.findIter(hay)) {
+          expect(hay.slice(m.start, m.end)).toBe(m.text);
+        }
+      }),
     );
   });
 });
@@ -288,21 +248,12 @@ describe("property: non-overlapping", () => {
   test("no two consecutive matches overlap", () => {
     assertProperty(
       "no-two-consecutive-matches-overlap",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const matches = buildFS(pats, k, false).findIter(
-            hay,
-          );
-          for (let i = 1; i < matches.length; i++) {
-            expect(
-              matches[i]!.start,
-            ).toBeGreaterThanOrEqual(matches[i - 1]!.end);
-          }
-        },
-      ),
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const matches = buildFS(pats, k, false).findIter(hay);
+        for (let i = 1; i < matches.length; i++) {
+          expect(matches[i]!.start).toBeGreaterThanOrEqual(matches[i - 1]!.end);
+        }
+      }),
     );
   });
 });
@@ -313,24 +264,17 @@ describe("property: monotonic offsets", () => {
   test("ascending start order, start < end", () => {
     assertProperty(
       "ascending-start-order-start-end",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const matches = buildFS(pats, k, false).findIter(
-            hay,
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const matches = buildFS(pats, k, false).findIter(hay);
+        for (const m of matches) {
+          expect(m.end).toBeGreaterThan(m.start);
+        }
+        for (let i = 1; i < matches.length; i++) {
+          expect(matches[i]!.start).toBeGreaterThanOrEqual(
+            matches[i - 1]!.start,
           );
-          for (const m of matches) {
-            expect(m.end).toBeGreaterThan(m.start);
-          }
-          for (let i = 1; i < matches.length; i++) {
-            expect(
-              matches[i]!.start,
-            ).toBeGreaterThanOrEqual(matches[i - 1]!.start);
-          }
-        },
-      ),
+        }
+      }),
     );
   });
 });
@@ -341,19 +285,12 @@ describe("property: distance bound", () => {
   test("distance <= max for every match", () => {
     assertProperty(
       "distance-max-for-every-match",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const matches = buildFS(pats, k, false).findIter(
-            hay,
-          );
-          for (const m of matches) {
-            expect(m.distance).toBeLessThanOrEqual(k);
-          }
-        },
-      ),
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const matches = buildFS(pats, k, false).findIter(hay);
+        for (const m of matches) {
+          expect(m.distance).toBeLessThanOrEqual(k);
+        }
+      }),
     );
   });
 });
@@ -369,22 +306,14 @@ describe("property: distance correctness", () => {
   test("distance equals levenshtein(pattern, text)", () => {
     assertProperty(
       "distance-equals-levenshtein-pattern-text",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const fs = buildFS(pats, k, false);
-          for (const m of fs.findIter(hay)) {
-            const actual = levenshtein(
-              pats[m.pattern]!,
-              m.text,
-            );
-            expect(actual).toBeLessThanOrEqual(k);
-            expect(m.distance).toBe(actual);
-          }
-        },
-      ),
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const fs = buildFS(pats, k, false);
+        for (const m of fs.findIter(hay)) {
+          const actual = levenshtein(pats[m.pattern]!, m.text);
+          expect(actual).toBeLessThanOrEqual(k);
+          expect(m.distance).toBe(actual);
+        }
+      }),
     );
   });
 });
@@ -402,23 +331,18 @@ describe("property: oracle vs findIter", () => {
   test("every findIter match is valid (exists in oracle region)", () => {
     assertProperty(
       "every-finditer-match-is-valid-exists-in-oracle-region",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const fs = buildFS(pats, k, false);
-          const real = fs.findIter(hay);
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const fs = buildFS(pats, k, false);
+        const real = fs.findIter(hay);
 
-          // Every match must be a genuine fuzzy
-          // match: Levenshtein distance between
-          // pattern and matched text <= k.
-          for (const m of real) {
-            const d = levenshtein(pats[m.pattern]!, m.text);
-            expect(d).toBeLessThanOrEqual(k);
-          }
-        },
-      ),
+        // Every match must be a genuine fuzzy
+        // match: Levenshtein distance between
+        // pattern and matched text <= k.
+        for (const m of real) {
+          const d = levenshtein(pats[m.pattern]!, m.text);
+          expect(d).toBeLessThanOrEqual(k);
+        }
+      }),
     );
   });
 
@@ -440,9 +364,7 @@ describe("property: oracle vs findIter", () => {
         }),
         (pats, hay) => {
           const k = 1;
-          const real = buildFS(pats, k, false).findIter(
-            hay,
-          );
+          const real = buildFS(pats, k, false).findIter(hay);
 
           // Each match from our library must be
           // verifiable by the oracle.
@@ -473,9 +395,7 @@ describe("property: oracle vs findIter", () => {
         }),
         (pats, hay) => {
           const k = 1;
-          const real = buildFS(pats, k, false).findIter(
-            hay,
-          );
+          const real = buildFS(pats, k, false).findIter(hay);
           const oracle = oracleFuzzySearch(pats, hay, k);
 
           // For each oracle match, our library
@@ -499,18 +419,13 @@ describe("property: oracle vs findIter", () => {
               // At minimum, the same region should
               // have a match from any pattern.
               const anyCover = real.some(
-                (rm) =>
-                  rm.start <= om.end && rm.end >= om.start,
+                (rm) => rm.start <= om.end && rm.end >= om.start,
               );
               // Relax: non-overlapping selection
               // may differ. At least isMatch should
               // agree.
               if (!anyCover) {
-                const fs = buildFS(
-                  [pats[om.pattern]!],
-                  k,
-                  false,
-                );
+                const fs = buildFS([pats[om.pattern]!], k, false);
                 // The pattern must find SOMETHING
                 // in the haystack.
                 expect(fs.isMatch(hay)).toBe(true);
@@ -529,30 +444,19 @@ describe("property: wholeWords boundaries", () => {
   test("every wholeWords match is at word boundaries", () => {
     assertProperty(
       "every-wholewords-match-is-at-word-boundaries",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const matches = buildFS(pats, k, true).findIter(
-            hay,
-          );
-          for (const m of matches) {
-            const before = hay[m.start - 1];
-            const after = hay[m.end];
-            if (before) {
-              expect(
-                !isWordChar(before) || isCjk(m.text[0]!),
-              ).toBe(true);
-            }
-            if (after) {
-              expect(
-                !isWordChar(after) || isCjk(m.text.at(-1)!),
-              ).toBe(true);
-            }
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const matches = buildFS(pats, k, true).findIter(hay);
+        for (const m of matches) {
+          const before = hay[m.start - 1];
+          const after = hay[m.end];
+          if (before) {
+            expect(!isWordChar(before) || isCjk(m.text[0]!)).toBe(true);
           }
-        },
-      ),
+          if (after) {
+            expect(!isWordChar(after) || isCjk(m.text.at(-1)!)).toBe(true);
+          }
+        }
+      }),
     );
   });
 });
@@ -586,17 +490,14 @@ describe("property: exact match always found", () => {
         (pats, idx, k) => {
           const uniquePats = [...new Set(pats)];
           if (uniquePats.length === 0) return;
-          const target =
-            uniquePats[idx % uniquePats.length]!;
+          const target = uniquePats[idx % uniquePats.length]!;
 
           const hay = `xxx ${target} yyy`;
           const fs = buildFS(uniquePats, k, true);
           const matches = fs.findIter(hay);
 
           const found = matches.some(
-            (m) =>
-              m.start >= 4 &&
-              m.end <= 4 + target.length + k,
+            (m) => m.start >= 4 && m.end <= 4 + target.length + k,
           );
           expect(found).toBe(true);
         },
@@ -611,28 +512,23 @@ describe("property: replaceAll ↔ findIter", () => {
   test("replaceAll matches findIter-based reconstruction", () => {
     assertProperty(
       "replaceall-matches-finditer-based-reconstruction",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const fs = buildFS(pats, k, false);
-          const matches = fs.findIter(hay);
-          const repls = pats.map((_, i) => `[${i}]`);
-          const result = fs.replaceAll(hay, repls);
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const fs = buildFS(pats, k, false);
+        const matches = fs.findIter(hay);
+        const repls = pats.map((_, i) => `[${i}]`);
+        const result = fs.replaceAll(hay, repls);
 
-          let expected = "";
-          let last = 0;
-          for (const m of matches) {
-            expected += hay.slice(last, m.start);
-            expected += repls[m.pattern]!;
-            last = m.end;
-          }
-          expected += hay.slice(last);
+        let expected = "";
+        let last = 0;
+        for (const m of matches) {
+          expected += hay.slice(last, m.start);
+          expected += repls[m.pattern]!;
+          last = m.end;
+        }
+        expected += hay.slice(last);
 
-          expect(result).toBe(expected);
-        },
-      ),
+        expect(result).toBe(expected);
+      }),
     );
   });
 });
@@ -643,17 +539,10 @@ describe("property: isMatch ↔ findIter", () => {
   test("isMatch agrees with findIter length > 0", () => {
     assertProperty(
       "ismatch-agrees-with-finditer-length-0",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const fs = buildFS(pats, k, true);
-          expect(fs.isMatch(hay)).toBe(
-            fs.findIter(hay).length > 0,
-          );
-        },
-      ),
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const fs = buildFS(pats, k, true);
+        expect(fs.isMatch(hay)).toBe(fs.findIter(hay).length > 0);
+      }),
     );
   });
 });
@@ -685,21 +574,13 @@ describe("property: levenshtein oracle on every match", () => {
   test("oracle distance equals reported distance", () => {
     assertProperty(
       "oracle-distance-equals-reported-distance",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const fs = buildFS(pats, k, false);
-          for (const m of fs.findIter(hay)) {
-            const oracleDist = levenshtein(
-              pats[m.pattern]!,
-              m.text,
-            );
-            expect(m.distance).toBe(oracleDist);
-          }
-        },
-      ),
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const fs = buildFS(pats, k, false);
+        for (const m of fs.findIter(hay)) {
+          const oracleDist = levenshtein(pats[m.pattern]!, m.text);
+          expect(m.distance).toBe(oracleDist);
+        }
+      }),
     );
   });
 });
@@ -729,11 +610,7 @@ describe("property: single vs multi-pattern", () => {
         (pats, hay, k) => {
           const multi = buildFS(pats, k, false);
           for (const m of multi.findIter(hay)) {
-            const single = buildFS(
-              [pats[m.pattern]!],
-              k,
-              false,
-            );
+            const single = buildFS([pats[m.pattern]!], k, false);
             expect(single.isMatch(hay)).toBe(true);
           }
         },
@@ -766,14 +643,8 @@ describe("property: strict oracle (single pattern)", () => {
         }),
         fc.constantFrom(1, 2),
         (pat, hay, k) => {
-          const real = buildFS([pat], k, false).findIter(
-            hay,
-          );
-          const oracle = oracleSinglePatternCandidates(
-            pat,
-            hay,
-            k,
-          );
+          const real = buildFS([pat], k, false).findIter(hay);
+          const oracle = oracleSinglePatternCandidates(pat, hay, k);
 
           // Multiple equally-good alignments can
           // exist for the same fuzzy match. The
@@ -807,9 +678,7 @@ describe("property: strict oracle (single pattern)", () => {
         }),
         fc.constantFrom(1, 2),
         (pat, hay, k) => {
-          const real = buildFS([pat], k, false).findIter(
-            hay,
-          );
+          const real = buildFS([pat], k, false).findIter(hay);
           const oracle = oracleFuzzySearch([pat], hay, k);
 
           // Every oracle match must be either:
@@ -818,8 +687,7 @@ describe("property: strict oracle (single pattern)", () => {
           //    equal or better distance.
           for (const om of oracle) {
             const exact = real.some(
-              (rm) =>
-                rm.start === om.start && rm.end === om.end,
+              (rm) => rm.start === om.start && rm.end === om.end,
             );
             if (!exact) {
               const covered = real.some(
@@ -833,9 +701,7 @@ describe("property: strict oracle (single pattern)", () => {
               // region.
               if (!covered) {
                 const nearby = real.some(
-                  (rm) =>
-                    rm.end >= om.start &&
-                    rm.start <= om.end,
+                  (rm) => rm.end >= om.start && rm.start <= om.end,
                 );
                 expect(nearby).toBe(true);
               }
@@ -859,17 +725,13 @@ describe("property: normalization idempotence", () => {
       minLength: 0,
       maxLength: 100,
       unit: fc.constantFrom(
-        ..."abcdefghijklmnopqrstuvwxyz 0123456789.,!?-".split(
-          "",
-        ),
+        ..."abcdefghijklmnopqrstuvwxyz 0123456789.,!?-".split(""),
       ),
     });
     const asciiPat = fc.string({
       minLength: 3,
       maxLength: 10,
-      unit: fc.constantFrom(
-        ..."abcdefghijklmnopqrstuvwxyz".split(""),
-      ),
+      unit: fc.constantFrom(..."abcdefghijklmnopqrstuvwxyz".split("")),
     });
     assertProperty(
       "ascii-text-norm-vs-no-norm-produce-same-matches",
@@ -880,9 +742,7 @@ describe("property: normalization idempotence", () => {
         }),
         asciiStr,
         (pats, hay) => {
-          const plain = buildFS(pats, 1, false).findIter(
-            hay,
-          );
+          const plain = buildFS(pats, 1, false).findIter(hay);
           const norm = new FuzzySearch(
             pats.map((p) => ({
               pattern: p,
@@ -920,9 +780,7 @@ describe("property: diacritics normalization oracle", () => {
   test("norm matches have correct normalized distance", () => {
     // Czech-like chars for realistic coverage.
     const czChar = fc.constantFrom(
-      ..."aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž ".split(
-        "",
-      ),
+      ..."aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž ".split(""),
     );
     const czStr = fc.string({
       minLength: 0,
@@ -957,9 +815,7 @@ describe("property: diacritics normalization oracle", () => {
             // The Levenshtein distance between
             // stripped pattern and stripped matched
             // text must be <= max distance.
-            const normPat = stripDiacritics(
-              pats[m.pattern]!,
-            );
+            const normPat = stripDiacritics(pats[m.pattern]!);
             const normText = stripDiacritics(m.text);
             const d = levenshtein(normPat, normText);
             expect(d).toBeLessThanOrEqual(1);
@@ -1027,9 +883,7 @@ describe("property: overlapping prefix patterns", () => {
         fc.string({
           minLength: 3,
           maxLength: 8,
-          unit: fc.constantFrom(
-            ..."abcdefghijklmnop".split(""),
-          ),
+          unit: fc.constantFrom(..."abcdefghijklmnop".split("")),
         }),
         fc.string({
           minLength: 0,
@@ -1039,10 +893,7 @@ describe("property: overlapping prefix patterns", () => {
           // Prefixes of increasing length
           const pats = Array.from(
             {
-              length: Math.max(
-                0,
-                Math.min(base.length, 4) - 1,
-              ),
+              length: Math.max(0, Math.min(base.length, 4) - 1),
             },
             (_, i) => base.slice(0, i + 3),
           );
@@ -1104,20 +955,13 @@ describe("property: wholeWords candidate validity", () => {
     maxDist,
     (pats, hay, k) => {
       const matches = buildFS(pats, k, true).findIter(hay);
-      const unrestricted = buildFS(
-        pats,
-        k,
-        false,
-      ).findIter(hay);
+      const unrestricted = buildFS(pats, k, false).findIter(hay);
       if (matches.length > 0) {
         expect(unrestricted.length).toBeGreaterThan(0);
       }
       let previousEnd = 0;
       for (const m of matches) {
-        const distance = levenshtein(
-          pats[m.pattern]!,
-          m.text,
-        );
+        const distance = levenshtein(pats[m.pattern]!, m.text);
         expect(distance).toBeLessThanOrEqual(k);
         expect(m.distance).toBe(distance);
         expect(m.start).toBeGreaterThanOrEqual(previousEnd);
@@ -1126,14 +970,10 @@ describe("property: wholeWords candidate validity", () => {
         const before = hay[m.start - 1];
         const after = hay[m.end];
         if (before) {
-          expect(
-            !isWordChar(before) || isCjk(m.text[0]!),
-          ).toBe(true);
+          expect(!isWordChar(before) || isCjk(m.text[0]!)).toBe(true);
         }
         if (after) {
-          expect(
-            !isWordChar(after) || isCjk(m.text.at(-1)!),
-          ).toBe(true);
+          expect(!isWordChar(after) || isCjk(m.text.at(-1)!)).toBe(true);
         }
         previousEnd = m.end;
       }
@@ -1141,10 +981,7 @@ describe("property: wholeWords candidate validity", () => {
   );
 
   test("wholeWords returns valid non-overlapping candidates at word boundaries", () => {
-    assertProperty(
-      "whole-words-candidate-validity",
-      candidateValidity,
-    );
+    assertProperty("whole-words-candidate-validity", candidateValidity);
   });
 });
 
@@ -1189,8 +1026,7 @@ describe("property: distance monotonicity", () => {
           //  covers d1's regions.)
           for (const m1 of d1) {
             const covered = d2.some(
-              (m2) =>
-                m2.start <= m1.end && m2.end >= m1.start,
+              (m2) => m2.start <= m1.end && m2.end >= m1.start,
             );
             expect(covered).toBe(true);
           }
@@ -1250,23 +1086,18 @@ describe("property: determinism", () => {
   test("same input always produces same output", () => {
     assertProperty(
       "same-input-always-produces-same-output",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const fs = buildFS(pats, k, false);
-          const r1 = fs.findIter(hay);
-          const r2 = fs.findIter(hay);
-          expect(r1.length).toBe(r2.length);
-          for (let i = 0; i < r1.length; i++) {
-            expect(r1[i]!.start).toBe(r2[i]!.start);
-            expect(r1[i]!.end).toBe(r2[i]!.end);
-            expect(r1[i]!.distance).toBe(r2[i]!.distance);
-            expect(r1[i]!.pattern).toBe(r2[i]!.pattern);
-          }
-        },
-      ),
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const fs = buildFS(pats, k, false);
+        const r1 = fs.findIter(hay);
+        const r2 = fs.findIter(hay);
+        expect(r1.length).toBe(r2.length);
+        for (let i = 0; i < r1.length; i++) {
+          expect(r1[i]!.start).toBe(r2[i]!.start);
+          expect(r1[i]!.end).toBe(r2[i]!.end);
+          expect(r1[i]!.distance).toBe(r2[i]!.distance);
+          expect(r1[i]!.pattern).toBe(r2[i]!.pattern);
+        }
+      }),
     );
   });
 });
@@ -1282,9 +1113,7 @@ describe("property: supplementary plane offsets", () => {
     const emojiStr = fc.string({
       minLength: 0,
       maxLength: 40,
-      unit: fc.constantFrom(
-        ..."abcdefgh 😀🎉🔥🚀💡🎸🌍🏠".split(""),
-      ),
+      unit: fc.constantFrom(..."abcdefgh 😀🎉🔥🚀💡🎸🌍🏠".split("")),
     });
     const emojiPat = fc.string({
       minLength: 3,
@@ -1339,10 +1168,7 @@ describe("property: mixed distances per pattern", () => {
         }),
         (entries, hay) => {
           fc.pre(
-            entries.every(
-              (e) =>
-                e.distance < Array.from(e.pattern).length,
-            ),
+            entries.every((e) => e.distance < Array.from(e.pattern).length),
           );
           const fs = new FuzzySearch(entries, {
             wholeWords: false,
@@ -1368,9 +1194,7 @@ describe("property: mixed distances per pattern", () => {
 describe("property: all features combined", () => {
   test("norm + CI + wholeWords: all matches valid", () => {
     const czChar = fc.constantFrom(
-      ..."aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž ABCČDĎEÉĚ".split(
-        "",
-      ),
+      ..."aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž ABCČDĎEÉĚ".split(""),
     );
     const czStr = fc.string({
       minLength: 0,
@@ -1404,12 +1228,8 @@ describe("property: all features combined", () => {
           );
           for (const m of fs.findIter(hay)) {
             // Normalize both sides, then check
-            const normPat = stripDiacritics(
-              pats[m.pattern]!,
-            ).toLowerCase();
-            const normText = stripDiacritics(
-              m.text,
-            ).toLowerCase();
+            const normPat = stripDiacritics(pats[m.pattern]!).toLowerCase();
+            const normText = stripDiacritics(m.text).toLowerCase();
             const d = levenshtein(normPat, normText);
             expect(d).toBeLessThanOrEqual(1);
 
@@ -1417,14 +1237,10 @@ describe("property: all features combined", () => {
             const before = hay[m.start - 1];
             const after = hay[m.end];
             if (before) {
-              expect(
-                !isWordChar(before) || isCjk(m.text[0]!),
-              ).toBe(true);
+              expect(!isWordChar(before) || isCjk(m.text[0]!)).toBe(true);
             }
             if (after) {
-              expect(
-                !isWordChar(after) || isCjk(m.text.at(-1)!),
-              ).toBe(true);
+              expect(!isWordChar(after) || isCjk(m.text.at(-1)!)).toBe(true);
             }
           }
         },
@@ -1466,8 +1282,7 @@ describe("property: no false negatives on exact", () => {
           // the exact position.
           const exactFound = matches.some(
             (m) =>
-              m.start <= prefix.length &&
-              m.end >= prefix.length + pat.length,
+              m.start <= prefix.length && m.end >= prefix.length + pat.length,
           );
           // Or a nearby match (non-overlapping
           // selection may choose a different one).
@@ -1493,10 +1308,7 @@ function damerauLev(a: string, b: string): number {
   if (m === 0) return n;
   if (n === 0) return m;
 
-  let prev2: number[] = Array.from(
-    { length: n + 1 },
-    () => 0,
-  );
+  let prev2: number[] = Array.from({ length: n + 1 }, () => 0);
   let prev = Array.from({ length: n + 1 }, (_, i) => i);
 
   for (let i = 1; i <= m; i++) {
@@ -1504,11 +1316,7 @@ function damerauLev(a: string, b: string): number {
     curr[0] = i;
     for (let j = 1; j <= n; j++) {
       const cost = ac[i - 1] === bc[j - 1] ? 0 : 1;
-      curr[j] = Math.min(
-        curr[j - 1]! + 1,
-        prev[j]! + 1,
-        prev[j - 1]! + cost,
-      );
+      curr[j] = Math.min(curr[j - 1]! + 1, prev[j]! + 1, prev[j - 1]! + cost);
       if (
         i > 1 &&
         j > 1 &&
@@ -1643,9 +1451,7 @@ for (const ww of [false, true]) {
 describe("property: cartesian options × distance", () => {
   test("all 16 combos: every match is valid", () => {
     const czChar = fc.constantFrom(
-      ..."aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž ABCČDĎEÉĚ.,!?-".split(
-        "",
-      ),
+      ..."aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž ABCČDĎEÉĚ.,!?-".split(""),
     );
     const czPat = fc.string({
       minLength: 4,
@@ -1677,9 +1483,7 @@ describe("property: cartesian options × distance", () => {
             );
             for (const m of fs.findIter(hay)) {
               // 1. text field correct
-              expect(hay.slice(m.start, m.end)).toBe(
-                m.text,
-              );
+              expect(hay.slice(m.start, m.end)).toBe(m.text);
 
               // 2. distance correct (normalized)
               let oPat = pats[m.pattern]!;
@@ -1700,16 +1504,12 @@ describe("property: cartesian options × distance", () => {
                 const before = hay[m.start - 1];
                 const after = hay[m.end];
                 if (before) {
-                  expect(
-                    !isWordChar(before) ||
-                      isCjk(m.text[0]!),
-                  ).toBe(true);
+                  expect(!isWordChar(before) || isCjk(m.text[0]!)).toBe(true);
                 }
                 if (after) {
-                  expect(
-                    !isWordChar(after) ||
-                      isCjk(m.text.at(-1)!),
-                  ).toBe(true);
+                  expect(!isWordChar(after) || isCjk(m.text.at(-1)!)).toBe(
+                    true,
+                  );
                 }
               }
 
@@ -1720,9 +1520,9 @@ describe("property: cartesian options × distance", () => {
             // 5. non-overlapping check
             const matches = fs.findIter(hay);
             for (let i = 1; i < matches.length; i++) {
-              expect(
-                matches[i]!.start,
-              ).toBeGreaterThanOrEqual(matches[i - 1]!.end);
+              expect(matches[i]!.start).toBeGreaterThanOrEqual(
+                matches[i - 1]!.end,
+              );
             }
           }
         },
@@ -1790,14 +1590,8 @@ describe("property: substring patterns", () => {
         haystack,
         (base, trimL, trimR, hay) => {
           const left = Math.min(trimL, base.length - 3);
-          const right = Math.min(
-            trimR,
-            base.length - left - 3,
-          );
-          const inner = base.slice(
-            left,
-            base.length - right,
-          );
+          const right = Math.min(trimR, base.length - left - 3);
+          const inner = base.slice(left, base.length - right);
           if (inner.length < 3 || inner === base) return;
 
           const fs = new FuzzySearch(
@@ -1828,9 +1622,7 @@ describe("property: long patterns", () => {
     const longPat = fc.string({
       minLength: 50,
       maxLength: 63,
-      unit: fc.constantFrom(
-        ..."abcdefghijklmnopqrstuvwxyz".split(""),
-      ),
+      unit: fc.constantFrom(..."abcdefghijklmnopqrstuvwxyz".split("")),
     });
     assertProperty(
       "patterns-50-63-chars-matches-valid",
@@ -1841,10 +1633,9 @@ describe("property: long patterns", () => {
           maxLength: 200,
         }),
         (pat, hay) => {
-          const fs = new FuzzySearch(
-            [{ pattern: pat, distance: 1 }],
-            { wholeWords: false },
-          );
+          const fs = new FuzzySearch([{ pattern: pat, distance: 1 }], {
+            wholeWords: false,
+          });
           for (const m of fs.findIter(hay)) {
             expect(hay.slice(m.start, m.end)).toBe(m.text);
             const d = levenshtein(pat, m.text);
@@ -1878,10 +1669,9 @@ describe("property: high distance (4-5)", () => {
         fc.constantFrom(4, 5),
         (pat, hay, k) => {
           fc.pre(Array.from(pat).length > k);
-          const fs = new FuzzySearch(
-            [{ pattern: pat, distance: k }],
-            { wholeWords: false },
-          );
+          const fs = new FuzzySearch([{ pattern: pat, distance: k }], {
+            wholeWords: false,
+          });
           for (const m of fs.findIter(hay)) {
             const d = levenshtein(pat, m.text);
             expect(d).toBeLessThanOrEqual(k);
@@ -1941,39 +1731,29 @@ describe("property: score in [0, 1]", () => {
   test("every match has score in [0, 1]", () => {
     assertProperty(
       "every-match-has-score-in-0-1",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const fs = buildFS(pats, k, false);
-          for (const m of fs.findIter(hay)) {
-            expect(m.score).toBeGreaterThanOrEqual(0);
-            expect(m.score).toBeLessThanOrEqual(1);
-          }
-        },
-      ),
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const fs = buildFS(pats, k, false);
+        for (const m of fs.findIter(hay)) {
+          expect(m.score).toBeGreaterThanOrEqual(0);
+          expect(m.score).toBeLessThanOrEqual(1);
+        }
+      }),
     );
   });
 
   test("score = 1 iff distance = 0", () => {
     assertProperty(
       "score-1-iff-distance-0",
-      fc.property(
-        patterns,
-        haystack,
-        maxDist,
-        (pats, hay, k) => {
-          const fs = buildFS(pats, k, false);
-          for (const m of fs.findIter(hay)) {
-            if (m.distance === 0) {
-              expect(m.score).toBe(1);
-            } else {
-              expect(m.score).toBeLessThan(1);
-            }
+      fc.property(patterns, haystack, maxDist, (pats, hay, k) => {
+        const fs = buildFS(pats, k, false);
+        for (const m of fs.findIter(hay)) {
+          if (m.distance === 0) {
+            expect(m.score).toBe(1);
+          } else {
+            expect(m.score).toBeLessThan(1);
           }
-        },
-      ),
+        }
+      }),
     );
   });
 });
@@ -1992,11 +1772,8 @@ describe("property: kBest cap", () => {
         (pats, hay, k, kBest) => {
           // Filter patterns the same way buildFS does
           // so the constructor accepts them.
-          const valid = pats.filter(
-            (p) => Array.from(p).length > k,
-          );
-          const entries =
-            valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
+          const valid = pats.filter((p) => Array.from(p).length > k);
+          const entries = valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
           const fs = new FuzzySearch(
             entries.map((p) => ({
               pattern: p,
@@ -2020,11 +1797,8 @@ describe("property: kBest cap", () => {
         maxDist,
         fc.integer({ min: 1, max: 20 }),
         (pats, hay, k, kBest) => {
-          const valid = pats.filter(
-            (p) => Array.from(p).length > k,
-          );
-          const entries =
-            valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
+          const valid = pats.filter((p) => Array.from(p).length > k);
+          const entries = valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
           const fs = new FuzzySearch(
             entries.map((p) => ({
               pattern: p,
@@ -2034,9 +1808,9 @@ describe("property: kBest cap", () => {
           );
           const matches = fs.findIter(hay);
           for (let i = 1; i < matches.length; i++) {
-            expect(
-              matches[i - 1]!.score,
-            ).toBeGreaterThanOrEqual(matches[i]!.score);
+            expect(matches[i - 1]!.score).toBeGreaterThanOrEqual(
+              matches[i]!.score,
+            );
           }
         },
       ),
@@ -2060,11 +1834,8 @@ describe("property: minScore filter", () => {
           noNaN: true,
         }),
         (pats, hay, k, minScore) => {
-          const valid = pats.filter(
-            (p) => Array.from(p).length > k,
-          );
-          const entries =
-            valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
+          const valid = pats.filter((p) => Array.from(p).length > k);
+          const entries = valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
           const fs = new FuzzySearch(
             entries.map((p) => ({
               pattern: p,
@@ -2073,9 +1844,7 @@ describe("property: minScore filter", () => {
             { wholeWords: false, minScore },
           );
           for (const m of fs.findIter(hay)) {
-            expect(m.score).toBeGreaterThanOrEqual(
-              minScore,
-            );
+            expect(m.score).toBeGreaterThanOrEqual(minScore);
           }
         },
       ),
@@ -2095,11 +1864,8 @@ describe("property: minScore filter", () => {
           noNaN: true,
         }),
         (pats, hay, k, minScore) => {
-          const valid = pats.filter(
-            (p) => Array.from(p).length > k,
-          );
-          const entries =
-            valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
+          const valid = pats.filter((p) => Array.from(p).length > k);
+          const entries = valid.length > 0 ? valid : ["\x00\x01\x02\x03"];
           const unfiltered = new FuzzySearch(
             entries.map((p) => ({
               pattern: p,
@@ -2114,9 +1880,7 @@ describe("property: minScore filter", () => {
             })),
             { wholeWords: false, minScore },
           ).findIter(hay);
-          expect(filtered.length).toBeLessThanOrEqual(
-            unfiltered.length,
-          );
+          expect(filtered.length).toBeLessThanOrEqual(unfiltered.length);
           // Each filtered match should be present
           // in the unfiltered set (same start/end/pattern).
           for (const f of filtered) {

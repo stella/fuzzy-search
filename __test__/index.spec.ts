@@ -1,25 +1,23 @@
 import { describe, expect, test } from "bun:test";
 
-import { FuzzySearch, distance } from "../src/index";
+import { distance, FuzzySearch } from "../src/index";
 
 // ─── Core functionality ───────────────────────
 
 describe("FuzzySearch", () => {
   test("basic exact matching (distance 0)", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 0 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 0 }], {
+      wholeWords: false,
+    });
     expect(fs.patternCount).toBe(1);
     expect(fs.isMatch("say hello world")).toBe(true);
     expect(fs.isMatch("helo world")).toBe(false);
   });
 
   test("distance 1: substitution", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 1 }], {
+      wholeWords: false,
+    });
     const matches = fs.findIter("say helo world");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.text).toBe("helo");
@@ -27,10 +25,9 @@ describe("FuzzySearch", () => {
   });
 
   test("distance 1: valid match in noisy text", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 1 }], {
+      wholeWords: false,
+    });
     const matches = fs.findIter("qqq helxo qqq");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.text).toBe("helxo");
@@ -38,10 +35,9 @@ describe("FuzzySearch", () => {
   });
 
   test("distance 1: deletion", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 1 }], {
+      wholeWords: false,
+    });
     const matches = fs.findIter("say helo world");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.text).toBe("helo");
@@ -49,18 +45,16 @@ describe("FuzzySearch", () => {
   });
 
   test("distance 2: two substitutions", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 2 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 2 }], {
+      wholeWords: false,
+    });
     expect(fs.isMatch("hxlxo")).toBe(true);
   });
 
   test("no match beyond distance", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 1 }], {
+      wholeWords: false,
+    });
     expect(fs.isMatch("hxxlo")).toBe(false);
   });
 
@@ -129,26 +123,20 @@ describe("FuzzySearch", () => {
 
 describe("Czech names", () => {
   test("OCR error: l→1", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Gaislerová", distance: 1 }],
-      { wholeWords: true },
-    );
-    const matches = fs.findIter(
-      "Smlouva s Gais1erová o pronájmu.",
-    );
+    const fs = new FuzzySearch([{ pattern: "Gaislerová", distance: 1 }], {
+      wholeWords: true,
+    });
+    const matches = fs.findIter("Smlouva s Gais1erová o pronájmu.");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.text).toBe("Gais1erová");
     expect(matches[0]!.distance).toBe(1);
   });
 
   test("missing háček (diacritics norm)", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Gaislerová", distance: 0 }],
-      {
-        normalizeDiacritics: true,
-        wholeWords: true,
-      },
-    );
+    const fs = new FuzzySearch([{ pattern: "Gaislerová", distance: 0 }], {
+      normalizeDiacritics: true,
+      wholeWords: true,
+    });
     const matches = fs.findIter("Podpis: Gaislerova");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.text).toBe("Gaislerova");
@@ -156,25 +144,19 @@ describe("Czech names", () => {
   });
 
   test("typo: w→v", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Novák", distance: 1 }],
-      { wholeWords: true },
-    );
-    const matches = fs.findIter(
-      "Pan Nowák podepsal smlouvu.",
-    );
+    const fs = new FuzzySearch([{ pattern: "Novák", distance: 1 }], {
+      wholeWords: true,
+    });
+    const matches = fs.findIter("Pan Nowák podepsal smlouvu.");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.text).toBe("Nowák");
   });
 
   test("transliteration: Příbram → Pribram", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Příbram", distance: 0 }],
-      {
-        normalizeDiacritics: true,
-        wholeWords: true,
-      },
-    );
+    const fs = new FuzzySearch([{ pattern: "Příbram", distance: 0 }], {
+      normalizeDiacritics: true,
+      wholeWords: true,
+    });
     expect(fs.isMatch("Město Pribram")).toBe(true);
   });
 
@@ -187,9 +169,7 @@ describe("Czech names", () => {
       ],
       { wholeWords: true },
     );
-    const text =
-      "Gais1erová a Snytrová podepsali " +
-      "smlouvu s Nowák.";
+    const text = "Gais1erová a Snytrová podepsali " + "smlouvu s Nowák.";
     const matches = fs.findIter(text);
     expect(matches).toHaveLength(3);
     expect(matches[0]!.text).toBe("Gais1erová");
@@ -202,25 +182,19 @@ describe("Czech names", () => {
 
 describe("diacritics normalization", () => {
   test("strips combining marks (NFD)", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "café", distance: 0 }],
-      {
-        normalizeDiacritics: true,
-        wholeWords: false,
-      },
-    );
+    const fs = new FuzzySearch([{ pattern: "café", distance: 0 }], {
+      normalizeDiacritics: true,
+      wholeWords: false,
+    });
     expect(fs.isMatch("cafe")).toBe(true);
     expect(fs.isMatch("café")).toBe(true);
   });
 
   test("combined with distance", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Šnytrová", distance: 1 }],
-      {
-        normalizeDiacritics: true,
-        wholeWords: true,
-      },
-    );
+    const fs = new FuzzySearch([{ pattern: "Šnytrová", distance: 1 }], {
+      normalizeDiacritics: true,
+      wholeWords: true,
+    });
     // "Snytrova" is: strip diacritics (dist 0)
     // + no háček (another strip) → matches
     expect(fs.isMatch("Snytrova")).toBe(true);
@@ -231,26 +205,20 @@ describe("diacritics normalization", () => {
 
 describe("case insensitive", () => {
   test("basic case folding", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Hello", distance: 0 }],
-      {
-        caseInsensitive: true,
-        wholeWords: false,
-      },
-    );
+    const fs = new FuzzySearch([{ pattern: "Hello", distance: 0 }], {
+      caseInsensitive: true,
+      wholeWords: false,
+    });
     expect(fs.isMatch("hello")).toBe(true);
     expect(fs.isMatch("HELLO")).toBe(true);
     expect(fs.isMatch("hElLo")).toBe(true);
   });
 
   test("case insensitive + distance", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Novák", distance: 1 }],
-      {
-        caseInsensitive: true,
-        wholeWords: true,
-      },
-    );
+    const fs = new FuzzySearch([{ pattern: "Novák", distance: 1 }], {
+      caseInsensitive: true,
+      wholeWords: true,
+    });
     expect(fs.isMatch("NOWÁK")).toBe(true);
   });
 });
@@ -259,10 +227,9 @@ describe("case insensitive", () => {
 
 describe("whole words", () => {
   test("rejects substring matches", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "cat", distance: 1 }],
-      { wholeWords: true },
-    );
+    const fs = new FuzzySearch([{ pattern: "cat", distance: 1 }], {
+      wholeWords: true,
+    });
     // "category" contains "cat" at dist 0, but
     // it's not a whole word.
     expect(fs.isMatch("category")).toBe(false);
@@ -270,37 +237,33 @@ describe("whole words", () => {
   });
 
   test("word boundary at punctuation", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "cat", distance: 0 }],
-      { wholeWords: true },
-    );
+    const fs = new FuzzySearch([{ pattern: "cat", distance: 0 }], {
+      wholeWords: true,
+    });
     expect(fs.isMatch("(cat)")).toBe(true);
     expect(fs.isMatch("cat.")).toBe(true);
     expect(fs.isMatch("cat,dog")).toBe(true);
   });
 
   test("wholeWords: false allows substrings", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "cat", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "cat", distance: 1 }], {
+      wholeWords: false,
+    });
     expect(fs.isMatch("category")).toBe(true);
   });
 
   test("checks the last matched char at start boundary", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "京a", distance: 0 }],
-      { wholeWords: true },
-    );
+    const fs = new FuzzySearch([{ pattern: "京a", distance: 0 }], {
+      wholeWords: true,
+    });
     expect(fs.isMatch("京ab")).toBe(false);
     expect(fs.isMatch("京a b")).toBe(true);
   });
 
   test("keeps whole words beside overlapping hits", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "putin", distance: 2 }],
-      { wholeWords: true },
-    );
+    const fs = new FuzzySearch([{ pattern: "putin", distance: 2 }], {
+      wholeWords: true,
+    });
     const cases = [
       ["puttin", 0, 6, 1],
       ["a putinov b", 2, 9, 2],
@@ -322,10 +285,10 @@ describe("whole words", () => {
   });
 
   test("whole words with normalized diacritics", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "putin", distance: 2 }],
-      { wholeWords: true, normalizeDiacritics: true },
-    );
+    const fs = new FuzzySearch([{ pattern: "putin", distance: 2 }], {
+      wholeWords: true,
+      normalizeDiacritics: true,
+    });
     const matches = fs.findIter("a pu\u0301tinov b");
     expect(matches).toHaveLength(1);
     expect(matches[0]).toMatchObject({
@@ -337,10 +300,9 @@ describe("whole words", () => {
   });
 
   test("substring mode keeps its selection", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "putin", distance: 2 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "putin", distance: 2 }], {
+      wholeWords: false,
+    });
     const cases = [
       ["puttin", "putti", 2],
       ["putinov", "putin", 0],
@@ -361,10 +323,9 @@ describe("whole words", () => {
 
 describe("Unicode", () => {
   test("supplementary plane (emoji)", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 1 }], {
+      wholeWords: false,
+    });
     const matches = fs.findIter("😀 helo 😀");
     expect(matches).toHaveLength(1);
     // Emoji is 2 UTF-16 code units
@@ -373,10 +334,9 @@ describe("Unicode", () => {
   });
 
   test("Cyrillic names", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Иванов", distance: 1 }],
-      { wholeWords: true },
-    );
+    const fs = new FuzzySearch([{ pattern: "Иванов", distance: 1 }], {
+      wholeWords: true,
+    });
     expect(fs.isMatch("Иванов подписал")).toBe(true);
     // Substitution: о→а
     expect(fs.isMatch("Иванав подписал")).toBe(true);
@@ -387,13 +347,10 @@ describe("Unicode", () => {
 
 describe("replaceAll", () => {
   test("basic replacement", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Novák", distance: 1 }],
-      { wholeWords: true },
-    );
-    const result = fs.replaceAll("Pan Nowák podepsal.", [
-      "[REDACTED]",
-    ]);
+    const fs = new FuzzySearch([{ pattern: "Novák", distance: 1 }], {
+      wholeWords: true,
+    });
+    const result = fs.replaceAll("Pan Nowák podepsal.", ["[REDACTED]"]);
     expect(result).toBe("Pan [REDACTED] podepsal.");
   });
 
@@ -405,18 +362,14 @@ describe("replaceAll", () => {
       ],
       { wholeWords: true },
     );
-    const result = fs.replaceAll("Alice met Bob today.", [
-      "[A]",
-      "[B]",
-    ]);
+    const result = fs.replaceAll("Alice met Bob today.", ["[A]", "[B]"]);
     expect(result).toBe("[A] met [B] today.");
   });
 
   test("wrong replacement count throws", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "test", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "test", distance: 1 }], {
+      wholeWords: false,
+    });
     expect(() => {
       fs.replaceAll("test", ["a", "b"]);
     }).toThrow("Expected 1 replacements, got 2");
@@ -446,27 +399,24 @@ describe("UTF-16 offsets", () => {
 
 describe("edge cases", () => {
   test("empty haystack", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "abc", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "abc", distance: 1 }], {
+      wholeWords: false,
+    });
     expect(fs.findIter("")).toHaveLength(0);
     expect(fs.isMatch("")).toBe(false);
   });
 
   test("pattern longer than haystack", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "abcdef", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "abcdef", distance: 1 }], {
+      wholeWords: false,
+    });
     expect(fs.isMatch("abc")).toBe(false);
   });
 
   test("exact match at distance 0", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "exact", distance: 0 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "exact", distance: 0 }], {
+      wholeWords: false,
+    });
     const matches = fs.findIter("an exact match");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.distance).toBe(0);
@@ -474,20 +424,18 @@ describe("edge cases", () => {
   });
 
   test("match at start of text", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 1 }], {
+      wholeWords: false,
+    });
     const matches = fs.findIter("helo world");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.start).toBe(0);
   });
 
   test("match at end of text", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "world", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "world", distance: 1 }], {
+      wholeWords: false,
+    });
     const matches = fs.findIter("hello worlb");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.text).toBe("worlb");
@@ -495,19 +443,17 @@ describe("edge cases", () => {
 
   test("single character pattern (exact)", () => {
     // Single char at dist 0 (dist >= len rejected)
-    const fs = new FuzzySearch(
-      [{ pattern: "a", distance: 0 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "a", distance: 0 }], {
+      wholeWords: false,
+    });
     expect(fs.isMatch("a")).toBe(true);
     expect(fs.isMatch("b")).toBe(false);
   });
 
   test("short pattern with valid distance", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "ab", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "ab", distance: 1 }], {
+      wholeWords: false,
+    });
     expect(fs.isMatch("ab")).toBe(true);
     expect(fs.isMatch("ac")).toBe(true);
     expect(fs.isMatch("xz")).toBe(false);
@@ -521,58 +467,42 @@ describe("Damerau-Levenshtein", () => {
     // Standard Levenshtein: "abcd" → "abdc" = 2
     //   (sub c→d + sub d→c)
     // Damerau: "abcd" → "abdc" = 1 (transpose)
-    const lev = new FuzzySearch(
-      [{ pattern: "abcd", distance: 1 }],
-      {
-        wholeWords: false,
-        metric: "levenshtein",
-      },
-    );
-    const dam = new FuzzySearch(
-      [{ pattern: "abcd", distance: 1 }],
-      {
-        wholeWords: false,
-        metric: "damerau-levenshtein",
-      },
-    );
+    const lev = new FuzzySearch([{ pattern: "abcd", distance: 1 }], {
+      wholeWords: false,
+      metric: "levenshtein",
+    });
+    const dam = new FuzzySearch([{ pattern: "abcd", distance: 1 }], {
+      wholeWords: false,
+      metric: "damerau-levenshtein",
+    });
     // Levenshtein can't find "abdc" at dist 1
     const levM = lev.findIter("xxabdcxx");
     expect(levM.some((m) => m.text === "abdc")).toBe(false);
     // Damerau finds it
     const damM = dam.findIter("xxabdcxx");
-    expect(
-      damM.some(
-        (m) => m.text === "abdc" && m.distance === 1,
-      ),
-    ).toBe(true);
+    expect(damM.some((m) => m.text === "abdc" && m.distance === 1)).toBe(true);
   });
 
   test("transposition in real name", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Novák", distance: 1 }],
-      {
-        wholeWords: true,
-        metric: "damerau-levenshtein",
-      },
-    );
+    const fs = new FuzzySearch([{ pattern: "Novák", distance: 1 }], {
+      wholeWords: true,
+      metric: "damerau-levenshtein",
+    });
     // "Nvoák" = transposition of o and v
     expect(fs.isMatch("Nvoák podepsal")).toBe(true);
     // Standard Levenshtein would need dist 2
-    const lev = new FuzzySearch(
-      [{ pattern: "Novák", distance: 1 }],
-      { wholeWords: true, metric: "levenshtein" },
-    );
+    const lev = new FuzzySearch([{ pattern: "Novák", distance: 1 }], {
+      wholeWords: true,
+      metric: "levenshtein",
+    });
     expect(lev.isMatch("Nvoák podepsal")).toBe(false);
   });
 
   test("non-transposition edits unchanged", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 1 }],
-      {
-        wholeWords: false,
-        metric: "damerau-levenshtein",
-      },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 1 }], {
+      wholeWords: false,
+      metric: "damerau-levenshtein",
+    });
     // Substitution: still dist 1
     const m1 = fs.findIter("hallo");
     expect(m1).toHaveLength(1);
@@ -590,13 +520,10 @@ describe("Damerau-Levenshtein", () => {
   });
 
   test("distance field reflects Damerau metric", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "abcd", distance: 1 }],
-      {
-        wholeWords: false,
-        metric: "damerau-levenshtein",
-      },
-    );
+    const fs = new FuzzySearch([{ pattern: "abcd", distance: 1 }], {
+      wholeWords: false,
+      metric: "damerau-levenshtein",
+    });
     const matches = fs.findIter("abdc");
     expect(matches).toHaveLength(1);
     // "abdc" is a transposition of "abcd" → dist 1
@@ -605,10 +532,9 @@ describe("Damerau-Levenshtein", () => {
   });
 
   test("default metric is levenshtein", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "abcd", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "abcd", distance: 1 }], {
+      wholeWords: false,
+    });
     // "abdc" is dist 2 in standard Levenshtein
     // (two substitutions), not findable at dist 1.
     const m = fs.findIter("xxabdcxx");
@@ -616,17 +542,12 @@ describe("Damerau-Levenshtein", () => {
   });
 
   test("replaceAll with Damerau", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "test", distance: 1 }],
-      {
-        wholeWords: true,
-        metric: "damerau-levenshtein",
-      },
-    );
+    const fs = new FuzzySearch([{ pattern: "test", distance: 1 }], {
+      wholeWords: true,
+      metric: "damerau-levenshtein",
+    });
     // "tset" = transposition → dist 1 in Damerau
-    const result = fs.replaceAll("the tset passed", [
-      "[OK]",
-    ]);
+    const result = fs.replaceAll("the tset passed", ["[OK]"]);
     expect(result).toBe("the [OK] passed");
   });
 });
@@ -635,19 +556,17 @@ describe("Damerau-Levenshtein", () => {
 
 describe("distance: auto", () => {
   test("short pattern (≤2): exact only", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "ab", distance: "auto" }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "ab", distance: "auto" }], {
+      wholeWords: false,
+    });
     expect(fs.isMatch("ab")).toBe(true);
     expect(fs.isMatch("ac")).toBe(false);
   });
 
   test("medium pattern (3-5): distance 1", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: "auto" }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: "auto" }], {
+      wholeWords: false,
+    });
     // distance 1: substitution
     expect(fs.isMatch("hallo")).toBe(true);
     // distance 2: too far for auto on 5 chars
@@ -656,10 +575,9 @@ describe("distance: auto", () => {
   });
 
   test("long pattern (6+): distance 2", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Gaislerová", distance: "auto" }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "Gaislerová", distance: "auto" }], {
+      wholeWords: false,
+    });
     // distance 1
     expect(fs.isMatch("Gais1erová")).toBe(true);
     // distance 2 (10 chars → auto = 2)
@@ -696,12 +614,8 @@ describe("distance()", () => {
 
   test("Damerau-Levenshtein", () => {
     // Transposition = 1
-    expect(
-      distance("abcd", "abdc", "damerau-levenshtein"),
-    ).toBe(1);
-    expect(
-      distance("test", "tset", "damerau-levenshtein"),
-    ).toBe(1);
+    expect(distance("abcd", "abdc", "damerau-levenshtein")).toBe(1);
+    expect(distance("test", "tset", "damerau-levenshtein")).toBe(1);
     // Standard Levenshtein = 2
     expect(distance("abcd", "abdc")).toBe(2);
     expect(distance("test", "tset")).toBe(2);
@@ -712,9 +626,7 @@ describe("distance()", () => {
     expect(distance("😀", "😀")).toBe(0);
     expect(distance("😀x", "😀y")).toBe(1);
     expect(distance("😀🎉", "🎉😀")).toBe(2);
-    expect(
-      distance("😀🎉", "🎉😀", "damerau-levenshtein"),
-    ).toBe(1);
+    expect(distance("😀🎉", "🎉😀", "damerau-levenshtein")).toBe(1);
   });
 
   test("Czech diacritics", () => {
@@ -730,12 +642,8 @@ describe("distance()", () => {
   });
 
   test("symmetric", () => {
-    expect(distance("abc", "xyz")).toBe(
-      distance("xyz", "abc"),
-    );
-    expect(distance("hello", "world")).toBe(
-      distance("world", "hello"),
-    );
+    expect(distance("abc", "xyz")).toBe(distance("xyz", "abc"));
+    expect(distance("hello", "world")).toBe(distance("world", "hello"));
   });
 });
 
@@ -747,8 +655,7 @@ describe("distance()", () => {
 describe("distance() vs js-levenshtein", () => {
   // We need the npm package for this test.
   // Skip gracefully if not installed.
-  let jsLev: ((a: string, b: string) => number) | null =
-    null;
+  let jsLev: ((a: string, b: string) => number) | null = null;
   try {
     jsLev = require("../__bench__/node_modules/js-levenshtein");
   } catch {
@@ -793,9 +700,7 @@ describe("distance() vs js-levenshtein", () => {
     expect(distance("🎉🔥", "🔥🎉")).toBe(2);
     expect(jsLev("🎉🔥", "🔥🎉")).toBe(4);
 
-    expect(
-      distance("🎉🔥", "🔥🎉", "damerau-levenshtein"),
-    ).toBe(1);
+    expect(distance("🎉🔥", "🔥🎉", "damerau-levenshtein")).toBe(1);
   });
 });
 
@@ -803,10 +708,9 @@ describe("distance() vs js-levenshtein", () => {
 
 describe("score", () => {
   test("score = 1 for exact matches", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 0 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 0 }], {
+      wholeWords: false,
+    });
     const matches = fs.findIter("hello");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.score).toBe(1);
@@ -814,10 +718,9 @@ describe("score", () => {
 
   test("score reflects distance/length ratio", () => {
     // pattern length 5, distance 1 -> 1 - 1/5 = 0.8
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 1 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 1 }], {
+      wholeWords: false,
+    });
     const matches = fs.findIter("helo world");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.distance).toBe(1);
@@ -860,10 +763,9 @@ describe("score", () => {
       },
     ];
     for (const c of cases) {
-      const fs = new FuzzySearch(
-        [{ pattern: c.pattern, distance: c.dist }],
-        { wholeWords: false },
-      );
+      const fs = new FuzzySearch([{ pattern: c.pattern, distance: c.dist }], {
+        wholeWords: false,
+      });
       const matches = fs.findIter(c.hay);
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0]!.score).toBeCloseTo(c.expected, 10);
@@ -871,10 +773,9 @@ describe("score", () => {
   });
 
   test("score is always in [0, 1]", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "abcdef", distance: 3 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "abcdef", distance: 3 }], {
+      wholeWords: false,
+    });
     for (const m of fs.findIter("abxyzf abcdef abdcef")) {
       expect(m.score).toBeGreaterThanOrEqual(0);
       expect(m.score).toBeLessThanOrEqual(1);
@@ -882,10 +783,9 @@ describe("score", () => {
   });
 
   test("score is deterministic across calls", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "Novák", distance: 2 }],
-      { wholeWords: false },
-    );
+    const fs = new FuzzySearch([{ pattern: "Novák", distance: 2 }], {
+      wholeWords: false,
+    });
     const a = fs.findIter("xx Nowák yy");
     const b = fs.findIter("xx Nowák yy");
     expect(a.length).toBe(b.length);
@@ -919,10 +819,10 @@ describe("minScore", () => {
   });
 
   test("strict cutoff drops low-score matches", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 2 }],
-      { wholeWords: false, minScore: 0.85 },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 2 }], {
+      wholeWords: false,
+      minScore: 0.85,
+    });
     // "hxllo" -> distance 1 -> score 0.8, dropped
     expect(fs.findIter("hxllo")).toHaveLength(0);
     // exact match -> score 1, kept
@@ -930,37 +830,37 @@ describe("minScore", () => {
   });
 
   test("minScore = 0 admits everything", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 2 }],
-      { wholeWords: false, minScore: 0 },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 2 }], {
+      wholeWords: false,
+      minScore: 0,
+    });
     expect(fs.findIter("hxxlo").length).toBeGreaterThan(0);
   });
 
   test("minScore = 1 keeps only perfect matches", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 2 }],
-      { wholeWords: false, minScore: 1 },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 2 }], {
+      wholeWords: false,
+      minScore: 1,
+    });
     expect(fs.findIter("hello")).toHaveLength(1);
     expect(fs.findIter("helo")).toHaveLength(0);
   });
 
   test("minScore does not affect isMatch", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 2 }],
-      { wholeWords: false, minScore: 1 },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 2 }], {
+      wholeWords: false,
+      minScore: 1,
+    });
     // findIter would drop the dist-1 hit; isMatch
     // still reports any-match.
     expect(fs.isMatch("hxllo")).toBe(true);
   });
 
   test("minScore does not affect replaceAll", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 2 }],
-      { wholeWords: false, minScore: 1 },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 2 }], {
+      wholeWords: false,
+      minScore: 1,
+    });
     // Despite minScore=1, replaceAll still rewrites
     // the dist-1 match (documented asymmetry).
     expect(fs.replaceAll("hxllo", ["[X]"])).toBe("[X]");
@@ -986,10 +886,10 @@ describe("kBest", () => {
   });
 
   test("ties broken by lower start", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "ab", distance: 0 }],
-      { wholeWords: false, kBest: 1 },
-    );
+    const fs = new FuzzySearch([{ pattern: "ab", distance: 0 }], {
+      wholeWords: false,
+      kBest: 1,
+    });
     const matches = fs.findIter("ab xx ab");
     expect(matches).toHaveLength(1);
     expect(matches[0]!.start).toBe(0);
@@ -1015,19 +915,19 @@ describe("kBest", () => {
   });
 
   test("kBest larger than count returns all", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "abc", distance: 1 }],
-      { wholeWords: false, kBest: 100 },
-    );
+    const fs = new FuzzySearch([{ pattern: "abc", distance: 1 }], {
+      wholeWords: false,
+      kBest: 100,
+    });
     const matches = fs.findIter("abc xyz abd");
     expect(matches.length).toBeLessThanOrEqual(2);
   });
 
   test("kBest = 0 returns empty", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "abc", distance: 1 }],
-      { wholeWords: false, kBest: 0 },
-    );
+    const fs = new FuzzySearch([{ pattern: "abc", distance: 1 }], {
+      wholeWords: false,
+      kBest: 0,
+    });
     expect(fs.findIter("abc")).toHaveLength(0);
   });
 
@@ -1047,18 +947,18 @@ describe("kBest", () => {
   });
 
   test("kBest does not affect isMatch", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "abc", distance: 1 }],
-      { wholeWords: false, kBest: 0 },
-    );
+    const fs = new FuzzySearch([{ pattern: "abc", distance: 1 }], {
+      wholeWords: false,
+      kBest: 0,
+    });
     expect(fs.isMatch("abc")).toBe(true);
   });
 
   test("kBest does not affect replaceAll", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "abc", distance: 1 }],
-      { wholeWords: false, kBest: 0 },
-    );
+    const fs = new FuzzySearch([{ pattern: "abc", distance: 1 }], {
+      wholeWords: false,
+      kBest: 0,
+    });
     expect(fs.replaceAll("abc xyz", ["X"])).toBe("X xyz");
   });
 });
@@ -1084,10 +984,11 @@ describe("minScore + kBest", () => {
   });
 
   test("kBest does not resurrect filtered matches", () => {
-    const fs = new FuzzySearch(
-      [{ pattern: "hello", distance: 2 }],
-      { wholeWords: false, minScore: 1, kBest: 10 },
-    );
+    const fs = new FuzzySearch([{ pattern: "hello", distance: 2 }], {
+      wholeWords: false,
+      minScore: 1,
+      kBest: 10,
+    });
     // dist-1 match has score 0.8, filtered out.
     // kBest can't pull it back.
     expect(fs.findIter("hxllo")).toHaveLength(0);

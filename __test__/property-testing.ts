@@ -12,15 +12,9 @@ export class PropertyTestConfigError extends Error {
   }
 }
 
-const integerEnv = (
-  raw: string | undefined,
-  fallback: number,
-): number => {
+const integerEnv = (raw: string | undefined, fallback: number): number => {
   if (raw === undefined) return fallback;
-  if (
-    !/^-?\d+$/u.test(raw) ||
-    !Number.isSafeInteger(Number(raw))
-  ) {
+  if (!/^-?\d+$/u.test(raw) || !Number.isSafeInteger(Number(raw))) {
     throw new PropertyTestConfigError(
       "Property test configuration needs an integer.",
     );
@@ -41,13 +35,8 @@ type PropertyConfigOptions<T> = {
   env?: PropertyTestEnvironment;
 };
 
-const runFactor = (
-  env: PropertyTestEnvironment,
-): number => {
-  const factor = integerEnv(
-    env.PROPERTY_TEST_NUM_RUNS_FACTOR,
-    1,
-  );
+const runFactor = (env: PropertyTestEnvironment): number => {
+  const factor = integerEnv(env.PROPERTY_TEST_NUM_RUNS_FACTOR, 1);
   if (factor < 1) {
     throw new PropertyTestConfigError(
       "Property test run factor must be positive.",
@@ -56,9 +45,7 @@ const runFactor = (
   return factor;
 };
 
-export const propertyTestTimeout = (
-  baseMs: number,
-): number => {
+export const propertyTestTimeout = (baseMs: number): number => {
   const timeout = baseMs * runFactor(process.env);
   if (!Number.isSafeInteger(timeout) || timeout < 1) {
     throw new PropertyTestConfigError(
@@ -73,10 +60,7 @@ export const propertyConfig = <T>({
   env = process.env,
 }: PropertyConfigOptions<T> = {}): fc.Parameters<T> => {
   const factor = runFactor(env);
-  const seed = integerEnv(
-    env.PROPERTY_TEST_SEED,
-    FIXED_SEED,
-  );
+  const seed = integerEnv(env.PROPERTY_TEST_SEED, FIXED_SEED);
   if (seed < -2_147_483_648 || seed > 2_147_483_647) {
     throw new PropertyTestConfigError(
       "Property test seed must fit a signed 32-bit integer.",
@@ -108,13 +92,8 @@ export const assertProperty = <T>(
   property: fc.IProperty<T>,
   params?: Omit<fc.Parameters<T>, "seed" | "path">,
 ): void => {
-  const config = propertyConfig(
-    params === undefined ? {} : { params },
-  );
-  const pinned =
-    Object.entries(seeds).find(
-      ([key]) => key === id,
-    )?.[1] ?? [];
+  const config = propertyConfig(params === undefined ? {} : { params });
+  const pinned = Object.entries(seeds).find(([key]) => key === id)?.[1] ?? [];
   for (const { seed, path } of pinned) {
     fc.assert(property, {
       seed,

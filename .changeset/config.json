@@ -9,7 +9,7 @@
   "linked": [],
   "access": "public",
   "baseBranch": "main",
-  "format": "oxfmt",
+  "format": false,
   "updateInternalDependencies": "patch",
   "ignore": []
 }

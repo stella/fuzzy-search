@@ -58,7 +58,7 @@
     "changeset:version": "changeset version && node scripts/version-sync.mjs sync",
     "release:prepare": "node scripts/prepare-release-package.mjs",
     "release:check": "node scripts/check-release-tarballs.mjs",
-    "format": "oxfmt . \"!provenance/**\" \"!.ai/**\" \"!.agents/**\" \"!.claude/**\" \"!AGENTS.md\" \"!CLAUDE.md\" \"!GEMINI.md\" && cargo fmt --all",
+    "format": "bun fmt && cargo fmt --all",
     "typecheck": "bun check --no-pretty --all --project=tsconfig.json",
     "check:typecheck-parity": "stll-typecheck-parity",
     "lint": "bun --bun oxlint -c oxlint.config.ts --report-unused-disable-directives-severity=error --deny-warnings --type-aware .",
@@ -79,12 +79,12 @@
     "@emnapi/runtime": "1.11.1",
     "@napi-rs/cli": "3.7.2",
     "@napi-rs/wasm-runtime": "1.2.3",
-    "@stll/oxlint-config": "1.4.0",
-    "@stll/oxlint-plugin": "0.2.2",
+    "@stll/oxlint-config": "1.7.0",
+    "@stll/oxlint-plugin": "0.6.0",
     "@stll/typescript-config": "0.8.0",
     "@tybys/wasm-util": "0.10.2",
     "@types/node": "^26.2.0",
-    "bun-types": "1.4.3",
+    "bun-types": "1.4.4",
     "damerau-levenshtein": "1.0.8",
     "emnapi": "1.11.1",
     "fast-check": "^4.9.0",
@@ -92,7 +92,6 @@
     "fuse.js": "7.5.0",
     "fuzzball": "2.2.6",
     "js-levenshtein": "1.1.6",
-    "oxfmt": "0.72.0",
     "oxlint": "1.87.0",
     "oxlint-tsgolint": "7.0.2003",
     "tsdown": "0.22.14",
@@ -117,6 +116,6 @@
   "engines": {
     "node": ">= 18"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4",
   "trustedDependencies": []
 }

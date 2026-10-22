@@ -18,23 +18,16 @@ const scalar = fc.constantFrom(
   "\u00a0",
   " ",
 );
-const text = fc
-  .array(scalar, { maxLength: 14 })
-  .map((chars) => chars.join(""));
+const text = fc.array(scalar, { maxLength: 14 }).map((chars) => chars.join(""));
 const pattern = fc
   .array(scalar, { minLength: 3, maxLength: 8 })
   .map((chars) => chars.join(""));
 
 /** Exhaust all scalar-aligned windows; no Myers or greedy selection involved. */
-const candidates = (
-  needle: string,
-  haystack: string,
-  budget: number,
-) => {
+const candidates = (needle: string, haystack: string, budget: number) => {
   const chars = Array.from(haystack);
   const offsets = [0];
-  for (const char of chars)
-    offsets.push(offsets.at(-1)! + char.length);
+  for (const char of chars) offsets.push(offsets.at(-1)! + char.length);
   const windows: {
     start: number;
     end: number;
@@ -55,16 +48,10 @@ const candidates = (
   return windows;
 };
 
-const referenceDistance = (
-  left: string,
-  right: string,
-): number => {
+const referenceDistance = (left: string, right: string): number => {
   const a = Array.from(left);
   const b = Array.from(right);
-  let row = Array.from(
-    { length: b.length + 1 },
-    (_, i) => i,
-  );
+  let row = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (const [i, char] of a.entries()) {
     const next = [i + 1];
     for (const [j, other] of b.entries()) {
@@ -81,10 +68,7 @@ const referenceDistance = (
   return row.at(-1)!;
 };
 
-const assertSpans = (
-  matches: FuzzyMatch[],
-  haystack: string,
-): void => {
+const assertSpans = (matches: FuzzyMatch[], haystack: string): void => {
   let previousEnd = 0;
   const boundaries = new Set([0]);
   let offset = 0;
@@ -98,9 +82,7 @@ const assertSpans = (
     expect(match.end).toBeLessThanOrEqual(haystack.length);
     expect(boundaries.has(match.start)).toBe(true);
     expect(boundaries.has(match.end)).toBe(true);
-    expect(haystack.slice(match.start, match.end)).toBe(
-      match.text,
-    );
+    expect(haystack.slice(match.start, match.end)).toBe(match.text);
     previousEnd = match.end;
   }
 };
@@ -110,25 +92,14 @@ describe("Unicode matching contracts", () => {
     assertProperty(
       "unicode-distance-laws",
       fc.property(text, text, text, (a, b, c) => {
-        for (const metric of [
-          "levenshtein",
-          "damerau-levenshtein",
-        ] as const) {
+        for (const metric of ["levenshtein", "damerau-levenshtein"] as const) {
           expect(distance(a, a, metric)).toBe(0);
-          expect(distance(a, b, metric)).toBe(
-            distance(b, a, metric),
-          );
-          expect(
-            distance(a, b, metric),
-          ).toBeGreaterThanOrEqual(
-            Math.abs(
-              Array.from(a).length - Array.from(b).length,
-            ),
+          expect(distance(a, b, metric)).toBe(distance(b, a, metric));
+          expect(distance(a, b, metric)).toBeGreaterThanOrEqual(
+            Math.abs(Array.from(a).length - Array.from(b).length),
           );
         }
-        expect(distance(a, b)).toBe(
-          referenceDistance(a, b),
-        );
+        expect(distance(a, b)).toBe(referenceDistance(a, b));
         // Restricted Damerau (OSA) does not claim the triangle inequality.
         expect(distance(a, c)).toBeLessThanOrEqual(
           distance(a, b) + distance(b, c),
@@ -146,25 +117,15 @@ describe("Unicode matching contracts", () => {
         fc.boolean(),
         fc.integer({ min: 0, max: 1 }),
         (needle, drawn, embed, budget) => {
-          const haystack = embed
-            ? `${drawn}\u00a0${needle}`
-            : drawn;
-          const expected = candidates(
-            needle,
-            haystack,
-            budget,
-          );
+          const haystack = embed ? `${drawn}\u00a0${needle}` : drawn;
+          const expected = candidates(needle, haystack, budget);
           const search = new FuzzySearch(
             [{ pattern: needle, distance: budget }],
             { wholeWords: false },
           );
           const found = search.findIter(haystack);
-          expect(found.length > 0).toBe(
-            expected.length > 0,
-          );
-          expect(search.isMatch(haystack)).toBe(
-            expected.length > 0,
-          );
+          expect(found.length > 0).toBe(expected.length > 0);
+          expect(search.isMatch(haystack)).toBe(expected.length > 0);
           for (const { start, end, distance: d } of found) {
             expect(expected).toContainEqual({
               start,
@@ -192,10 +153,9 @@ describe("Unicode matching contracts", () => {
           selected.push(candidate);
           previousEnd = candidate.end;
         }
-        const found = new FuzzySearch(
-          [{ pattern: needle, distance: 0 }],
-          { wholeWords: false },
-        ).findIter(haystack);
+        const found = new FuzzySearch([{ pattern: needle, distance: 0 }], {
+          wholeWords: false,
+        }).findIter(haystack);
         expect(
           found.map(({ start, end, distance: d }) => ({
             start,
@@ -224,27 +184,18 @@ describe("Unicode matching contracts", () => {
         fc.boolean(),
         (needle, caseInsensitive, normalizeDiacritics) => {
           const fold = (value: string) => {
-            const cased = caseInsensitive
-              ? value.toLowerCase()
-              : value;
+            const cased = caseInsensitive ? value.toLowerCase() : value;
             return normalizeDiacritics
-              ? cased
-                  .normalize("NFD")
-                  .replace(/\p{M}/gu, "")
+              ? cased.normalize("NFD").replace(/\p{M}/gu, "")
               : cased;
           };
-          const spelled = caseInsensitive
-            ? needle.toUpperCase()
-            : needle;
+          const spelled = caseInsensitive ? needle.toUpperCase() : needle;
           const haystack = `😀\u00a0${normalizeDiacritics ? spelled.normalize("NFD") : spelled}\u00a0${spelled}`;
-          const actual = new FuzzySearch(
-            [{ pattern: needle, distance: 0 }],
-            {
-              wholeWords: true,
-              caseInsensitive,
-              normalizeDiacritics,
-            },
-          ).findIter(haystack);
+          const actual = new FuzzySearch([{ pattern: needle, distance: 0 }], {
+            wholeWords: true,
+            caseInsensitive,
+            normalizeDiacritics,
+          }).findIter(haystack);
           const canonical = new FuzzySearch(
             [{ pattern: fold(needle), distance: 0 }],
             { wholeWords: true },
@@ -255,12 +206,10 @@ describe("Unicode matching contracts", () => {
               distance: match.distance,
             })),
           ).toEqual(
-            canonical.map(
-              ({ text: matchedText, distance: d }) => ({
-                text: matchedText,
-                distance: d,
-              }),
-            ),
+            canonical.map(({ text: matchedText, distance: d }) => ({
+              text: matchedText,
+              distance: d,
+            })),
           );
           expect(actual.length).toBe(2);
           assertSpans(actual, haystack);
@@ -278,19 +227,13 @@ describe("Unicode matching contracts", () => {
         (unit, count) => {
           const haystack = `${unit.repeat(count)}\u00a0needle\u00a0`;
           const started = performance.now();
-          const found = new FuzzySearch(
-            [{ pattern: "needle", distance: 1 }],
-            { wholeWords: false },
-          ).findIter(haystack);
+          const found = new FuzzySearch([{ pattern: "needle", distance: 1 }], {
+            wholeWords: false,
+          }).findIter(haystack);
           expect(
-            found.some(
-              ({ text: matchedText }) =>
-                matchedText === "needle",
-            ),
+            found.some(({ text: matchedText }) => matchedText === "needle"),
           ).toBe(true);
-          expect(performance.now() - started).toBeLessThan(
-            2000,
-          );
+          expect(performance.now() - started).toBeLessThan(2000);
           assertSpans(found, haystack);
         },
       ),

@@ -57,11 +57,7 @@ export function naiveSlidingWindow(
     let lastEnd = 0;
     for (let i = 0; i <= text.length - minLen; i++) {
       if (i < lastEnd) continue;
-      for (
-        let len = minLen;
-        len <= maxLen && i + len <= text.length;
-        len++
-      ) {
+      for (let len = minLen; len <= maxLen && i + len <= text.length; len++) {
         const window = text.slice(i, i + len);
         if (naiveLevenshtein(pattern, window) <= distance) {
           count++;
@@ -87,11 +83,7 @@ export function fastLevSlidingWindow(
     let lastEnd = 0;
     for (let i = 0; i <= text.length - minLen; i++) {
       if (i < lastEnd) continue;
-      for (
-        let len = minLen;
-        len <= maxLen && i + len <= text.length;
-        len++
-      ) {
+      for (let len = minLen; len <= maxLen && i + len <= text.length; len++) {
         const window = text.slice(i, i + len);
         if (fastLev(pattern, window) <= distance) {
           count++;
@@ -117,20 +109,17 @@ export const libs: Lib[] = [
         })),
         { wholeWords: false },
       ),
-    search: (engine, h) =>
-      (engine as FuzzySearch).findIter(h).length,
+    search: (engine, h) => (engine as FuzzySearch).findIter(h).length,
   },
   {
     name: "fastest-levenshtein + window",
     build: (p) => p,
-    search: (p, h) =>
-      fastLevSlidingWindow(p as PatternDef[], h),
+    search: (p, h) => fastLevSlidingWindow(p as PatternDef[], h),
   },
   {
     name: "naive JS (sliding window)",
     build: (p) => p,
-    search: (p, h) =>
-      naiveSlidingWindow(p as PatternDef[], h),
+    search: (p, h) => naiveSlidingWindow(p as PatternDef[], h),
   },
   {
     name: "fuse.js (word-split)",
@@ -145,12 +134,10 @@ export const libs: Lib[] = [
       };
       // Split text into words, search each
       // pattern in the word list.
-      const words = h
-        .split(/\s+/)
-        .map((w: string, i: number) => ({
-          word: w,
-          idx: i,
-        }));
+      const words = h.split(/\s+/).map((w: string, i: number) => ({
+        word: w,
+        idx: i,
+      }));
       const fuse = new Fuse(words, {
         keys: ["word"],
         threshold: 0.4,
@@ -172,11 +159,10 @@ export const libs: Lib[] = [
       const words = h.split(/\s+/);
       let count = 0;
       for (const pat of patterns) {
-        const results = fuzzball.extract(
-          pat.pattern,
-          words,
-          { scorer: fuzzball.ratio, cutoff: 70 },
-        );
+        const results = fuzzball.extract(pat.pattern, words, {
+          scorer: fuzzball.ratio,
+          cutoff: 70,
+        });
         count += results.length;
       }
       return count;
@@ -186,11 +172,7 @@ export const libs: Lib[] = [
 
 // ─── Bench runner ─────────────────────────────
 
-export const bench = (
-  name: string,
-  fn: () => number,
-  n: number,
-) => {
+export const bench = (name: string, fn: () => number, n: number) => {
   for (let i = 0; i < 2; i++) fn();
   const t = performance.now();
   let c = 0;

@@ -1,8 +1,8 @@
 import { describe, expect, mock, test } from "bun:test";
 
 import stllFuzzySearchWasmVite, {
-  WASM_VITE_PACKAGES,
   buildFuzzySearchWasmViteConfig,
+  WASM_VITE_PACKAGES,
 } from "../src/vite";
 import { injectWasmFetchGuard } from "../src/wasm-fetch-guard";
 
@@ -58,13 +58,9 @@ const bytes = await fetch(__wasmUrl).then((res) => res.arrayBuffer())
       "@stll/fuzzy-search-wasm",
     );
 
-    expect(transformed).toContain(
-      "const view = new Uint8Array(bytes)",
-    );
+    expect(transformed).toContain("const view = new Uint8Array(bytes)");
     expect(transformed).toContain("view[0] !== 0x00");
-    expect(transformed).toContain(
-      "@stll/fuzzy-search-wasm/vite",
-    );
+    expect(transformed).toContain("@stll/fuzzy-search-wasm/vite");
   });
 
   test("warns when napi-rs loader format changes", () => {

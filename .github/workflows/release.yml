@@ -468,14 +468,7 @@ jobs:
 
   finalize:
     name: Finalize
-    needs:
-      [
-        preflight,
-        pack,
-        attest,
-        publish-core,
-        assemble-release,
-      ]
+    needs: [preflight, pack, attest, publish-core, assemble-release]
     if: >-
       github.ref == 'refs/heads/main' && (
         needs.pack.result == 'success'

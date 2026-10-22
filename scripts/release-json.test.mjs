@@ -15,9 +15,7 @@ test("package metadata narrows strings and retains unrelated fields", () => {
     optionalDependencies: { native: "1.2.3" },
     custom: { enabled: true },
   };
-  expect(
-    parsePackageManifest(JSON.stringify(manifest)),
-  ).toEqual(manifest);
+  expect(parsePackageManifest(JSON.stringify(manifest))).toEqual(manifest);
   for (const invalid of [
     null,
     [],
@@ -27,9 +25,7 @@ test("package metadata narrows strings and retains unrelated fields", () => {
     { ...manifest, main: 1 },
     { ...manifest, optionalDependencies: { native: 1 } },
   ])
-    expect(() =>
-      parsePackageManifest(JSON.stringify(invalid)),
-    ).toThrow();
+    expect(() => parsePackageManifest(JSON.stringify(invalid))).toThrow();
 });
 
 test("Cargo and registry envelopes validate fields before release decisions", () => {
@@ -52,15 +48,13 @@ test("Cargo and registry envelopes validate fields before release decisions", ()
     { ...metadata, packages: [null] },
     {
       ...metadata,
-      packages: [
-        { name: "public", version: "1.2.3", publish: [1] },
-      ],
+      packages: [{ name: "public", version: "1.2.3", publish: [1] }],
     },
   ])
     expect(() => parseCargoMetadata(invalid)).toThrow();
-  expect(
-    parseRegistryVersion({ version: { checksum: "abc" } }),
-  ).toEqual({ checksum: "abc" });
+  expect(parseRegistryVersion({ version: { checksum: "abc" } })).toEqual({
+    checksum: "abc",
+  });
   for (const invalid of [
     null,
     {},
@@ -74,17 +68,8 @@ test("SBOM drift diagnostics preserve structured invalid versions without object
   expect(formatSbomVersion("1.2.3")).toBe("1.2.3");
   for (const missing of [null, undefined])
     expect(formatSbomVersion(missing)).toBe("<missing>");
-  for (const value of [
-    { version: "unexpected" },
-    ["unexpected"],
-    false,
-    4,
-  ]) {
-    expect(formatSbomVersion(value)).toBe(
-      JSON.stringify(value),
-    );
-    expect(formatSbomVersion(value)).not.toContain(
-      "[object Object]",
-    );
+  for (const value of [{ version: "unexpected" }, ["unexpected"], false, 4]) {
+    expect(formatSbomVersion(value)).toBe(JSON.stringify(value));
+    expect(formatSbomVersion(value)).not.toContain("[object Object]");
   }
 });

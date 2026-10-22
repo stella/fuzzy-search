@@ -4,41 +4,28 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 
 const root = new URL("../", import.meta.url);
-const read = (path: string) =>
-  readFileSync(new URL(path, root), "utf8");
+const read = (path: string) => readFileSync(new URL(path, root), "utf8");
 
 test("repository workflows satisfy the installed shared toolchain guard", () => {
-  const result = spawnSync(
-    "bunx",
-    ["--no-install", "stll-toolchain-check"],
-    {
-      cwd: root,
-      encoding: "utf8",
-    },
-  );
+  const result = spawnSync("bunx", ["--no-install", "stll-toolchain-check"], {
+    cwd: root,
+    encoding: "utf8",
+  });
   expect(result.status, result.stderr).toBe(0);
   const workflow = read(".github/workflows/ci.yml");
-  expect(workflow).toContain(
-    'HAWK_RUST_TOOLCHAIN: "1.97.1"',
-  );
+  expect(workflow).toContain('HAWK_RUST_TOOLCHAIN: "1.97.1"');
   expect(workflow).toContain('toolchain: "1.97.1"');
   const manifest = JSON.parse(read("package.json"));
-  expect(manifest.scripts["rust:hawk"]).toContain(
-    "cargo +1.97.1 hawk",
-  );
+  expect(manifest.scripts["rust:hawk"]).toContain("cargo +1.97.1 hawk");
 });
 
 test("change detection follows trust and the CI dependency graph stays acyclic", () => {
-  const workflow = Bun.YAML.parse(
-    read(".github/workflows/ci.yml"),
-  );
+  const workflow = Bun.YAML.parse(read(".github/workflows/ci.yml"));
   const jobs = workflow.jobs;
   const detector = jobs["check-changes"];
   expect(detector.needs).toEqual(["trust-check"]);
   expect(jobs["trust-check"].needs).toBeUndefined();
-  const condition = detector.if
-    .trim()
-    .replace(/\s+/gu, " ");
+  const condition = detector.if.trim().replace(/\s+/gu, " ");
   expect(condition).toBe(
     "always() && !cancelled() && (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true')",
   );
@@ -81,10 +68,7 @@ test("change detection follows trust and the CI dependency graph stays acyclic",
     },
   ]) {
     const result = runInNewContext(
-      condition.replaceAll(
-        "needs.trust-check.",
-        'needs["trust-check"].',
-      ),
+      condition.replaceAll("needs.trust-check.", 'needs["trust-check"].'),
       {
         always: () => true,
         cancelled: () => scenario.cancelled,
@@ -99,19 +83,12 @@ test("change detection follows trust and the CI dependency graph stays acyclic",
     expect(result).toBe(scenario.expected);
   }
   const dependencies = (job: unknown) => {
-    if (
-      typeof job !== "object" ||
-      job === null ||
-      !("needs" in job)
-    )
-      return [];
+    if (typeof job !== "object" || job === null || !("needs" in job)) return [];
     const needs = job.needs;
     if (typeof needs === "string") return [needs];
     if (
       Array.isArray(needs) &&
-      needs.every(
-        (value: unknown) => typeof value === "string",
-      )
+      needs.every((value: unknown) => typeof value === "string")
     )
       return needs;
     throw new Error("invalid CI dependency declaration");
@@ -127,8 +104,7 @@ test("change detection follows trust and the CI dependency graph stays acyclic",
     expect(visiting.has(name)).toBe(false);
     if (visited.has(name)) return;
     const needs = graph.get(name);
-    if (needs === undefined)
-      throw new Error("unknown CI job: " + name);
+    if (needs === undefined) throw new Error("unknown CI job: " + name);
     visiting.add(name);
     for (const dependency of needs) visit(dependency);
     visiting.delete(name);
@@ -150,12 +126,8 @@ test("native Node loads the single explicitly extended build-config import", () 
   );
   expect(result.status, result.stderr).toBe(0);
   const config = read("tsdown.config.ts");
-  expect(
-    config.match(/from "\.\/[^"]+\.ts"/gu),
-  ).toHaveLength(1);
-  expect(
-    JSON.parse(read("tsconfig.json")).compilerOptions,
-  ).toEqual({
+  expect(config.match(/from "\.\/[^"]+\.ts"/gu)).toHaveLength(1);
+  expect(JSON.parse(read("tsconfig.json")).compilerOptions).toEqual({
     allowImportingTsExtensions: true,
   });
 });
@@ -163,19 +135,24 @@ test("native Node loads the single explicitly extended build-config import", () 
 test("first-party quarantine exemptions use exact supported annotations", () => {
   const text = read("bunfig.toml");
   const configuration = Bun.TOML.parse(text);
-  for (const name of configuration.install
-    .minimumReleaseAgeExcludes) {
-    expect(name).toStartWith("@stll/");
+  for (const name of configuration.install.minimumReleaseAgeExcludes) {
     expect(name).not.toContain("*");
     const line = text
       .split("\n")
       .find((entry) =>
-        entry
-          .trimStart()
-          .startsWith(JSON.stringify(name) + ","),
+        entry.trimStart().startsWith(JSON.stringify(name) + ","),
       );
+    // First-party exemptions are permanent; a third-party exclusion names
+    // the instant the normal quarantine admits it.
+    const marker =
+      typeof name === "string" && name.startsWith("@stll/")
+        ? "quarantine-excluded-since"
+        : "quarantine-expires";
     expect(line).toMatch(
-      /^\s*"[^"]+",?\s*#\s*quarantine-excluded-since:\s*\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\s*$/u,
+      new RegExp(
+        `^\\s*"[^"]+",?\\s*#\\s*${marker}:\\s*\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z\\s*$`,
+        "u",
+      ),
     );
   }
 });

@@ -73,8 +73,7 @@ function crossCheck(
     })),
     {
       wholeWords: opts.wholeWords ?? true,
-      normalizeDiacritics:
-        opts.normalizeDiacritics ?? false,
+      normalizeDiacritics: opts.normalizeDiacritics ?? false,
       caseInsensitive: opts.caseInsensitive ?? false,
       metric,
     },
@@ -109,10 +108,7 @@ function crossCheck(
 
     // Cross-check against damerau-levenshtein
     const refDam = refDamerau(pat, matched);
-    if (
-      metric === "damerau-levenshtein" &&
-      m.distance === refDam
-    ) {
+    if (metric === "damerau-levenshtein" && m.distance === refDam) {
       result.damOk++;
     } else if (metric === "damerau-levenshtein") {
       result.damFail.push({
@@ -146,28 +142,17 @@ function crossCheck(
 }
 
 function printResult(r: Result) {
-  const metric =
-    r.damFail.length + r.damOk > 0
-      ? "damerau"
-      : "levenshtein";
+  const metric = r.damFail.length + r.damOk > 0 ? "damerau" : "levenshtein";
   const ok = metric === "damerau" ? r.damOk : r.levOk;
-  const fails =
-    metric === "damerau" ? r.damFail : r.levFail;
+  const fails = metric === "damerau" ? r.damFail : r.levFail;
 
   const status =
-    fails.length === 0
-      ? "\x1b[32m✓ PASS\x1b[0m"
-      : "\x1b[31m✗ FAIL\x1b[0m";
+    fails.length === 0 ? "\x1b[32m✓ PASS\x1b[0m" : "\x1b[31m✗ FAIL\x1b[0m";
 
   const ref =
-    metric === "damerau"
-      ? "damerau-levenshtein (npm)"
-      : "js-levenshtein (npm)";
+    metric === "damerau" ? "damerau-levenshtein (npm)" : "js-levenshtein (npm)";
 
-  console.log(
-    `  ${status} ${r.label}: ` +
-      `${ok}/${r.total} match ${ref}`,
-  );
+  console.log(`  ${status} ${r.label}: ` + `${ok}/${r.total} match ${ref}`);
 
   for (const f of fails.slice(0, 5)) {
     console.log(
@@ -233,17 +218,12 @@ const CZ = [
   { pattern: "Dvořák", distance: 1 },
 ];
 
-printResult(
-  crossCheck("Levenshtein, wholeWords", CZ, czText),
-);
+printResult(crossCheck("Levenshtein, wholeWords", CZ, czText));
 
 printResult(
-  crossCheck(
-    "Damerau-Levenshtein, wholeWords",
-    CZ,
-    czText,
-    { metric: "damerau-levenshtein" },
-  ),
+  crossCheck("Damerau-Levenshtein, wholeWords", CZ, czText, {
+    metric: "damerau-levenshtein",
+  }),
 );
 
 printResult(
@@ -284,9 +264,7 @@ if (bible) {
     { pattern: "offering", distance: 1 },
   ];
 
-  printResult(
-    crossCheck("Levenshtein dist 1", BIBLE, bible),
-  );
+  printResult(crossCheck("Levenshtein dist 1", BIBLE, bible));
   printResult(
     crossCheck(
       "Levenshtein dist 2",
@@ -331,9 +309,7 @@ if (cesNews) {
     { pattern: "koalice", distance: 1 },
   ];
 
-  printResult(
-    crossCheck("Levenshtein dist 1", CZ_NEWS, cesNews),
-  );
+  printResult(crossCheck("Levenshtein dist 1", CZ_NEWS, cesNews));
   printResult(
     crossCheck("Damerau dist 1", CZ_NEWS, cesNews, {
       metric: "damerau-levenshtein",
@@ -346,8 +322,7 @@ if (cesNews) {
 console.log("\n### Random pairs (10,000 × 2)\n");
 
 function randomStr(len: number): string {
-  const chars =
-    "abcdefghijklmnopqrstuvwxyz" + "áčďéěíňóřšťúůýž";
+  const chars = "abcdefghijklmnopqrstuvwxyz" + "áčďéěíňóřšťúůýž";
   let s = "";
   for (let i = 0; i < len; i++) {
     s += chars[Math.floor(Math.random() * chars.length)];
@@ -367,10 +342,10 @@ for (let i = 0; i < 10000; i++) {
   const hay = randomStr(6 + (i % 20));
 
   // Levenshtein check
-  const fsLev = new FuzzySearch(
-    [{ pattern: pat, distance: 2 }],
-    { wholeWords: false, metric: "levenshtein" },
-  );
+  const fsLev = new FuzzySearch([{ pattern: pat, distance: 2 }], {
+    wholeWords: false,
+    metric: "levenshtein",
+  });
   for (const m of fsLev.findIter(hay)) {
     levTotal++;
     const ref = refLevenshtein(pat, m.text);
@@ -378,20 +353,16 @@ for (let i = 0; i < 10000; i++) {
       levOk++;
     } else {
       levMismatches.push(
-        `"${pat}" vs "${m.text}": ` +
-          `ours=${m.distance}, npm=${ref}`,
+        `"${pat}" vs "${m.text}": ` + `ours=${m.distance}, npm=${ref}`,
       );
     }
   }
 
   // Damerau check
-  const fsDam = new FuzzySearch(
-    [{ pattern: pat, distance: 2 }],
-    {
-      wholeWords: false,
-      metric: "damerau-levenshtein",
-    },
-  );
+  const fsDam = new FuzzySearch([{ pattern: pat, distance: 2 }], {
+    wholeWords: false,
+    metric: "damerau-levenshtein",
+  });
   for (const m of fsDam.findIter(hay)) {
     damTotal++;
     const ref = refDamerau(pat, m.text);
@@ -399,8 +370,7 @@ for (let i = 0; i < 10000; i++) {
       damOk++;
     } else {
       damMismatches.push(
-        `"${pat}" vs "${m.text}": ` +
-          `ours=${m.distance}, npm=${ref}`,
+        `"${pat}" vs "${m.text}": ` + `ours=${m.distance}, npm=${ref}`,
       );
     }
   }
@@ -411,8 +381,7 @@ const levStatus =
     ? "\x1b[32m✓ PASS\x1b[0m"
     : "\x1b[31m✗ FAIL\x1b[0m";
 console.log(
-  `  ${levStatus} Levenshtein: ` +
-    `${levOk}/${levTotal} match js-levenshtein`,
+  `  ${levStatus} Levenshtein: ` + `${levOk}/${levTotal} match js-levenshtein`,
 );
 for (const m of levMismatches.slice(0, 5)) {
   console.log(`    MISMATCH: ${m}`);

@@ -6,10 +6,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-import {
-  parsePackageManifest,
-  formatSbomVersion,
-} from "./release-json.mjs";
+import { formatSbomVersion, parsePackageManifest } from "./release-json.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 
@@ -31,10 +28,7 @@ function readPackageManifest(filePath) {
 }
 
 function writeJson(filePath, value) {
-  writeText(
-    filePath,
-    `${JSON.stringify(value, null, 2)}\n`,
-  );
+  writeText(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 function readVersion() {
@@ -51,16 +45,9 @@ function escapeRegex(value) {
 }
 
 /** @param {string} content @param {RegExp} matcher @param {string} replacement @param {string} filePath */
-function replaceRequired(
-  content,
-  matcher,
-  replacement,
-  filePath,
-) {
+function replaceRequired(content, matcher, replacement, filePath) {
   if (!matcher.test(content)) {
-    throw new Error(
-      `Expected to match ${matcher} in ${filePath}`,
-    );
+    throw new Error(`Expected to match ${matcher} in ${filePath}`);
   }
   return content.replace(matcher, replacement);
 }
@@ -82,9 +69,7 @@ export const resolveVersion = ({
 }) =>
   explicitVersion ??
   tag?.replace(/^v/, "") ??
-  (command === "sync"
-    ? packageVersion
-    : versionFileVersion);
+  (command === "sync" ? packageVersion : versionFileVersion);
 
 /** @param {{ content: string, filePath: string, sourceVersion: string, targetVersion: string }} options */
 export const replaceLoaderVersion = ({
@@ -94,9 +79,7 @@ export const replaceLoaderVersion = ({
   targetVersion,
 }) => {
   if (!content.includes(sourceVersion)) {
-    throw new Error(
-      `Expected ${filePath} to contain ${sourceVersion}`,
-    );
+    throw new Error(`Expected ${filePath} to contain ${sourceVersion}`);
   }
   return content.replaceAll(sourceVersion, targetVersion);
 };
@@ -119,10 +102,7 @@ function npmPurlCandidates(name, version) {
 }
 
 function npmPurlPrefixes(name) {
-  return [
-    `pkg:npm/${name}@`,
-    `pkg:npm/${encodedScopedPackageName(name)}@`,
-  ];
+  return [`pkg:npm/${name}@`, `pkg:npm/${encodedScopedPackageName(name)}@`];
 }
 
 /** @param {string} bunLock @param {string} packageName */
@@ -157,12 +137,7 @@ function collectSbomVersionDrift(
 ) {
   if (Array.isArray(value)) {
     for (const item of value) {
-      collectSbomVersionDrift(
-        item,
-        expectedPurls,
-        expectedVersion,
-        results,
-      );
+      collectSbomVersionDrift(item, expectedPurls, expectedVersion, results);
     }
     return;
   }
@@ -172,33 +147,21 @@ function collectSbomVersionDrift(
   }
 
   const purl = "purl" in value ? value.purl : undefined;
-  const version =
-    "version" in value ? value.version : undefined;
+  const version = "version" in value ? value.version : undefined;
   if (
     typeof purl === "string" &&
     expectedPurls.has(purl) &&
     version !== expectedVersion
   ) {
-    results.push(
-      `${purl}: version=${formatSbomVersion(version)}`,
-    );
+    results.push(`${purl}: version=${formatSbomVersion(version)}`);
   }
 
   for (const child of Object.values(value)) {
-    collectSbomVersionDrift(
-      child,
-      expectedPurls,
-      expectedVersion,
-      results,
-    );
+    collectSbomVersionDrift(child, expectedPurls, expectedVersion, results);
   }
 }
 
-function replaceSbomVersionForPurl(
-  provenanceSbom,
-  purl,
-  nextVersion,
-) {
+function replaceSbomVersionForPurl(provenanceSbom, purl, nextVersion) {
   return provenanceSbom.replace(
     new RegExp(
       `("purl": "${escapeRegex(purl)}",\\n\\s+"type": "[^"]+",\\n\\s+"version": ")[^"]+(")`,
@@ -209,25 +172,17 @@ function replaceSbomVersionForPurl(
 }
 
 function packageMeta() {
-  const root = readPackageManifest(
-    repoPath("package.json"),
-  );
+  const root = readPackageManifest(repoPath("package.json"));
   const cargoTomlPath = repoPath("Cargo.toml");
   const cargoToml = readText(cargoTomlPath);
-  const cargoNameMatch = cargoToml.match(
-    /^name = "([^"]+)"$/m,
-  );
+  const cargoNameMatch = cargoToml.match(/^name = "([^"]+)"$/m);
   if (!cargoNameMatch) {
-    throw new Error(
-      `Missing Cargo package name in ${cargoTomlPath}`,
-    );
+    throw new Error(`Missing Cargo package name in ${cargoTomlPath}`);
   }
 
   const [scope, baseName] = root.name.split("/");
   if (!scope || !baseName) {
-    throw new Error(
-      `Expected scoped package name, got ${root.name}`,
-    );
+    throw new Error(`Expected scoped package name, got ${root.name}`);
   }
 
   return {
@@ -239,10 +194,7 @@ function packageMeta() {
     cargoLockPath: repoPath("Cargo.lock"),
     bunLockPath: repoPath("bun.lock"),
     indexCjsPath: repoPath("index.cjs"),
-    provenanceSbomPath: repoPath(
-      "provenance",
-      "sbom.cdx.json",
-    ),
+    provenanceSbomPath: repoPath("provenance", "sbom.cdx.json"),
     wasmManifestPath: repoPath("wasm", "package.json"),
   };
 }
@@ -260,11 +212,7 @@ function workspaceCargoTomlPaths() {
     if (!entry.isDirectory()) {
       continue;
     }
-    const cargoTomlPath = repoPath(
-      "crates",
-      entry.name,
-      "Cargo.toml",
-    );
+    const cargoTomlPath = repoPath("crates", entry.name, "Cargo.toml");
     if (fileExists(cargoTomlPath)) {
       paths.push(cargoTomlPath);
     }
@@ -276,13 +224,9 @@ function workspaceCargoTomlPaths() {
 function cargoPackageNames(cargoTomlPaths) {
   return cargoTomlPaths.map((cargoTomlPath) => {
     const cargoToml = readText(cargoTomlPath);
-    const cargoNameMatch = cargoToml.match(
-      /^name = "([^"]+)"$/m,
-    );
+    const cargoNameMatch = cargoToml.match(/^name = "([^"]+)"$/m);
     if (!cargoNameMatch) {
-      throw new Error(
-        `Missing Cargo package name in ${cargoTomlPath}`,
-      );
+      throw new Error(`Missing Cargo package name in ${cargoTomlPath}`);
     }
     return cargoNameMatch[1];
   });
@@ -295,11 +239,7 @@ function platformPackageManifests() {
     })
     .filter((entry) => entry.isDirectory())
     .map((entry) => {
-      const manifestPath = repoPath(
-        "npm",
-        entry.name,
-        "package.json",
-      );
+      const manifestPath = repoPath("npm", entry.name, "package.json");
       return {
         manifestPath,
         manifest: readPackageManifest(manifestPath),
@@ -318,14 +258,10 @@ function mismatches(expectedVersion) {
   const versionFileVersion = readVersion();
 
   if (versionFileVersion !== expectedVersion) {
-    results.push(
-      `${repoPath("VERSION")}: version=${versionFileVersion}`,
-    );
+    results.push(`${repoPath("VERSION")}: version=${versionFileVersion}`);
   }
   if (meta.root.version !== expectedVersion) {
-    results.push(
-      `${meta.packageJsonPath}: version=${meta.root.version}`,
-    );
+    results.push(`${meta.packageJsonPath}: version=${meta.root.version}`);
   }
 
   const platformPackageNames = new Set(
@@ -335,8 +271,7 @@ function mismatches(expectedVersion) {
     meta.root.optionalDependencies ?? {},
   ).filter(
     (name) =>
-      platformPackageNames.has(name) ||
-      name.startsWith(meta.optionalPrefix),
+      platformPackageNames.has(name) || name.startsWith(meta.optionalPrefix),
   );
   for (const packageName of sourceOptionalPackages) {
     results.push(
@@ -346,21 +281,15 @@ function mismatches(expectedVersion) {
 
   const wasm = readPackageManifest(meta.wasmManifestPath);
   if (wasm.version !== expectedVersion) {
-    results.push(
-      `${meta.wasmManifestPath}: version=${wasm.version}`,
-    );
+    results.push(`${meta.wasmManifestPath}: version=${wasm.version}`);
   }
 
   for (const { manifestPath, manifest } of platforms) {
     if (manifest.version !== expectedVersion) {
-      results.push(
-        `${manifestPath}: version=${manifest.version}`,
-      );
+      results.push(`${manifestPath}: version=${manifest.version}`);
     }
     if (!manifest.name.startsWith(meta.optionalPrefix)) {
-      results.push(
-        `${manifestPath}: unexpected package name ${manifest.name}`,
-      );
+      results.push(`${manifestPath}: unexpected package name ${manifest.name}`);
     }
   }
 
@@ -368,16 +297,9 @@ function mismatches(expectedVersion) {
   const cargoNames = cargoPackageNames(cargoTomlPaths);
   for (const cargoTomlPath of cargoTomlPaths) {
     const cargoToml = readText(cargoTomlPath);
-    const currentCargoName = cargoToml.match(
-      /^name = "([^"]+)"$/m,
-    )?.[1];
-    const cargoVersionMatch = cargoToml.match(
-      /^version = "([^"]+)"$/m,
-    );
-    if (
-      !cargoVersionMatch ||
-      cargoVersionMatch[1] !== expectedVersion
-    ) {
+    const currentCargoName = cargoToml.match(/^name = "([^"]+)"$/m)?.[1];
+    const cargoVersionMatch = cargoToml.match(/^version = "([^"]+)"$/m);
+    if (!cargoVersionMatch || cargoVersionMatch[1] !== expectedVersion) {
       results.push(
         `${cargoTomlPath}: version=${cargoVersionMatch?.[1] ?? "<missing>"}`,
       );
@@ -386,17 +308,13 @@ function mismatches(expectedVersion) {
       currentCargoName === meta.cargoName &&
       !/^publish = false$/m.test(cargoToml)
     ) {
-      results.push(
-        `${cargoTomlPath}: NAPI root must remain private`,
-      );
+      results.push(`${cargoTomlPath}: NAPI root must remain private`);
     }
     if (
       currentCargoName === "stella-fuzzy-search-core" &&
       !/^publish = \["crates-io"\]$/m.test(cargoToml)
     ) {
-      results.push(
-        `${cargoTomlPath}: core must publish only to crates.io`,
-      );
+      results.push(`${cargoTomlPath}: core must publish only to crates.io`);
     }
     for (const cargoName of cargoNames) {
       const dependencyVersion = cargoToml.match(
@@ -405,10 +323,7 @@ function mismatches(expectedVersion) {
           "m",
         ),
       );
-      if (
-        dependencyVersion &&
-        dependencyVersion[1] !== expectedVersion
-      ) {
+      if (dependencyVersion && dependencyVersion[1] !== expectedVersion) {
         results.push(
           `${cargoTomlPath}: dependencies.${cargoName}.version=${dependencyVersion[1]}`,
         );
@@ -423,10 +338,7 @@ function mismatches(expectedVersion) {
         `\\[\\[package\\]\\]\\nname = "${escapeRegex(cargoName)}"\\nversion = "([^"]+)"`,
       ),
     );
-    if (
-      !cargoLockMatch ||
-      cargoLockMatch[1] !== expectedVersion
-    ) {
+    if (!cargoLockMatch || cargoLockMatch[1] !== expectedVersion) {
       results.push(
         `${meta.cargoLockPath}: ${cargoName}.version=${cargoLockMatch?.[1] ?? "<missing>"}`,
       );
@@ -435,10 +347,7 @@ function mismatches(expectedVersion) {
 
   const bunLock = readText(meta.bunLockPath);
   for (const packageName of platformPackageNames) {
-    const lockfileVersion = readBunLockVersion(
-      bunLock,
-      packageName,
-    );
+    const lockfileVersion = readBunLockVersion(bunLock, packageName);
     if (lockfileVersion !== null) {
       results.push(
         `${meta.bunLockPath}: ${packageName}=${lockfileVersion}; expected release-generated`,
@@ -448,20 +357,12 @@ function mismatches(expectedVersion) {
 
   if (fileExists(meta.indexCjsPath)) {
     const indexCjs = readText(meta.indexCjsPath);
-    if (
-      !indexCjs.includes(
-        `bindingPackageVersion !== '${expectedVersion}'`,
-      )
-    ) {
+    if (!indexCjs.includes(`bindingPackageVersion !== '${expectedVersion}'`)) {
       results.push(
         `${meta.indexCjsPath}: native binding guard not updated to ${expectedVersion}`,
       );
     }
-    if (
-      !indexCjs.includes(
-        `expected ${expectedVersion} but got`,
-      )
-    ) {
+    if (!indexCjs.includes(`expected ${expectedVersion} but got`)) {
       results.push(
         `${meta.indexCjsPath}: expected version string ${expectedVersion}`,
       );
@@ -469,25 +370,19 @@ function mismatches(expectedVersion) {
   }
 
   if (fileExists(meta.provenanceSbomPath)) {
-    const provenanceSbom = readText(
-      meta.provenanceSbomPath,
-    );
+    const provenanceSbom = readText(meta.provenanceSbomPath);
     const expectedPurls = new Set([
       ...npmPurlCandidates(meta.root.name, expectedVersion),
       ...cargoNames.map(
-        (cargoName) =>
-          `pkg:cargo/${cargoName}@${expectedVersion}`,
+        (cargoName) => `pkg:cargo/${cargoName}@${expectedVersion}`,
       ),
     ]);
-    const hasRootNpmComponent = npmPurlPrefixes(
-      meta.root.name,
-    ).some((prefix) => provenanceSbom.includes(prefix));
+    const hasRootNpmComponent = npmPurlPrefixes(meta.root.name).some((prefix) =>
+      provenanceSbom.includes(prefix),
+    );
     if (
       hasRootNpmComponent &&
-      !npmPurlCandidates(
-        meta.root.name,
-        expectedVersion,
-      ).some((candidate) =>
+      !npmPurlCandidates(meta.root.name, expectedVersion).some((candidate) =>
         provenanceSbom.includes(candidate),
       )
     ) {
@@ -497,9 +392,7 @@ function mismatches(expectedVersion) {
     }
     for (const cargoName of cargoNames) {
       if (
-        !provenanceSbom.includes(
-          `pkg:cargo/${cargoName}@${expectedVersion}`,
-        )
+        !provenanceSbom.includes(`pkg:cargo/${cargoName}@${expectedVersion}`)
       ) {
         results.push(
           `${meta.provenanceSbomPath}: ${cargoName} cargo purl not updated to ${expectedVersion}`,
@@ -541,20 +434,15 @@ function syncVersion(nextVersion) {
           !packageName.startsWith(meta.optionalPrefix),
       ),
     );
-    if (
-      Object.keys(retainedOptionalDependencies).length > 0
-    ) {
-      meta.root.optionalDependencies =
-        retainedOptionalDependencies;
+    if (Object.keys(retainedOptionalDependencies).length > 0) {
+      meta.root.optionalDependencies = retainedOptionalDependencies;
     } else {
       delete meta.root.optionalDependencies;
     }
   }
   writeJson(meta.packageJsonPath, meta.root);
 
-  const wasmManifest = readPackageManifest(
-    meta.wasmManifestPath,
-  );
+  const wasmManifest = readPackageManifest(meta.wasmManifestPath);
   wasmManifest.version = nextVersion;
   writeJson(meta.wasmManifestPath, wasmManifest);
 
@@ -593,13 +481,9 @@ function syncVersion(nextVersion) {
       { stdio: "inherit" },
     );
   }
-  execFileSync(
-    "cargo",
-    ["metadata", "--no-deps", "--format-version", "1"],
-    {
-      stdio: "ignore",
-    },
-  );
+  execFileSync("cargo", ["metadata", "--no-deps", "--format-version", "1"], {
+    stdio: "ignore",
+  });
 
   if (fileExists(meta.indexCjsPath)) {
     const indexCjs = replaceLoaderVersion({
@@ -623,20 +507,14 @@ function syncVersion(nextVersion) {
     for (const cargoName of cargoNames) {
       provenanceSbom = replaceRequired(
         provenanceSbom,
-        new RegExp(
-          `pkg:cargo/${escapeRegex(cargoName)}@[^"\\s<]+`,
-          "g",
-        ),
+        new RegExp(`pkg:cargo/${escapeRegex(cargoName)}@[^"\\s<]+`, "g"),
         `pkg:cargo/${cargoName}@${nextVersion}`,
         meta.provenanceSbomPath,
       );
     }
     for (const purl of [
       ...npmPurlCandidates(meta.root.name, nextVersion),
-      ...cargoNames.map(
-        (cargoName) =>
-          `pkg:cargo/${cargoName}@${nextVersion}`,
-      ),
+      ...cargoNames.map((cargoName) => `pkg:cargo/${cargoName}@${nextVersion}`),
     ]) {
       provenanceSbom = replaceSbomVersionForPurl(
         provenanceSbom,
@@ -722,8 +600,7 @@ function main() {
 
 if (
   process.argv[1] &&
-  path.resolve(process.argv[1]) ===
-    fileURLToPath(import.meta.url)
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
   main();
 }

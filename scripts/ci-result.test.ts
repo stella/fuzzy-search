@@ -14,13 +14,9 @@ test("the aggregate CI result depends on every validation job", () => {
   );
 
   expect(aggregate.if).toBe("always()");
-  expect([...aggregate.needs].sort((left, right) =>
-    left.localeCompare(right),
-  )).toEqual(
-    validationJobs.sort((left, right) =>
-      left.localeCompare(right),
-    ),
-  );
+  expect(
+    [...aggregate.needs].sort((left, right) => left.localeCompare(right)),
+  ).toEqual(validationJobs.sort((left, right) => left.localeCompare(right)));
 });
 
 test("CI and CLA workflows handle merge queue checks", () => {
@@ -29,9 +25,7 @@ test("CI and CLA workflows handle merge queue checks", () => {
     ".github/workflows/cla.yml",
   ]) {
     const workflow = parseWorkflow(path);
-    expect(workflow.on.merge_group.types).toEqual([
-      "checks_requested",
-    ]);
+    expect(workflow.on.merge_group.types).toEqual(["checks_requested"]);
   }
 });
 

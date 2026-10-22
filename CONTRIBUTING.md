@@ -18,7 +18,7 @@ bun install
 bun run build       # native module
 bun test            # run tests
 bun run lint        # oxlint
-bun run format      # oxfmt + rustfmt
+bun run format      # bun fmt + rustfmt
 ```
 
 ## Architecture

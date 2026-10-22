@@ -22,10 +22,7 @@ function readJson(filePath) {
 }
 
 function writeJson(filePath, value) {
-  fs.writeFileSync(
-    filePath,
-    `${JSON.stringify(value, null, 2)}\n`,
-  );
+  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 function fail(message) {
@@ -35,9 +32,7 @@ function fail(message) {
 
 function sortObject(value) {
   return Object.fromEntries(
-    Object.entries(value).sort(([left], [right]) =>
-      left.localeCompare(right),
-    ),
+    Object.entries(value).sort(([left], [right]) => left.localeCompare(right)),
   );
 }
 
@@ -47,11 +42,7 @@ function platformPackages() {
     .readdirSync(npmDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => {
-      const packageJsonPath = path.join(
-        npmDir,
-        entry.name,
-        "package.json",
-      );
+      const packageJsonPath = path.join(npmDir, entry.name, "package.json");
       return {
         packageJsonPath,
         manifest: readJson(packageJsonPath),
@@ -70,26 +61,17 @@ if (!scope || !baseName) {
   fail(`Expected scoped package name, got ${root.name}`);
 }
 if (root.version !== version) {
-  fail(
-    `${packageJsonPath}: version=${root.version}; expected ${version}`,
-  );
+  fail(`${packageJsonPath}: version=${root.version}; expected ${version}`);
 }
 
 const optionalPrefix = `${scope}/${baseName}-`;
 const generatedOptionalDependencies = {};
-for (const {
-  packageJsonPath: manifestPath,
-  manifest,
-} of platformPackages()) {
+for (const { packageJsonPath: manifestPath, manifest } of platformPackages()) {
   if (manifest.version !== version) {
-    fail(
-      `${manifestPath}: version=${manifest.version}; expected ${version}`,
-    );
+    fail(`${manifestPath}: version=${manifest.version}; expected ${version}`);
   }
   if (!manifest.name.startsWith(optionalPrefix)) {
-    fail(
-      `${manifestPath}: unexpected package name ${manifest.name}`,
-    );
+    fail(`${manifestPath}: unexpected package name ${manifest.name}`);
   }
   generatedOptionalDependencies[manifest.name] = version;
 }
