@@ -9,10 +9,10 @@ const INLINE_CELLS: usize = 8;
 #[derive(Clone, Debug)]
 enum Cells {
   Inline {
-    values: [usize; INLINE_CELLS],
+    values: [u16; INLINE_CELLS],
     len: usize,
   },
-  Heap(Vec<usize>),
+  Heap(Vec<u16>),
 }
 
 impl Cells {
@@ -28,6 +28,7 @@ impl Cells {
   }
 
   fn push(&mut self, value: usize) {
+    let value = u16::try_from(value).unwrap_or(u16::MAX);
     match self {
       Self::Inline { values, len } => {
         if let Some(slot) = values.get_mut(*len) {
@@ -43,23 +44,27 @@ impl Cells {
     }
   }
 
-  fn get(&self, index: usize) -> Option<&usize> {
-    match self {
-      Self::Inline { values, len } => values.get(..*len)?.get(index),
-      Self::Heap(values) => values.get(index),
-    }
-  }
-
-  fn last(&self) -> Option<&usize> {
+  fn get(&self, index: usize) -> Option<usize> {
     match self {
       Self::Inline { values, len } => {
-        len.checked_sub(1).and_then(|index| values.get(index))
+        values.get(..*len)?.get(index).copied().map(usize::from)
       }
-      Self::Heap(values) => values.last(),
+      Self::Heap(values) => values.get(index).copied().map(usize::from),
     }
   }
 
-  fn iter(&self) -> impl Iterator<Item = &usize> {
+  fn last(&self) -> Option<usize> {
+    match self {
+      Self::Inline { values, len } => len
+        .checked_sub(1)
+        .and_then(|index| values.get(index))
+        .copied()
+        .map(usize::from),
+      Self::Heap(values) => values.last().copied().map(usize::from),
+    }
+  }
+
+  fn iter(&self) -> impl Iterator<Item = usize> + '_ {
     let slice = match self {
       // SAFETY: `push` transitions to heap storage instead of incrementing
       // `len` beyond the inline array.
@@ -67,7 +72,7 @@ impl Cells {
       Self::Inline { values, len } => &values[..*len],
       Self::Heap(values) => values,
     };
-    slice.iter()
+    slice.iter().copied().map(usize::from)
   }
 
   fn initial(length: usize) -> Self {
@@ -90,7 +95,6 @@ impl Row {
     column
       .checked_sub(self.start)
       .and_then(|index| self.cells.get(index))
-      .copied()
       .unwrap_or(infinity)
   }
 }
@@ -177,7 +181,7 @@ impl OsaAutomaton {
       }
       self.cells.set(self.cells.get() + 1);
       let deletion = state.row.get(column, infinity) + 1;
-      let insertion = cells.last().copied().unwrap_or(infinity) + 1;
+      let insertion = cells.last().unwrap_or(infinity) + 1;
       let substitution = state.row.get(column - 1, infinity)
         + usize::from(self.query[column - 1] != character);
       let mut value = deletion.min(insertion).min(substitution);
@@ -189,7 +193,7 @@ impl OsaAutomaton {
       }
       cells.push(value.min(infinity));
     }
-    let live = cells.iter().any(|&value| value <= self.budget);
+    let live = cells.iter().any(|value| value <= self.budget);
     State {
       row: Row { start, cells },
       previous_row: state.row.clone(),

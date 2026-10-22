@@ -1734,41 +1734,43 @@ mod tests {
     }
     let index = builder.finish(vec![vec![1.0; vocabulary_size]]).unwrap();
     let mut selected = 7_usize;
-    for _ in 0..64 {
-      selected =
-        selected.wrapping_mul(1_103_515_245).wrapping_add(12_345) % 10_000;
-      let words = synthetic_name(selected);
-      let query = EntityQuery {
-        tokens: words
-          .iter()
-          .map(|text| QueryToken {
-            form: 0,
-            text: text.clone(),
-            weight: 1.0,
-          })
-          .collect(),
-        units: words
-          .into_iter()
-          .enumerate()
-          .map(|(position, text)| QueryUnit {
-            form: 0,
-            text,
-            positions: vec![u32::try_from(position).unwrap()],
-          })
-          .collect(),
-      };
-      let result = index
-        .search(
-          &query,
-          &SearchParams {
-            tau: 0.9,
-            quality: 1.0,
-            max_cost: u64::MAX,
-          },
-        )
-        .unwrap();
-      assert_eq!(result.survivors, [u32::try_from(selected).unwrap()]);
-      assert!(!result.exhausted);
+    for tau in [0.799_999_999_999_998_3, 0.9] {
+      for _ in 0..64 {
+        selected =
+          selected.wrapping_mul(1_103_515_245).wrapping_add(12_345) % 10_000;
+        let words = synthetic_name(selected);
+        let query = EntityQuery {
+          tokens: words
+            .iter()
+            .map(|text| QueryToken {
+              form: 0,
+              text: text.clone(),
+              weight: 1.0,
+            })
+            .collect(),
+          units: words
+            .into_iter()
+            .enumerate()
+            .map(|(position, text)| QueryUnit {
+              form: 0,
+              text,
+              positions: vec![u32::try_from(position).unwrap()],
+            })
+            .collect(),
+        };
+        let result = index
+          .search(
+            &query,
+            &SearchParams {
+              tau,
+              quality: 1.0,
+              max_cost: u64::MAX,
+            },
+          )
+          .unwrap();
+        assert_eq!(result.survivors, [u32::try_from(selected).unwrap()]);
+        assert!(!result.exhausted);
+      }
     }
   }
 }

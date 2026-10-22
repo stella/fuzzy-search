@@ -8,6 +8,7 @@ import type { EntityQuery } from "../src/index";
 const ENTITY_COUNT = 20_000;
 const QUERY_COUNT = 10_000;
 const RUNS = 2;
+const THRESHOLDS = [0.7999999999999983, 0.9] as const;
 
 const name = (index: number): [string, string] => {
   const hex = createHash("sha256")
@@ -58,25 +59,29 @@ for (let index = 0; index < ENTITY_COUNT; index++) {
 }
 const index = builder.finish([new Float64Array(vocabularySize).fill(1)]);
 const queries = Array.from({ length: QUERY_COUNT }, (_, offset) => query(offset));
-const timings: number[] = [];
-for (let run = 0; run < RUNS; run++) {
-  for (const [expected, input] of queries.entries()) {
-    const start = performance.now();
-    const result = index.search(input, {
-      tau: 0.9,
-      quality: 1,
-      maxCost: Number.MAX_SAFE_INTEGER,
-    });
-    timings.push(performance.now() - start);
-    if (
-      result.exhausted ||
-      result.survivors.length !== 1 ||
-      result.survivors[0] !== expected
-    ) {
-      throw new Error(`Unexpected result for query ${expected}`);
+for (const tau of THRESHOLDS) {
+  const timings: number[] = [];
+  for (let run = 0; run < RUNS; run++) {
+    for (const [expected, input] of queries.entries()) {
+      const start = performance.now();
+      const result = index.search(input, {
+        tau,
+        quality: 1,
+        maxCost: Number.MAX_SAFE_INTEGER,
+      });
+      timings.push(performance.now() - start);
+      if (
+        result.exhausted ||
+        result.survivors.length !== 1 ||
+        result.survivors[0] !== expected
+      ) {
+        throw new Error(`Unexpected result for query ${expected} at tau ${tau}`);
+      }
     }
   }
+  timings.sort((left, right) => left - right);
+  const median = timings[Math.floor(timings.length / 2)];
+  console.log(
+    `tau=${tau} queries=${timings.length} median_ms=${median?.toFixed(3)}`,
+  );
 }
-timings.sort((left, right) => left - right);
-const median = timings[Math.floor(timings.length / 2)];
-console.log(`queries=${timings.length} median_ms=${median?.toFixed(3)}`);

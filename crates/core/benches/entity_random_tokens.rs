@@ -96,23 +96,25 @@ fn bench_search(c: &mut Criterion) {
     .expect("valid index");
   let lexicon = Lexicon::new(&vocabulary).expect("distinct vocabulary");
   let queries = (0..QUERY_COUNT).map(query).collect::<Vec<_>>();
-  let mut next = 0;
-  c.bench_function("entity_random_tokens/search", |b| {
-    b.iter(|| {
-      let query = queries.get(next).expect("query index wraps");
-      next = next.saturating_add(1) % QUERY_COUNT;
-      index
-        .search(
-          query,
-          &SearchParams {
-            tau: 0.9,
-            quality: 1.0,
-            max_cost: u64::MAX,
-          },
-        )
-        .expect("valid search")
+  for (label, tau) in [("tau_0.8", 0.799_999_999_999_998_3), ("tau_0.9", 0.9)] {
+    let mut next = 0;
+    c.bench_function(&format!("entity_random_tokens/search/{label}"), |b| {
+      b.iter(|| {
+        let query = queries.get(next).expect("query index wraps");
+        next = next.saturating_add(1) % QUERY_COUNT;
+        index
+          .search(
+            query,
+            &SearchParams {
+              tau,
+              quality: 1.0,
+              max_cost: u64::MAX,
+            },
+          )
+          .expect("valid search")
+      });
     });
-  });
+  }
   let mut lookup_index = 0;
   c.bench_function("entity_random_tokens/two_lexicon_lookups", |b| {
     b.iter(|| {
