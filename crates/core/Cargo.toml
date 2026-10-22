@@ -23,7 +23,7 @@ unicode-segmentation = "1"
 [dev-dependencies]
 proptest = "1.11"
 criterion = { version = "0.8.2", default-features = false }
-sha2 = "0.10"
+sha2 = "0.11"
 
 [[bench]]
 name = "entity_lexicon"
