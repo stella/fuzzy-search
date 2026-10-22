@@ -24,6 +24,8 @@ const name = (index: number): [string, string] => {
   return [folded.slice(0, 16), folded.slice(16)];
 };
 
+const collapseRuns = (text: string) => text.replace(/(.)\1+/gu, "$1");
+
 const query = (index: number): EntityQuery => {
   const words = name(index);
   return {
@@ -85,3 +87,59 @@ for (const tau of THRESHOLDS) {
     `tau=${tau} queries=${timings.length} median_ms=${median?.toFixed(3)}`,
   );
 }
+
+
+const sixBuilder = new EntityIndexBuilder({
+  forms: 2,
+  budget: { byLength: [0, 0, 0, 0, 1, 1, 2], basis: "shorter" },
+  initialWeight: 1,
+  initialSimilarity: 0.8,
+});
+const sixVocabularySizes = [0, 0];
+for (let entity = 0; entity < ENTITY_COUNT; entity++) {
+  const raw = name(entity);
+  const folded = raw.map(collapseRuns) as [string, string];
+  const forms = [folded, raw].map((words, form) => {
+    const tokens = words.map((text) => {
+      const id = sixBuilder.intern(form, text);
+      sixVocabularySizes[form] = Math.max(sixVocabularySizes[form] ?? 0, id + 1);
+      return { id, weight: 1, minimumWeight: 0.8 };
+    });
+    const id = sixBuilder.intern(form, words.join(""));
+    sixVocabularySizes[form] = Math.max(sixVocabularySizes[form] ?? 0, id + 1);
+    return { form, tokens, joins: [{ id, left: 0, right: 1 }], minimumTotal: 1.6 };
+  });
+  sixBuilder.addAlias({ entryId: entity, entityGroup: 0, quality: 1, forms });
+}
+const sixIndex = sixBuilder.finish(
+  sixVocabularySizes.map((size) => new Float64Array(size).fill(1)),
+);
+const sixQueries = Array.from({ length: QUERY_COUNT }, (_, entity) => {
+  const raw = name(entity);
+  const folded = raw.map(collapseRuns) as [string, string];
+  return {
+    tokens: folded.map((text) => ({ form: 0, text, weight: 1 })),
+    units: [folded, raw].flatMap((words, form) => [
+      { form, text: words[0], positions: [0] },
+      { form, text: words[1], positions: [1] },
+      { form, text: words.join(""), positions: [0, 1] },
+    ]),
+  } satisfies EntityQuery;
+});
+const sixTimings: number[] = [];
+for (const [expected, input] of sixQueries.entries()) {
+  const start = performance.now();
+  const result = sixIndex.search(input, {
+    tau: 0.7999999999999983,
+    quality: 1,
+    maxCost: Number.MAX_SAFE_INTEGER,
+  });
+  sixTimings.push(performance.now() - start);
+  if (result.exhausted || result.survivors[0] !== expected) {
+    throw new Error(`Unexpected six-unit result for query ${expected}`);
+  }
+}
+sixTimings.sort((left, right) => left - right);
+console.log(
+  `six_units queries=${sixTimings.length} median_ms=${sixTimings[Math.floor(sixTimings.length / 2)]?.toFixed(3)}`,
+);
