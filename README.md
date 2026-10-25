@@ -334,9 +334,10 @@ bun run format          # bun fmt + rustfmt
 ```
 
 Run `bun run typecheck` to check types with `bun check --no-pretty --all --project=tsconfig.json`.
-Run `bun run check:typecheck-parity` to compare repository diagnostics and seeded diagnostic classes with TypeScript. CI runs the normal typecheck; compiler parity runs for toolchain changes and on demand in the Optional proofs workflow.
+CI runs it and checks that it rejects a seeded type error.
 Editors continue to use the TypeScript language service because Bun has no language server.
-The `typescript` dependency also supports declaration generation through tsdown.
+tsdown generates declaration files with its oxc isolated-declarations generator, without a TypeScript compiler.
+The root `typescript` devDependency stays only for `stll-toolchain-check` from `@stll/oxlint-config`, which runs its `tsc` to list the type-aware lint projects; it is removed after the next `@stll/oxlint-config` release.
 
 ## Entity candidate index
 
