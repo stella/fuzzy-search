@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const readWorkflow = (name: string) =>
   readFileSync(
@@ -15,14 +15,13 @@ test("shared typecheck retains tooling invariants without duplicate compiler che
   expect(workflow).not.toContain("- run: bun run check:typecheck-parity");
 });
 
-test("nightly parity uses the same shared workflow and runs only compiler checks", () => {
-  const nightly = readWorkflow("typecheck-nightly");
-  const shared =
-    /uses: (stella\/.github\/.github\/workflows\/rust-napi-ci.yml@\w+)/;
-  expect(nightly.match(shared)?.at(1)).toBe(
-    readWorkflow("ci").match(shared)?.at(1),
-  );
-  expect(nightly).toContain("      typecheck: true");
-  expect(nightly).toContain("      typecheck-only: true");
-  expect(nightly).toContain("      parity: always");
+test("no workflow runs a separate compiler parity check", () => {
+  expect(
+    existsSync(
+      new URL("../.github/workflows/typecheck-nightly.yml", import.meta.url),
+    ),
+  ).toBe(false);
+  const workflow = readWorkflow("ci");
+  expect(workflow).not.toContain("typecheck-only:");
+  expect(workflow).not.toContain("parity:");
 });

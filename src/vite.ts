@@ -35,7 +35,15 @@ export function buildFuzzySearchWasmViteConfig(
   };
 }
 
-export default function stllFuzzySearchWasmVite() {
+type WasmVitePackage = (typeof WASM_VITE_PACKAGES)[number];
+
+export default function stllFuzzySearchWasmVite(): {
+  name: string;
+  config(): {
+    optimizeDeps: { exclude: WasmVitePackage[] };
+    ssr: { external: WasmVitePackage[] };
+  };
+} {
   return {
     name: "stll-fuzzy-search-wasm",
     config() {
