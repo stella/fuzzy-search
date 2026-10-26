@@ -1,17 +1,27 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
-const read = (path: string) =>
-  readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
-
-test("CI type checks with bun check in the repository job", () => {
-  const workflow = read(".github/workflows/ci.yml");
-  expect(workflow).toContain("__test__/tooling-adoption.spec.ts");
-  expect(workflow).toContain("      - run: bun run typecheck");
-  expect(workflow).toContain("export const typecheckRejectionProbe: string");
-  // The shared workflow's type check job also runs compiler parity.
-  expect(workflow).not.toContain("      typecheck: true");
-  expect(read("package.json")).toContain(
-    '"typecheck": "bun check --no-pretty --all --project=tsconfig.json"',
+const readWorkflow = (name: string) =>
+  readFileSync(
+    new URL(`../.github/workflows/${name}.yml`, import.meta.url),
+    "utf8",
   );
+
+test("shared typecheck retains tooling invariants without duplicate compiler checks", () => {
+  const workflow = readWorkflow("ci");
+  expect(workflow).toContain("      typecheck: true");
+  expect(workflow).toContain("__test__/tooling-adoption.spec.ts");
+  expect(workflow).not.toContain("- run: bun run typecheck");
+  expect(workflow).not.toContain("- run: bun run check:typecheck-parity");
+});
+
+test("no workflow runs a separate compiler parity check", () => {
+  expect(
+    existsSync(
+      new URL("../.github/workflows/typecheck-nightly.yml", import.meta.url),
+    ),
+  ).toBe(false);
+  const workflow = readWorkflow("ci");
+  expect(workflow).not.toContain("typecheck-only:");
+  expect(workflow).not.toContain("parity:");
 });
