@@ -16,6 +16,11 @@ import {
 // retain their complete diagnostic chain in both native and strict WASI paths.
 const require = createRequire(import.meta.url);
 const loader = readFileSync(new URL("../index.cjs", import.meta.url), "utf8");
+const unavailableBinding = (specifier) => {
+  throw Object.assign(new Error(`Unavailable binding: ${specifier}`), {
+    code: "MODULE_NOT_FOUND",
+  });
+};
 for (const forceWasi of [undefined, "error"]) {
   let failure;
   try {
@@ -27,10 +32,13 @@ for (const forceWasi of [undefined, "error"]) {
           arch: "x64",
           env: { NAPI_RS_FORCE_WASI: forceWasi },
         },
-        require: (specifier) => {
-          if (specifier === "fs") return require(specifier);
-          throw new Error(`Unavailable binding: ${specifier}`);
-        },
+        require: Object.assign(
+          (specifier) => {
+            if (specifier === "fs") return require(specifier);
+            return unavailableBinding(specifier);
+          },
+          { resolve: unavailableBinding },
+        ),
         module: { exports: {} },
         __dirname: fileURLToPath(new URL("..", import.meta.url)),
       },
