@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.1
+
+### Patch Changes
+
+- [#226](https://github.com/stella/fuzzy-search/pull/226) [`e14cd9e`](https://github.com/stella/fuzzy-search/commit/e14cd9e66d0d85bae2c006a965c852572020d353) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Update the native bindings and WebAssembly runtime dependencies, including managed array lifetime and environment teardown fixes.
+
+- [#230](https://github.com/stella/fuzzy-search/pull/230) [`17b8660`](https://github.com/stella/fuzzy-search/commit/17b8660e78bbbd259f39f74542712b1e810fb2c2) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Build native and WebAssembly packages with Rust 1.99.1, including its FFI bool miscompilation fix, and update build tooling to Node 26.12.1.
+
 ## 1.4.0
 
 ### Minor Changes
