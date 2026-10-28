@@ -43,14 +43,18 @@ test("release artifacts retain the complete NAPI WASI loader bundle", () => {
   const upload = workflow.jobs.build.steps.find((step: { uses?: string }) =>
     step.uses?.startsWith("actions/upload-artifact@"),
   );
-  const patterns = upload.with.path.trim().split(/\s+/u);
+  const path = upload?.with?.path;
+  if (typeof path !== "string") {
+    throw new Error("Release upload must declare artifact paths");
+  }
+  const patterns = path.trim().split(/\s+/u);
   const selected = (file: string) =>
     patterns.some(
-      (pattern: string) =>
+      (pattern) =>
         !pattern.startsWith("!") && new Bun.Glob(pattern).match(file),
     ) &&
     !patterns.some(
-      (pattern: string) =>
+      (pattern) =>
         pattern.startsWith("!") && new Bun.Glob(pattern.slice(1)).match(file),
     );
   const manifest = JSON.parse(
