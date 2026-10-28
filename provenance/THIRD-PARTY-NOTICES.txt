@@ -16,16 +16,16 @@ Project: root
 - autocfg 1.5.1 — Apache-2.0 OR MIT
 - bit-set 0.11.1 — Apache-2.0 OR MIT
 - bit-vec 0.10.1 — Apache-2.0 OR MIT
-- bitflags 2.13.1 — Apache-2.0 OR MIT
-- block-buffer 0.10.4 — Apache-2.0 OR MIT
-- bon 3.9.3 — Apache-2.0 OR MIT
-- bon-macros 3.9.3 — Apache-2.0 OR MIT
+- bitflags 2.13.2 — Apache-2.0 OR MIT
+- block-buffer 0.12.1 — Apache-2.0 OR MIT
+- bon 3.10.2 — Apache-2.0 OR MIT
+- bon-macros 3.10.2 — Apache-2.0 OR MIT
 - borsh 1.8.1 — Apache-2.0 OR MIT
 - borsh-derive 1.8.1 — Apache-2.0
 - bytes 1.12.1 — MIT
 - cast 0.3.0 — Apache-2.0 OR MIT
-- cc 1.8.0 — Apache-2.0 OR MIT
-- cfg-if 1.0.4 — Apache-2.0 OR MIT
+- cc 1.9.0 — Apache-2.0 OR MIT
+- cfg-if 1.0.5 — Apache-2.0 OR MIT
 - cfg_aliases 0.2.2 — MIT
 - chacha20 0.10.2 — Apache-2.0 OR MIT
 - ciborium 0.2.2 — Apache-2.0
@@ -34,24 +34,24 @@ Project: root
 - clap 4.6.7 — Apache-2.0 OR MIT
 - clap_builder 4.6.7 — Apache-2.0 OR MIT
 - clap_lex 1.1.1 — Apache-2.0 OR MIT
-- convert_case 0.12.0 — MIT
+- const-oid 0.10.2 — Apache-2.0 OR MIT
+- convert_case 0.11.0 — MIT
 - core_detect 1.0.0 — MIT/Apache-2.0
-- cpufeatures 0.2.17 — Apache-2.0 OR MIT
 - cpufeatures 0.3.1 — Apache-2.0 OR MIT
 - criterion 0.8.2 — Apache-2.0 OR MIT
 - criterion-plot 0.8.2 — Apache-2.0 OR MIT
 - crunchy 0.2.4 — MIT
-- crypto-common 0.1.7 — Apache-2.0 OR MIT
+- crypto-common 0.2.2 — Apache-2.0 OR MIT
 - ctor 1.0.13 — Apache-2.0 OR MIT
-- darling 0.23.0 — MIT
-- darling_core 0.23.0 — MIT
-- darling_macro 0.23.0 — MIT
-- digest 0.10.7 — Apache-2.0 OR MIT
+- darling 0.24.1 — MIT
+- darling_core 0.24.1 — MIT
+- darling_macro 0.24.1 — MIT
+- digest 0.11.3 — Apache-2.0 OR MIT
 - either 1.19.0 — Apache-2.0 OR MIT
 - equivalent 1.0.3 — Apache-2.0 OR MIT
 - errno 0.3.14 — Apache-2.0 OR MIT
 - fastrand 2.5.0 — Apache-2.0 OR MIT
-- find-msvc-tools 0.1.14 — Apache-2.0 OR MIT
+- find-msvc-tools 0.1.15 — Apache-2.0 OR MIT
 - fnv 1.0.7 — Apache-2.0 / MIT
 - fst 0.4.7 — Unlicense/MIT
 - futures 0.3.34 — Apache-2.0 OR MIT
@@ -63,22 +63,22 @@ Project: root
 - futures-sink 0.3.34 — Apache-2.0 OR MIT
 - futures-task 0.3.34 — Apache-2.0 OR MIT
 - futures-util 0.3.34 — Apache-2.0 OR MIT
-- generic-array 0.14.7 — MIT
 - getrandom 0.4.3 — Apache-2.0 OR MIT
 - half 2.7.1 — Apache-2.0 OR MIT
 - hashbrown 0.17.1 — Apache-2.0 OR MIT
+- hybrid-array 0.4.15 — Apache-2.0 OR MIT
 - ident_case 1.0.1 — MIT/Apache-2.0
 - indexmap 2.14.2 — Apache-2.0 OR MIT
 - itertools 0.13.0 — Apache-2.0 OR MIT
 - itoa 1.0.18 — Apache-2.0 OR MIT
-- libc 0.2.190 — Apache-2.0 OR MIT
+- libc 0.2.191 — Apache-2.0 OR MIT
 - libloading 0.9.0 — ISC
 - linux-raw-sys 0.12.1 — Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT
 - memchr 2.8.3 — MIT OR Unlicense
-- napi 3.15.0 — MIT
-- napi-build 2.6.0 — MIT
-- napi-derive 3.6.13 — MIT
-- napi-derive-backend 6.1.6 — MIT
+- napi 3.11.0 — MIT
+- napi-build 2.3.2 — MIT
+- napi-derive 3.6.0 — MIT
+- napi-derive-backend 6.0.0 — MIT
 - napi-sys 3.4.1 — MIT
 - nohash-hasher 0.2.0 — Apache-2.0 OR MIT
 - num-traits 0.2.19 — Apache-2.0 OR MIT
@@ -86,7 +86,7 @@ Project: root
 - oorandom 11.1.5 — MIT
 - page_size 0.6.0 — MIT/Apache-2.0
 - pin-project-lite 0.2.17 — Apache-2.0 OR MIT
-- prettyplease 0.2.37 — Apache-2.0 OR MIT
+- prettyplease 0.3.0 — Apache-2.0 OR MIT
 - proc-macro-crate 3.5.0 — Apache-2.0 OR MIT
 - proc-macro2 1.0.107 — Apache-2.0 OR MIT
 - proptest 1.12.0 — Apache-2.0 OR MIT
@@ -101,34 +101,31 @@ Project: root
 - regex-syntax 0.8.11 — Apache-2.0 OR MIT
 - rustc-hash 2.1.3 — Apache-2.0 OR MIT
 - rustix 1.1.5 — Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT
-- rustversion 1.0.23 — Apache-2.0 OR MIT
 - rusty-fork 0.3.1 — MIT/Apache-2.0
 - same-file 1.0.6 — Unlicense/MIT
 - semver 1.0.28 — Apache-2.0 OR MIT
 - serde 1.0.229 — Apache-2.0 OR MIT
 - serde_core 1.0.229 — Apache-2.0 OR MIT
 - serde_derive 1.0.229 — Apache-2.0 OR MIT
-- serde_json 1.0.151 — Apache-2.0 OR MIT
-- sha2 0.10.9 — Apache-2.0 OR MIT
+- serde_json 1.0.154 — Apache-2.0 OR MIT
+- sha2 0.11.1 — Apache-2.0 OR MIT
 - shlex 2.0.1 — Apache-2.0 OR MIT
 - slab 0.4.12 — MIT
 - strsim 0.11.1 — MIT
 - syn 2.0.119 — Apache-2.0 OR MIT
-- syn 3.0.3 — Apache-2.0 OR MIT
+- syn 3.0.9 — Apache-2.0 OR MIT
 - tempfile 3.27.0 — Apache-2.0 OR MIT
 - tinytemplate 1.2.1 — Apache-2.0 OR MIT
-- tinyvec 1.12.0 — Apache-2.0 OR MIT OR Zlib
-- tinyvec_macros 0.1.1 — Apache-2.0 OR MIT OR Zlib
+- tinyvec 1.13.3 — Apache-2.0 OR MIT OR Zlib
 - toml_datetime 1.1.2+spec-1.1.0 — Apache-2.0 OR MIT
 - toml_edit 0.25.17+spec-1.1.0 — Apache-2.0 OR MIT
 - toml_parser 1.1.5+spec-1.1.0 — Apache-2.0 OR MIT
 - typenum 1.20.1 — Apache-2.0 OR MIT
 - unarray 0.1.4 — Apache-2.0 OR MIT
 - unicode-case-mapping 1.0.0 — Apache-2.0
-- unicode-ident 1.0.24 — (MIT OR Apache-2.0) AND Unicode-3.0
-- unicode-normalization 0.1.25 — Apache-2.0 OR MIT
+- unicode-ident 1.0.27 — (MIT OR Apache-2.0) AND Unicode-3.0
+- unicode-normalization 0.1.26 — (MIT OR Apache-2.0) AND Unicode-3.0
 - unicode-segmentation 1.13.3 — Apache-2.0 OR MIT
-- version_check 0.9.5 — MIT/Apache-2.0
 - vite 8.3.5 — MIT
 - wait-timeout 0.2.1 — MIT/Apache-2.0
 - walkdir 2.5.0 — Unlicense/MIT
