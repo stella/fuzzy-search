@@ -186,7 +186,7 @@ jobs:
   napi-ci:
     if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') }}
     needs: [check-changes, trust-check]
-    uses: stella/.github/.github/workflows/rust-napi-ci.yml@04c86bb54f4ae022354d72f8a40400bc7cf7428c
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@ba5f7da76aededf6f22814de93c72a49843fcc8e
     with:
       typecheck: true
       node-version: "26.10.0"
@@ -216,7 +216,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
-          toolchain: "1.99.0"
+          toolchain: "1.99.1"
       - name: Verify publication boundary
         run: |
           set -euo pipefail
