@@ -78,7 +78,7 @@
     "@emnapi/runtime": "1.11.3",
     "@napi-rs/cli": "3.10.9",
     "@napi-rs/wasm-runtime": "1.2.5",
-    "@stll/oxlint-config": "3.1.0",
+    "@stll/oxlint-config": "3.4.1",
     "@stll/oxlint-plugin": "0.7.0",
     "@stll/typescript-config": "0.10.0",
     "@tybys/wasm-util": "0.10.4",
