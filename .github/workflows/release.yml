@@ -40,7 +40,7 @@ jobs:
       github.event_name != 'workflow_dispatch'
       || inputs.publish_to_npm != true
       || github.ref == 'refs/heads/main'
-    uses: stella/.github/.github/workflows/npm-version-preflight.yml@48aacae31829ce15216a6b766b03a92fd2e84da3
+    uses: stella/.github/.github/workflows/npm-version-preflight.yml@ba5f7da76aededf6f22814de93c72a49843fcc8e
     with:
       package-files: |
         package.json
@@ -127,7 +127,7 @@ jobs:
         env:
           RUSTDOCFLAGS: -Dwarnings
       - run: cargo test --workspace
-      - uses: stella/.github/actions/provenance-check@48aacae31829ce15216a6b766b03a92fd2e84da3
+      - uses: stella/.github/actions/provenance-check@ba5f7da76aededf6f22814de93c72a49843fcc8e
         with:
           provenance-version: v0.1.3
       - run: cargo publish --dry-run --locked --package stella-fuzzy-search-core
@@ -386,7 +386,7 @@ jobs:
         && needs.attest.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@04c86bb54f4ae022354d72f8a40400bc7cf7428c
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@ba5f7da76aededf6f22814de93c72a49843fcc8e
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
@@ -408,7 +408,7 @@ jobs:
         && needs.verify.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@04c86bb54f4ae022354d72f8a40400bc7cf7428c
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@ba5f7da76aededf6f22814de93c72a49843fcc8e
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
@@ -478,7 +478,7 @@ jobs:
         && needs.preflight.outputs.already-released != 'true'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/npm-version-finalize.yml@04c86bb54f4ae022354d72f8a40400bc7cf7428c
+    uses: stella/.github/.github/workflows/npm-version-finalize.yml@ba5f7da76aededf6f22814de93c72a49843fcc8e
     with:
       package-files: |
         package.json
