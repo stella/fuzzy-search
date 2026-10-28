@@ -44,12 +44,13 @@ const scenarios = {
   "0": { forceWasi: "0", native: true },
   "1": { forceWasi: "1", native: true },
   unavailableWasi: { forceWasi: "true", native: true },
-  packagedWasi: {
+  preferredLocalWasi: {
     forceWasi: "true",
     localWasi: true,
     native: true,
     packageWasi: true,
   },
+  packagedWasi: { forceWasi: "true", native: true, packageWasi: true },
   localWasi: { localWasi: true },
   requiredWasi: { forceWasi: "error", native: true },
   unavailable: {},
@@ -189,10 +190,14 @@ describe("generated loader WASI selection", () => {
     });
   });
 
-  test("true selects the packaged WASI candidate last", () => {
+  test("true falls back to packaged WASI when local WASI is unavailable", () => {
     expect(results.packagedWasi).toEqual({
       source: "package-wasi",
     });
+  });
+
+  test("true retains the first available local WASI candidate", () => {
+    expect(results.preferredLocalWasi).toEqual({ source: "local-wasi" });
   });
 
   test("missing native falls back to local WASI", () => {

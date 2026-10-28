@@ -15,6 +15,8 @@ export default defineConfig([
   },
   {
     entry: ["src/wasm.ts"],
+    platform: "browser",
+    define: { process: "undefined" },
     outDir: "wasm/dist",
     format: ["esm"],
     dts: { generator: "oxc" },
@@ -32,6 +34,8 @@ export default defineConfig([
   },
   {
     entry: ["wasi-worker-browser.mjs"],
+    platform: "browser",
+    define: { process: "undefined" },
     outDir: "wasm/dist",
     format: ["esm"],
     dts: false,
