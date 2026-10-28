@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { runInNewContext } from "node:vm";
 
 import {
   distance,
@@ -8,6 +11,57 @@ import {
   EntityIndexBuilder,
   FuzzySearch,
 } from "../dist/index.mjs";
+
+// A host can expose a read-only inherited cause; loader failures must still
+// retain their complete diagnostic chain in both native and strict WASI paths.
+const require = createRequire(import.meta.url);
+const loader = readFileSync(new URL("../index.cjs", import.meta.url), "utf8");
+const unavailableBinding = (specifier) => {
+  throw Object.assign(new Error(`Unavailable binding: ${specifier}`), {
+    code: "MODULE_NOT_FOUND",
+  });
+};
+for (const forceWasi of [undefined, "error"]) {
+  let failure;
+  try {
+    runInNewContext(
+      `Object.defineProperty(Error.prototype, "cause", { value: null });\n${loader}`,
+      {
+        process: {
+          platform: "darwin",
+          arch: "x64",
+          env: { NAPI_RS_FORCE_WASI: forceWasi },
+        },
+        require: Object.assign(
+          (specifier) => {
+            if (specifier === "fs") return require(specifier);
+            return unavailableBinding(specifier);
+          },
+          { resolve: unavailableBinding },
+        ),
+        module: { exports: {} },
+        __dirname: fileURLToPath(new URL("..", import.meta.url)),
+      },
+    );
+  } catch (error) {
+    failure = error;
+  }
+  assert.equal(failure?.name, "Error");
+  assert.match(
+    failure.message,
+    forceWasi ? /WASI binding not found/ : /Cannot find native binding/,
+  );
+  let causes = 0;
+  for (let cause = failure.cause; cause !== null; cause = cause.cause) {
+    assert.equal(cause.name, "Error");
+    assert.match(cause.message, /Unavailable binding:/);
+    causes += 1;
+  }
+  assert.ok(
+    causes >= 2,
+    "both local and package binding failures must be retained",
+  );
+}
 
 const haystack = "Smlouva s Gais1erová v Pribram";
 const fuzzy = new FuzzySearch(

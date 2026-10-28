@@ -1,4 +1,4 @@
-const FETCH_NEEDLE = "await fetch(__wasmUrl).then((res) => res.arrayBuffer())";
+const FETCH_NEEDLE = "await __wasmResponse.arrayBuffer()";
 
 function buildMissingNeedleWarning(id: string): string {
   return (
@@ -9,8 +9,8 @@ function buildMissingNeedleWarning(id: string): string {
 }
 
 function buildReplacement(packageName: string): string {
-  return `await fetch(__wasmUrl).then(async (res) => {
-  const bytes = await res.arrayBuffer()
+  return `await (async () => {
+  const bytes = await __wasmResponse.arrayBuffer()
   const view = new Uint8Array(bytes)
   if (view.length < 4 || view[0] !== 0x00 || view[1] !== 0x61 || view[2] !== 0x73 || view[3] !== 0x6d) {
     throw new Error(
@@ -20,7 +20,7 @@ function buildReplacement(packageName: string): string {
     )
   }
   return bytes
-})`;
+})()`;
 }
 
 export function injectWasmFetchGuard(

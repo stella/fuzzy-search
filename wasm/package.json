@@ -45,7 +45,7 @@
     "prepublishOnly": "cd .. && bun run build:js"
   },
   "dependencies": {
-    "@napi-rs/wasm-runtime": "^1.1.3"
+    "@napi-rs/wasm-runtime": "^1.2.5"
   },
   "peerDependencies": {
     "vite": ">=5 <10"
@@ -54,5 +54,8 @@
     "vite": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=23.5.0"
   }
 }

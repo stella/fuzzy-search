@@ -77,7 +77,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
-      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: "1.99.0"
       - name: Check crates.io version
@@ -106,12 +106,12 @@ jobs:
         with:
           node-version-file: .node-version
       - run: node scripts/version-sync.mjs check
-      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: "1.99.0"
           components: clippy, rustfmt
           targets: wasm32-wasip1-threads
-      - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: release-verify
       - run: bun install --frozen-lockfile
@@ -172,11 +172,11 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
-      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: "1.99.0"
           targets: ${{ matrix.settings.target }}
-      - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: release-build-${{ matrix.settings.target }}
       - run: bun install --frozen-lockfile
@@ -386,7 +386,7 @@ jobs:
         && needs.attest.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@04c86bb54f4ae022354d72f8a40400bc7cf7428c
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
@@ -408,7 +408,7 @@ jobs:
         && needs.verify.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@04c86bb54f4ae022354d72f8a40400bc7cf7428c
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
@@ -478,7 +478,7 @@ jobs:
         && needs.preflight.outputs.already-released != 'true'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/npm-version-finalize.yml@8f19eb7220047e5b06f6e75f0b9f908bfd01f5f6
+    uses: stella/.github/.github/workflows/npm-version-finalize.yml@04c86bb54f4ae022354d72f8a40400bc7cf7428c
     with:
       package-files: |
         package.json

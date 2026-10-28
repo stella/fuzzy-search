@@ -19,20 +19,21 @@ if (hasGeneratedLoader) {
 }
 
 const loader = await readFile(target, "utf8");
-const nativeBindingAssignment = "nativeBinding = requireNative()";
-if (!loader.includes(nativeBindingAssignment)) {
-  throw new Error("Generated NAPI loader no longer initializes nativeBinding");
+const errorListDeclaration = "const loadErrors = []";
+if (!loader.includes(errorListDeclaration)) {
+  throw new Error("Generated NAPI loader no longer declares loadErrors");
 }
 
 const causeAssignments = [
-  ["wasiBindingError.cause = err", "setErrorCause(wasiBindingError, err)"],
-  ["error.cause = wasiBindingError", "setErrorCause(error, wasiBindingError)"],
+  ["error.cause = previous", "setErrorCause(error, previous)"],
   [
-    "error.cause = loadErrors.reduce((err, cur) => {",
-    "setErrorCause(error, loadErrors.reduce((err, cur) => {",
+    "error.cause = createLoadErrorChain(wasiBindingErrors)",
+    "setErrorCause(error, createLoadErrorChain(wasiBindingErrors))",
   ],
-  ["cur.cause = err", "setErrorCause(cur, err)"],
-  ["    })\n    throw error", "    }))\n    throw error"],
+  [
+    "error.cause = createLoadErrorChain(loadErrors)",
+    "setErrorCause(error, createLoadErrorChain(loadErrors))",
+  ],
 ];
 
 if (loader.includes("const setErrorCause =")) {
@@ -45,8 +46,8 @@ if (loader.includes("const setErrorCause =")) {
 }
 
 const withCauseHelper = loader.replace(
-  nativeBindingAssignment,
-  `${nativeBindingAssignment}
+  errorListDeclaration,
+  `${errorListDeclaration}
 
 const setErrorCause = (error, cause) => {
   Object.defineProperty(error, 'cause', {
@@ -59,8 +60,10 @@ const setErrorCause = (error, cause) => {
 
 let patchedLoader = withCauseHelper;
 for (const [assignment, replacement] of causeAssignments) {
-  if (!patchedLoader.includes(assignment)) {
-    throw new Error(`Generated NAPI loader no longer contains: ${assignment}`);
+  if (patchedLoader.split(assignment).length !== 2) {
+    throw new Error(
+      `Generated NAPI loader must contain exactly one: ${assignment}`,
+    );
   }
   patchedLoader = patchedLoader.replace(assignment, replacement);
 }
