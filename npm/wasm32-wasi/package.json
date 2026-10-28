@@ -40,6 +40,6 @@
   },
   "browser": "fuzzy-search.wasi-browser.js",
   "dependencies": {
-    "@napi-rs/wasm-runtime": "^1.1.3"
+    "@napi-rs/wasm-runtime": "^1.2.5"
   }
 }
