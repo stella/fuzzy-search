@@ -34,6 +34,7 @@ jobs:
       build-changed: ${{ (steps.filter.outputs.build == 'true' || steps.toolchain.outputs.changed == 'true') && 'true' || 'false' }}
       provenance-changed: ${{ (steps.filter.outputs.provenance == 'true' || steps.toolchain.outputs.changed == 'true') && 'true' || 'false' }}
       toolchain-changed: ${{ steps.toolchain.outputs.changed }}
+      node-version: ${{ steps.runtime.outputs.node-version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -43,6 +44,12 @@ jobs:
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
+      - name: Read selected Node runtime
+        id: runtime
+        run: |
+          node_version="$(cat .node-version)"
+          [[ "$node_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          echo "node-version=$node_version" >> "$GITHUB_OUTPUT"
       - name: Detect toolchain changes
         id: toolchain
         env:
@@ -189,7 +196,7 @@ jobs:
     uses: stella/.github/.github/workflows/rust-napi-ci.yml@ba5f7da76aededf6f22814de93c72a49843fcc8e
     with:
       typecheck: true
-      node-version: "26.10.0"
+      node-version: ${{ needs.check-changes.outputs.node-version }}
       trusted: ${{ (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') && 'true' || 'false' }}
       rust-changed: ${{ needs.check-changes.outputs.rust-changed }}
       build-changed: ${{ needs.check-changes.outputs.build-changed }}
