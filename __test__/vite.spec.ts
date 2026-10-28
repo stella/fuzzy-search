@@ -49,7 +49,7 @@ describe("stllFuzzySearchWasmVite", () => {
 describe("injectWasmFetchGuard", () => {
   test("wraps the napi-rs fetch with a wasm byte check", () => {
     const code = `
-const bytes = await fetch(__wasmUrl).then((res) => res.arrayBuffer())
+const bytes = await __wasmResponse.arrayBuffer()
 `;
 
     const transformed = injectWasmFetchGuard(
@@ -84,7 +84,7 @@ const bytes = await fetch(__wasmUrl).then((res) => res.arrayBuffer())
     const warn = mock();
 
     const transformed = injectWasmFetchGuard(
-      "await fetch(__wasmUrl).then((res) => res.arrayBuffer())",
+      "await __wasmResponse.arrayBuffer()",
       "other-file.js",
       "@stll/fuzzy-search-wasm",
       warn,

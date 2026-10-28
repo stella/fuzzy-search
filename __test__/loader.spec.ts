@@ -78,6 +78,7 @@ const loadBindings = () => {
     const scenarios = JSON.parse(process.argv[1]);
     const loaderPath = require.resolve(process.argv[2]);
     const originalLoad = Module._load;
+    const originalResolveFilename = Module._resolveFilename;
     const originalForceWasi = process.env.NAPI_RS_FORCE_WASI;
     const originalExcludeNetwork = process.report &&
       Object.getOwnPropertyDescriptor(process.report, "excludeNetwork");
@@ -88,6 +89,13 @@ const loadBindings = () => {
         packageWasi: { source: "package-wasi" },
       };
       delete require.cache[loaderPath];
+      Module._resolveFilename = (request, ...args) => {
+        if (request === "@stll/fuzzy-search-wasm32-wasi") {
+          if (scenario.packageWasi) return request;
+          throw Object.assign(new Error("package WASI unavailable"), { code: "MODULE_NOT_FOUND" });
+        }
+        return originalResolveFilename(request, ...args);
+      };
       Module._load = (request, parent, isMain) => {
         if (request.endsWith(".node")) {
           if (scenario.native) return bindings.native;
@@ -124,6 +132,7 @@ const loadBindings = () => {
         // Each scenario owns the loader cache and the globals it can change.
         delete require.cache[loaderPath];
         Module._load = originalLoad;
+        Module._resolveFilename = originalResolveFilename;
         if (originalForceWasi === undefined) {
           delete process.env.NAPI_RS_FORCE_WASI;
         } else {
