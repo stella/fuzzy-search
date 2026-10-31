@@ -489,6 +489,42 @@
           "content": "2706da6c749998cc555d04184909608956a69ad3f8ab1a076fbc867b4a3c3ce5"
         }
       ],
+      "name": "bon-macros",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/bon-macros@3.10.2",
+      "type": "library",
+      "version": "3.10.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/bon-macros@3.10.3",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "93833e97ac7c46ba97045afcf247238c27057538fcf2f06344662ddd5f567be6"
+        }
+      ],
       "licenses": [
         {
           "license": {
@@ -506,15 +542,11 @@
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
-        },
-        {
-          "name": "SrcFile",
-          "value": "fuzz/Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/bon-macros@3.10.2",
+      "purl": "pkg:cargo/bon-macros@3.10.3",
       "type": "library",
-      "version": "3.10.2"
+      "version": "3.10.3"
     },
     {
       "bom-ref": "pkg:cargo/bon@3.10.2",
@@ -541,6 +573,42 @@
           "content": "214f5df094ce551a10a30ffb9c70243d61f121a3d985a6495933e181dee6a7d2"
         }
       ],
+      "name": "bon",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/bon@3.10.2",
+      "type": "library",
+      "version": "3.10.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/bon@3.10.3",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a05442cd7005532d0cfedec676b5b9333d2b4c7c3afabe2b1a9ce2742fbe2ee6"
+        }
+      ],
       "licenses": [
         {
           "license": {
@@ -558,15 +626,11 @@
         {
           "name": "SrcFile",
           "value": "Cargo.lock"
-        },
-        {
-          "name": "SrcFile",
-          "value": "fuzz/Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/bon@3.10.2",
+      "purl": "pkg:cargo/bon@3.10.3",
       "type": "library",
-      "version": "3.10.2"
+      "version": "3.10.3"
     },
     {
       "bom-ref": "pkg:cargo/borsh-derive@1.8.1",
@@ -1299,7 +1363,7 @@
       "version": "0.10.2"
     },
     {
-      "bom-ref": "pkg:cargo/convert_case@0.11.0",
+      "bom-ref": "pkg:cargo/convert_case@0.12.0",
       "evidence": {
         "identity": [
           {
@@ -1320,7 +1384,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "affbf0190ed2caf063e3def54ff444b449371d55c58e513a95ab98eca50adb49"
+          "content": "1af709f1f33454bf52eadfc8c78b3b9ef9cb26fb54d16dc9cd9a7299f899fd1b"
         }
       ],
       "licenses": [
@@ -1337,9 +1401,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/convert_case@0.11.0",
+      "purl": "pkg:cargo/convert_case@0.12.0",
       "type": "library",
-      "version": "0.11.0"
+      "version": "0.12.0"
     },
     {
       "bom-ref": "pkg:cargo/core_detect@1.0.0",
@@ -3330,7 +3394,7 @@
       "version": "2.8.3"
     },
     {
-      "bom-ref": "pkg:cargo/napi-build@2.3.2",
+      "bom-ref": "pkg:cargo/napi-build@2.6.0",
       "evidence": {
         "identity": [
           {
@@ -3351,7 +3415,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "c9c366d2c8c60b86fa632df75f745509b52f9128f91a6bad4c796e44abb505e1"
+          "content": "b899b545d3aa6dca985939059f258c5488d34e4ecf39c274e20009748f4b846d"
         }
       ],
       "licenses": [
@@ -3368,12 +3432,12 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/napi-build@2.3.2",
+      "purl": "pkg:cargo/napi-build@2.6.0",
       "type": "library",
-      "version": "2.3.2"
+      "version": "2.6.0"
     },
     {
-      "bom-ref": "pkg:cargo/napi-derive-backend@6.0.0",
+      "bom-ref": "pkg:cargo/napi-derive-backend@6.1.6",
       "evidence": {
         "identity": [
           {
@@ -3394,7 +3458,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "4747005fa3e2c9989ac45a723a514c5db2411238b72981a3cda4c701a9dfea17"
+          "content": "f2639052c5aff9956a21d7b6202fc61d5e89c5f19c72d289b7a0641ea94e8159"
         }
       ],
       "licenses": [
@@ -3411,12 +3475,12 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/napi-derive-backend@6.0.0",
+      "purl": "pkg:cargo/napi-derive-backend@6.1.6",
       "type": "library",
-      "version": "6.0.0"
+      "version": "6.1.6"
     },
     {
-      "bom-ref": "pkg:cargo/napi-derive@3.6.0",
+      "bom-ref": "pkg:cargo/napi-derive@3.6.13",
       "evidence": {
         "identity": [
           {
@@ -3437,7 +3501,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "a49c513341a61a16a10af6efcce46b30d0822ba2d4fb197d24d33dfc199c78d5"
+          "content": "3ff48271a0f61abb83f3e2d1989fa71169143db95f6f948c3a8903961f2855dc"
         }
       ],
       "licenses": [
@@ -3454,9 +3518,9 @@
           "value": "Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/napi-derive@3.6.0",
+      "purl": "pkg:cargo/napi-derive@3.6.13",
       "type": "library",
-      "version": "3.6.0"
+      "version": "3.6.13"
     },
     {
       "bom-ref": "pkg:cargo/napi-sys@3.4.1",
@@ -6662,9 +6726,9 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/bon-macros@3.10.2"
+        "pkg:cargo/bon-macros@3.10.3"
       ],
-      "ref": "pkg:cargo/bon@3.10.2"
+      "ref": "pkg:cargo/bon@3.10.3"
     },
     {
       "dependsOn": [
@@ -6675,7 +6739,7 @@
         "pkg:cargo/quote@1.0.47",
         "pkg:cargo/syn@3.0.9"
       ],
-      "ref": "pkg:cargo/bon-macros@3.10.2"
+      "ref": "pkg:cargo/bon-macros@3.10.3"
     },
     {
       "dependsOn": [
@@ -6770,7 +6834,7 @@
       "dependsOn": [
         "pkg:cargo/unicode-segmentation@1.13.3"
       ],
-      "ref": "pkg:cargo/convert_case@0.11.0"
+      "ref": "pkg:cargo/convert_case@0.12.0"
     },
     {
       "dependsOn": [],
@@ -7025,7 +7089,7 @@
         "pkg:cargo/bitflags@2.13.2",
         "pkg:cargo/ctor@1.0.13",
         "pkg:cargo/futures@0.3.34",
-        "pkg:cargo/napi-build@2.3.2",
+        "pkg:cargo/napi-build@2.6.0",
         "pkg:cargo/napi-sys@3.4.1",
         "pkg:cargo/nohash-hasher@0.2.0",
         "pkg:cargo/rustc-hash@2.1.3",
@@ -7036,28 +7100,28 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/napi-build@2.3.2"
+      "ref": "pkg:cargo/napi-build@2.6.0"
     },
     {
       "dependsOn": [
-        "pkg:cargo/convert_case@0.11.0",
+        "pkg:cargo/convert_case@0.12.0",
         "pkg:cargo/ctor@1.0.13",
-        "pkg:cargo/napi-derive-backend@6.0.0",
+        "pkg:cargo/napi-derive-backend@6.1.6",
         "pkg:cargo/proc-macro2@1.0.107",
         "pkg:cargo/quote@1.0.47",
-        "pkg:cargo/syn@2.0.119"
+        "pkg:cargo/syn@3.0.9"
       ],
-      "ref": "pkg:cargo/napi-derive@3.6.0"
+      "ref": "pkg:cargo/napi-derive@3.6.13"
     },
     {
       "dependsOn": [
-        "pkg:cargo/convert_case@0.11.0",
+        "pkg:cargo/convert_case@0.12.0",
         "pkg:cargo/proc-macro2@1.0.107",
         "pkg:cargo/quote@1.0.47",
         "pkg:cargo/semver@1.0.28",
-        "pkg:cargo/syn@2.0.119"
+        "pkg:cargo/syn@3.0.9"
       ],
-      "ref": "pkg:cargo/napi-derive-backend@6.0.0"
+      "ref": "pkg:cargo/napi-derive-backend@6.1.6"
     },
     {
       "dependsOn": [
@@ -7264,8 +7328,8 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/napi-build@2.3.2",
-        "pkg:cargo/napi-derive@3.6.0",
+        "pkg:cargo/napi-build@2.6.0",
+        "pkg:cargo/napi-derive@3.6.13",
         "pkg:cargo/napi@3.11.0",
         "pkg:cargo/stella-fuzzy-search-core@1.4.1"
       ],
@@ -7273,7 +7337,7 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/bon@3.10.2",
+        "pkg:cargo/bon@3.10.3",
         "pkg:cargo/criterion@0.8.2",
         "pkg:cargo/fst@0.4.7",
         "pkg:cargo/proptest@1.12.0",
@@ -7435,6 +7499,23 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/arbitrary@1.5.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bon-macros@3.10.2"
+      ],
+      "ref": "pkg:cargo/bon@3.10.2"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/darling@0.24.1",
+        "pkg:cargo/ident_case@1.0.1",
+        "pkg:cargo/prettyplease@0.3.0",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.9"
+      ],
+      "ref": "pkg:cargo/bon-macros@3.10.2"
     },
     {
       "dependsOn": [
