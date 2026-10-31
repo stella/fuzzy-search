@@ -22,11 +22,11 @@ napi = { version = "=3.11.0", default-features = false, features = [
   "napi9",
   "serde-json",
 ] }
-napi-derive = "=3.6.0"
+napi-derive = "=3.6.13"
 stella-fuzzy-search-core = { version = "1.4.1", path = "crates/core" }
 
 [build-dependencies]
-napi-build = "=2.3.2"
+napi-build = "=2.6.0"
 
 [lints]
 workspace = true
