@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   version:
-    uses: stella/.github/.github/workflows/changeset-release-pr.yml@ba5f7da76aededf6f22814de93c72a49843fcc8e
+    uses: stella/.github/.github/workflows/changeset-release-pr.yml@042baebaf071329b956555c05caf5736504c278d
     secrets:
       CHANGELOG_APP_ID: ${{ secrets.CHANGELOG_APP_ID }}
       CHANGELOG_APP_PRIVATE_KEY: ${{ secrets.CHANGELOG_APP_PRIVATE_KEY }}
