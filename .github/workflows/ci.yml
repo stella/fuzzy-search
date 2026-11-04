@@ -303,7 +303,6 @@ jobs:
         if: needs.check-changes.outputs.build-changed != 'true'
         run: echo "Build inputs unchanged; browser check skipped."
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: needs.check-changes.outputs.build-changed == 'true'
         with:
           persist-credentials: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -313,7 +312,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: needs.check-changes.outputs.build-changed == 'true'
         with:
-          node-version: ${{ needs.check-changes.outputs.node-version }}
+          node-version-file: .node-version
       - if: needs.check-changes.outputs.build-changed == 'true'
         run: bun install --frozen-lockfile
       # Reuse the WASM binding the NAPI build matrix produced for this run.
@@ -340,6 +339,8 @@ jobs:
           set -euo pipefail
           app="$RUNNER_TEMP/browser-app"
           cp -R __test__/browser "$app"
+          # The fixture tsconfig only scopes repository lint; the app does not use it.
+          rm -- "$app/tsconfig.json"
           tarballs=("$RUNNER_TEMP"/pack/*.tgz)
           test "${#tarballs[@]}" -eq 1
           cp -- "${tarballs[0]}" "$app/stll-fuzzy-search-wasm.tgz"
