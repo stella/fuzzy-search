@@ -74,8 +74,8 @@
   "devDependencies": {
     "@changesets/changelog-github": "^1.0.1",
     "@changesets/cli": "^3.0.3",
-    "@emnapi/core": "1.11.3",
-    "@emnapi/runtime": "1.11.3",
+    "@emnapi/core": "2.0.0-beta.2",
+    "@emnapi/runtime": "2.0.0-beta.2",
     "@napi-rs/cli": "3.10.9",
     "@napi-rs/wasm-runtime": "1.2.5",
     "@stll/oxlint-config": "3.4.1",
@@ -85,7 +85,7 @@
     "@types/node": "^26.6.5",
     "bun-types": "1.4.4",
     "damerau-levenshtein": "1.0.8",
-    "emnapi": "1.11.3",
+    "emnapi": "2.0.0-beta.2",
     "fast-check": "^4.10.2",
     "fastest-levenshtein": "1.0.16",
     "fuse.js": "7.5.0",
@@ -97,7 +97,7 @@
     "vite": "^8.3.5"
   },
   "overrides": {
-    "emnapi": "1.11.3"
+    "emnapi": "2.0.0-beta.2"
   },
   "napi": {
     "binaryName": "fuzzy-search",
