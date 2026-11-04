@@ -1,0 +1,61 @@
+// Unnormalized @napi-rs/cli output used to detect scheduler drift.
+function __scheduleTimer(callback, delay) {
+  const setTimer = globalThis.setTimeout
+  if (typeof setTimer !== 'function') {
+    __scheduleMacrotask(callback)
+    return
+  }
+  try {
+    setTimer(callback, delay)
+  } catch {
+    __scheduleMacrotask(callback)
+  }
+}
+
+function __createWasmRuntimePollPace() {
+  return {
+    // Timers armed by *this* poll that have actually arrived.
+    arrivals: 0,
+    // The turn waiting on a timer alone *right now* — undefined whenever no
+    // turn is parked — and when that turn's own timer came due.
+    settleTurn: undefined,
+    turnTimerDueAt: 0,
+  }
+}
+
+function __armWasmRuntimePollStallBackup(pace) {
+  const setTimer = globalThis.setTimeout
+  if (typeof setTimer !== 'function') {
+    // Nothing to back up: `__scheduleTimer` is on the macrotask channel
+    // already, and that one cannot park.
+    return
+  }
+  // Read before arming, so this never claims to be due earlier than the timer
+  // actually is: a backup ends a turn only when it is provably due after it.
+  const dueAt = Date.now() + __WASM_RUNTIME_WORK_POLL_BACKUP_MS
+  let handle
+  try {
+    handle = setTimer(() => {
+      const settleTurn = pace.settleTurn
+      if (
+        !settleTurn ||
+        pace.turnTimerDueAt > dueAt - __WASM_RUNTIME_WORK_POLL_STALL_MS
+      ) {
+        // No turn is parked, or the parked one's timer came due too close to
+        // this backup to call it dropped — it may still arrive, and the turn
+        // that armed it armed a backup due a whole window after *that*.
+        return
+      }
+      pace.arrivals = 0
+      pace.settleTurn = undefined
+      settleTurn()
+    }, __WASM_RUNTIME_WORK_POLL_BACKUP_MS)
+  } catch {
+    return
+  }
+  if (handle && typeof handle.unref === 'function') {
+    try {
+      handle.unref()
+    } catch {}
+  }
+}

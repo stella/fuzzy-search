@@ -7,8 +7,10 @@ This file is a generated inventory of detected third-party components and declar
 Some licenses may require additional attribution text or redistribution steps.
 
 Project: root
-- @napi-rs/wasm-runtime 1.2.5 — MIT
+- @emnapi/runtime 2.0.0-beta.2 — MIT
+- @napi-rs/wasm-runtime 1.2.6 — MIT
 - @quansync/fs 1.0.0 — MIT
+- acorn 8.19.0 — MIT
 - aho-corasick 1.1.5 — MIT OR Unlicense
 - alloca 0.4.0 — MIT
 - anes 0.1.6 — Apache-2.0 OR MIT
@@ -76,7 +78,7 @@ Project: root
 - linux-raw-sys 0.12.1 — Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT
 - memchr 2.8.3 — MIT OR Unlicense
 - napi 3.11.0 — MIT
-- napi-build 2.3.2 — MIT
+- napi-build 2.6.0 — MIT
 - napi-derive 3.6.0 — MIT
 - napi-derive-backend 6.0.0 — MIT
 - napi-sys 3.4.1 — MIT
