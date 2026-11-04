@@ -6,9 +6,6 @@
     "build": "vite build",
     "check": "node check.mjs"
   },
-  "dependencies": {
-    "@stll/fuzzy-search-wasm": "file:./stll-fuzzy-search-wasm.tgz"
-  },
   "devDependencies": {
     "playwright": "1.64.1",
     "vite": "8.3.5"

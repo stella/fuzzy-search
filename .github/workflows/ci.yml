@@ -343,9 +343,10 @@ jobs:
           rm -- "$app/tsconfig.json"
           tarballs=("$RUNNER_TEMP"/pack/*.tgz)
           test "${#tarballs[@]}" -eq 1
-          cp -- "${tarballs[0]}" "$app/stll-fuzzy-search-wasm.tgz"
           cd "$app"
-          bun install
+          bun install --frozen-lockfile
+          # The tarball changes with every build, so it stays out of the lockfile.
+          bun add --no-save "${tarballs[0]}"
           bunx --no-install playwright install --with-deps --only-shell chromium
       - name: Build with Vite and run in Chromium
         if: needs.check-changes.outputs.build-changed == 'true'
