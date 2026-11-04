@@ -106,7 +106,9 @@ test("the WASI build artifact uploads the root loader its metadata names", () =>
   const prefix = "// napi-rs-artifact-metadata:";
   const [firstLine] = read("fuzzy-search.wasi.cjs").split("\n", 1);
   expect(firstLine.startsWith(prefix)).toBe(true);
-  const { rootEntry } = JSON.parse(firstLine.slice(prefix.length));
+  const rootEntry = String(
+    JSON.parse(firstLine.slice(prefix.length)).rootEntry,
+  );
   // `napi artifacts` copies this file out of the WASI build artifact by name,
   // so the build must emit it under that name and the upload must keep it.
   expect(rootEntry).toBe("index.cjs");
@@ -117,7 +119,7 @@ test("the WASI build artifact uploads the root loader its metadata names", () =>
     String(step.uses).startsWith("actions/upload-artifact@"),
   );
   expect(uploads).toHaveLength(1);
-  const patterns = uploads[0].with.path.trim().split(/\s+/u);
+  const patterns = String(uploads[0].with.path).trim().split(/\s+/u);
   const matches = (pattern) => new Bun.Glob(pattern).match(rootEntry);
   expect(
     patterns.some((pattern) => !pattern.startsWith("!") && matches(pattern)),
