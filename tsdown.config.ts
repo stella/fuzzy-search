@@ -24,7 +24,9 @@ export default defineConfig([
     clean: true,
     sourcemap: true,
     hash: false,
-    deps: { neverBundle: [/^@napi-rs\/wasm-runtime$/] },
+    deps: {
+      neverBundle: [/^@emnapi\/runtime$/, /^@napi-rs\/wasm-runtime$/],
+    },
     plugins: [wasmFetchGuardPlugin("@stll/fuzzy-search-wasm")],
     copy: [
       {
