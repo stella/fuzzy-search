@@ -63,3 +63,39 @@ test("privileged shared publishers match the release policy pin", () => {
   expect(publishers).toHaveLength(3);
   for (const publisher of publishers) expect(publisher.at(1)).toBe(pin);
 });
+
+test("the release reconciler checks the packages the release publishes", () => {
+  const reconcile = readFileSync(
+    new URL("../.github/workflows/npm-release-reconcile.yml", import.meta.url),
+    "utf8",
+  ).replaceAll("\r\n", "\n");
+  const packageFiles = (source) =>
+    [...source.matchAll(/package-files: \|\n((?: {8}\S.*\n)+)/gu)].map(
+      ([, list]) => list,
+    );
+  const [reconciled, ...extra] = packageFiles(reconcile);
+  expect(reconciled).toBeDefined();
+  expect(extra).toEqual([]);
+  // Preflight and the finalizer.
+  const released = packageFiles(workflow);
+  expect(released).toHaveLength(2);
+  for (const list of released) expect(list).toBe(reconciled);
+  const pin = reconcile.match(
+    /uses: stella\/\.github\/\.github\/workflows\/npm-release-reconcile\.yml@([0-9a-f]{40})\n/u,
+  )?.[1];
+  const finalizerPin = workflow.match(
+    /uses: stella\/\.github\/\.github\/workflows\/npm-version-finalize\.yml@([0-9a-f]{40})\n/u,
+  )?.[1];
+  expect(pin).toBeDefined();
+  expect(pin).toBe(finalizerPin);
+  const releaseAppSecrets = (source) =>
+    [
+      ...source.matchAll(
+        /^ {6}(RELEASE_APP_(?:ID|PRIVATE_KEY)): (\$\{\{ secrets\.[A-Z0-9_]+ \}\})$/gmu,
+      ),
+    ].map(([, name, value]) => `${name}=${value}`);
+  expect(releaseAppSecrets(reconcile)).toHaveLength(2);
+  expect(releaseAppSecrets(reconcile)).toEqual(
+    releaseAppSecrets(readJob("finalize")),
+  );
+});
