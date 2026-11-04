@@ -76,7 +76,7 @@ Project: root
 - linux-raw-sys 0.12.1 — Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT
 - memchr 2.8.3 — MIT OR Unlicense
 - napi 3.11.0 — MIT
-- napi-build 2.3.2 — MIT
+- napi-build 2.6.0 — MIT
 - napi-derive 3.6.0 — MIT
 - napi-derive-backend 6.0.0 — MIT
 - napi-sys 3.4.1 — MIT
