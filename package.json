@@ -47,7 +47,7 @@
     "universal": "napi universal",
     "build:js": "node scripts/ensure-wasm-artifact.mjs && tsdown && node scripts/fix-napi-loader.mjs && node scripts/check-wasm-compat.mjs",
     "prepublishOnly": "napi prepublish -t npm && tsdown && node scripts/fix-napi-loader.mjs",
-    "test": "bun test __test__/index.spec.ts __test__/entity.spec.ts __test__/entity-contract.spec.ts",
+    "test": "bun test __test__/index.spec.ts __test__/entity.spec.ts __test__/entity-contract.spec.ts scripts/generated-loader-normalization.test.mjs",
     "test:props": "bun test __test__/properties.spec.ts",
     "test:runtime:bun": "bun scripts/runtime-smoke.mjs && bun scripts/compiled-smoke.mjs",
     "test:runtime:node": "node scripts/runtime-smoke.mjs",
@@ -74,18 +74,19 @@
   "devDependencies": {
     "@changesets/changelog-github": "^1.0.1",
     "@changesets/cli": "^3.0.3",
-    "@emnapi/core": "1.11.3",
-    "@emnapi/runtime": "1.11.3",
+    "@emnapi/core": "2.0.0-beta.2",
+    "@emnapi/runtime": "2.0.0-beta.2",
     "@napi-rs/cli": "3.10.9",
-    "@napi-rs/wasm-runtime": "1.2.5",
+    "@napi-rs/wasm-runtime": "1.2.6",
     "@stll/oxlint-config": "3.4.1",
     "@stll/oxlint-plugin": "0.7.0",
     "@stll/typescript-config": "0.10.0",
     "@tybys/wasm-util": "0.10.4",
     "@types/node": "^26.6.5",
+    "acorn": "8.19.0",
     "bun-types": "1.4.4",
     "damerau-levenshtein": "1.0.8",
-    "emnapi": "1.11.3",
+    "emnapi": "2.0.0-beta.2",
     "fast-check": "^4.10.2",
     "fastest-levenshtein": "1.0.16",
     "fuse.js": "7.5.0",
@@ -97,7 +98,7 @@
     "vite": "^8.3.5"
   },
   "overrides": {
-    "emnapi": "1.11.3"
+    "emnapi": "2.0.0-beta.2"
   },
   "napi": {
     "binaryName": "fuzzy-search",
