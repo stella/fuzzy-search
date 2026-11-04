@@ -99,3 +99,34 @@ test("the release reconciler checks the packages the release publishes", () => {
     releaseAppSecrets(readJob("finalize")),
   );
 });
+
+test("the WASI build artifact uploads the root loader its metadata names", () => {
+  const read = (path) =>
+    readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+  const prefix = "// napi-rs-artifact-metadata:";
+  const [firstLine] = read("fuzzy-search.wasi.cjs").split("\n", 1);
+  expect(firstLine.startsWith(prefix)).toBe(true);
+  const rootEntry = String(
+    JSON.parse(firstLine.slice(prefix.length)).rootEntry,
+  );
+  // `napi artifacts` copies this file out of the WASI build artifact by name,
+  // so the build must emit it under that name and the upload must keep it.
+  expect(rootEntry).toBe("index.cjs");
+  expect(JSON.parse(read("package.json")).files).toContain(rootEntry);
+  expect(read("scripts/build-native.mjs")).toMatch(/"--js",\s*"index\.cjs",/u);
+
+  const uploads = Bun.YAML.parse(workflow).jobs.build.steps.filter((step) =>
+    String(step.uses).startsWith("actions/upload-artifact@"),
+  );
+  expect(uploads).toHaveLength(1);
+  const patterns = String(uploads[0].with.path).trim().split(/\s+/u);
+  const matches = (pattern) => new Bun.Glob(pattern).match(rootEntry);
+  expect(
+    patterns.some((pattern) => !pattern.startsWith("!") && matches(pattern)),
+  ).toBe(true);
+  expect(
+    patterns.some(
+      (pattern) => pattern.startsWith("!") && matches(pattern.slice(1)),
+    ),
+  ).toBe(false);
+});

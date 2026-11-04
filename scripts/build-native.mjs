@@ -11,7 +11,15 @@ const cliPath = new URL(
 
 const result = spawnSync(
   process.execPath,
-  [fileURLToPath(cliPath), "build", ...process.argv.slice(2)],
+  // The WASI loader metadata names this file as the package root entry, and
+  // `napi artifacts` copies it from the WASI build artifact by that name.
+  [
+    fileURLToPath(cliPath),
+    "build",
+    "--js",
+    "index.cjs",
+    ...process.argv.slice(2),
+  ],
   {
     stdio: "inherit",
   },
