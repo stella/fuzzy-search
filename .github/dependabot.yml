@@ -3,6 +3,7 @@ updates:
   - package-ecosystem: bun
     directories:
       - /
+      - /__test__/browser
       - /npm/wasm32-wasi
       - /wasm
     schedule:

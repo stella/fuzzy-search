@@ -285,6 +285,76 @@ jobs:
         if: needs.check-changes.outputs.rust-changed == 'true'
         run: bun run rust:hawk
 
+  browser:
+    name: Browser (Vite + Chromium)
+    if: >-
+      always()
+      && !cancelled()
+      && needs.check-changes.result == 'success'
+      && (github.event_name != 'pull_request'
+          || needs.trust-check.outputs.trusted == 'true')
+    needs: [check-changes, trust-check, napi-ci]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Skip when the build inputs are unchanged
+        if: needs.check-changes.outputs.build-changed != 'true'
+        run: echo "Build inputs unchanged; browser check skipped."
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        if: needs.check-changes.outputs.build-changed == 'true'
+        with:
+          bun-version-file: package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: needs.check-changes.outputs.build-changed == 'true'
+        with:
+          node-version-file: .node-version
+      - if: needs.check-changes.outputs.build-changed == 'true'
+        run: bun install --frozen-lockfile
+      # Reuse the WASM binding the NAPI build matrix produced for this run.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.check-changes.outputs.build-changed == 'true'
+        with:
+          name: bindings-wasm32-wasip1-threads
+          path: artifacts/wasm
+      - name: Build the browser package
+        if: needs.check-changes.outputs.build-changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp -- artifacts/wasm/*.wasm artifacts/wasm/*.wasi-browser.js .
+          cp -- artifacts/wasm/wasi-worker*.mjs .
+          bun run build:js
+          cp LICENSE NOTICE wasm/
+          mkdir -p "$RUNNER_TEMP/pack"
+          (cd wasm && bun pm pack --ignore-scripts --destination "$RUNNER_TEMP/pack")
+      - name: Install the packed package into a Vite app
+        if: needs.check-changes.outputs.build-changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$RUNNER_TEMP/browser-app"
+          cp -R __test__/browser "$app"
+          # The fixture tsconfig only scopes repository lint; the app does not use it.
+          rm -- "$app/tsconfig.json"
+          tarballs=("$RUNNER_TEMP"/pack/*.tgz)
+          test "${#tarballs[@]}" -eq 1
+          cd "$app"
+          bun install --frozen-lockfile
+          # The tarball changes with every build, so it stays out of the lockfile.
+          bun add --no-save "${tarballs[0]}"
+          bunx --no-install playwright install --with-deps --only-shell chromium
+      - name: Build with Vite and run in Chromium
+        if: needs.check-changes.outputs.build-changed == 'true'
+        working-directory: ${{ runner.temp }}/browser-app
+        run: |
+          bun run build
+          bun run check
+
   ci-result:
     if: always()
     needs:
@@ -296,6 +366,7 @@ jobs:
         napi-ci,
         core-package,
         hawk,
+        browser,
       ]
     runs-on: ubuntu-latest
     permissions:
@@ -319,9 +390,11 @@ jobs:
           NAPI_RESULT: ${{ needs.napi-ci.result }}
           CORE_PACKAGE_RESULT: ${{ needs.core-package.result }}
           HAWK_RESULT: ${{ needs.hawk.result }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
         run: |
           set -euo pipefail
           test "$DETECTOR_RESULT" = success
+          test "$BROWSER_RESULT" = success
           test "$CHECKS_RESULT" = success
           test "$NAPI_RESULT" = success
           test "$CORE_PACKAGE_RESULT" = success

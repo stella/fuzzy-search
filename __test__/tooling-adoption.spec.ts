@@ -74,6 +74,7 @@ test("generated Dependabot coverage is a fixed point including standalone WASM m
       "  - package-ecosystem: bun",
       "    directories:",
       "      - /",
+      "      - /__test__/browser",
       "      - /npm/wasm32-wasi",
       "      - /wasm",
     ].join("\n"),
