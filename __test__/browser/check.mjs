@@ -23,6 +23,11 @@ try {
         `request failed: ${request.url()} ${request.failure()?.errorText}`,
       );
     });
+    page.on("response", (response) => {
+      if (response.status() >= 400) {
+        failures.push(`HTTP ${response.status()}: ${response.url()}`);
+      }
+    });
 
     const response = await page.goto(url);
     const headers = response?.headers() ?? {};
