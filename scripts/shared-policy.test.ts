@@ -113,24 +113,47 @@ test("change detection follows trust and the CI dependency graph stays acyclic",
   for (const name of graph.keys()) visit(name);
 });
 
+// Native Node must load the build configuration and its explicitly extended
+// local import without a loader. The bundler is not what this checks, so its
+// specifier resolves to a stub: the real package maps a ~20 MB native binding
+// on import, and every build already loads it. The first Node process on a
+// fresh runner can take several seconds to start, so the spawn gets the same
+// explicit budget as the toolchain check instead of the 5 s test default.
+const loadConfigWithStubbedBundler = `
+import { registerHooks } from "node:module";
+registerHooks({
+  resolve: (specifier, context, nextResolve) =>
+    specifier === "tsdown"
+      ? {
+          shortCircuit: true,
+          url: "data:text/javascript,export const defineConfig = (config) => config;",
+        }
+      : nextResolve(specifier, context),
+});
+const { default: config } = await import(process.argv[1]);
+if (!Array.isArray(config) || config.length === 0) {
+  throw new Error("tsdown.config.ts exports no build list");
+}
+`;
+
 test("native Node loads the single explicitly extended build-config import", () => {
   const result = spawnSync(
     "node",
     [
       "--input-type=module",
       "-e",
-      "await import(process.argv[1]);",
+      loadConfigWithStubbedBundler,
       new URL("tsdown.config.ts", root).href,
     ],
-    { cwd: root, encoding: "utf8" },
+    { cwd: root, encoding: "utf8", timeout: 20_000 },
   );
-  expect(result.status, result.stderr).toBe(0);
+  expect(result.status, `${result.error ?? ""}\n${result.stderr}`).toBe(0);
   const config = read("tsdown.config.ts");
   expect(config.match(/from "\.\/[^"]+\.ts"/gu)).toHaveLength(1);
   expect(JSON.parse(read("tsconfig.json")).compilerOptions).toEqual({
     allowImportingTsExtensions: true,
   });
-});
+}, 30_000);
 
 test("first-party quarantine exemptions use exact supported annotations", () => {
   const text = read("bunfig.toml");
