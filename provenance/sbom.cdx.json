@@ -6422,6 +6422,61 @@
     {
       "authors": [
         {
+          "name": "toyobayashi"
+        }
+      ],
+      "bom-ref": "pkg:npm/@emnapi/runtime@2.0.0-beta.2",
+      "description": "emnapi runtime",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "node_modules/@emnapi/runtime/package.json",
+            "confidence": 0.7,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.7,
+                "technique": "manifest-analysis",
+                "value": "node_modules/@emnapi/runtime/package.json"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/toyobayashi/emnapi#readme"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/toyobayashi/emnapi.git"
+        }
+      ],
+      "group": "@emnapi",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+          }
+        }
+      ],
+      "name": "runtime",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "node_modules/@emnapi/runtime/package.json"
+        }
+      ],
+      "purl": "pkg:npm/%40emnapi/runtime@2.0.0-beta.2",
+      "scope": "required",
+      "type": "library",
+      "version": "2.0.0-beta.2"
+    },
+    {
+      "authors": [
+        {
           "name": "LongYinan (https://github.com/Brooooooklyn)"
         }
       ],
@@ -6444,10 +6499,10 @@
         ],
         "occurrences": [
           {
-            "location": "wasi-worker-browser.mjs#5"
+            "location": "wasi-worker-browser.mjs#7"
           },
           {
-            "location": "wasi-worker.mjs#13"
+            "location": "wasi-worker.mjs#21"
           }
         ]
       },
@@ -6507,7 +6562,7 @@
         ],
         "occurrences": [
           {
-            "location": "index.cjs#6"
+            "location": "index.cjs#5"
           }
         ]
       },
@@ -6541,6 +6596,61 @@
       "scope": "required",
       "type": "library",
       "version": "1.0.0"
+    },
+    {
+      "bom-ref": "pkg:npm/acorn@8.19.0",
+      "description": "ECMAScript parser",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "node_modules/acorn/package.json",
+            "confidence": 0.7,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.7,
+                "technique": "manifest-analysis",
+                "value": "node_modules/acorn/package.json"
+              }
+            ]
+          }
+        ],
+        "occurrences": [
+          {
+            "location": "scripts/generated-loader-normalization.test.mjs#2"
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/acornjs/acorn"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/acornjs/acorn.git"
+        }
+      ],
+      "group": "",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+          }
+        }
+      ],
+      "name": "acorn",
+      "properties": [
+        {
+          "name": "SrcFile",
+          "value": "node_modules/acorn/package.json"
+        }
+      ],
+      "purl": "pkg:npm/acorn@8.19.0",
+      "scope": "required",
+      "type": "library",
+      "version": "8.19.0"
     },
     {
       "authors": [
