@@ -78,7 +78,7 @@
     "@emnapi/runtime": "2.0.0-beta.2",
     "@napi-rs/cli": "3.10.9",
     "@napi-rs/wasm-runtime": "1.2.6",
-    "@stll/oxlint-config": "3.4.1",
+    "@stll/oxlint-config": "3.5.0",
     "@stll/oxlint-plugin": "0.7.0",
     "@stll/typescript-config": "0.10.0",
     "@tybys/wasm-util": "0.10.4",
@@ -94,7 +94,7 @@
     "js-levenshtein": "1.1.6",
     "oxlint": "1.89.0",
     "oxlint-tsgolint": "7.0.2005",
-    "tsdown": "0.23.1",
+    "tsdown": "0.23.4",
     "vite": "^8.3.5"
   },
   "overrides": {
