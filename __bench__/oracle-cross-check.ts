@@ -1,6 +1,4 @@
-// @ts-expect-error — no type declarations
 import damNpm from "damerau-levenshtein";
-// @ts-expect-error — no type declarations
 import jsLev from "js-levenshtein";
 /**
  * Cross-check: verify our distance computations
@@ -25,12 +23,11 @@ import { requiredAt } from "./required-at";
 // ─── Reference distance functions ────────────
 
 function refLevenshtein(a: string, b: string): number {
-  return jsLev(a, b) as number;
+  return jsLev(a, b);
 }
 
 function refDamerau(a: string, b: string): number {
-  const r = damNpm(a, b) as { steps: number };
-  return r.steps;
+  return damNpm(a, b).steps;
 }
 
 // ─── Cross-check runner ──────────────────────
@@ -152,7 +149,7 @@ function printResult(r: Result) {
   const ref =
     metric === "damerau" ? "damerau-levenshtein (npm)" : "js-levenshtein (npm)";
 
-  console.log(`  ${status} ${r.label}: ` + `${ok}/${r.total} match ${ref}`);
+  console.log(`  ${status} ${r.label}: ${ok}/${r.total} match ${ref}`);
 
   for (const f of fails.slice(0, 5)) {
     console.log(
@@ -322,7 +319,7 @@ if (cesNews) {
 console.log("\n### Random pairs (10,000 × 2)\n");
 
 function randomStr(len: number): string {
-  const chars = "abcdefghijklmnopqrstuvwxyz" + "áčďéěíňóřšťúůýž";
+  const chars = "abcdefghijklmnopqrstuvwxyzáčďéěíňóřšťúůýž";
   let s = "";
   for (let i = 0; i < len; i++) {
     s += chars[Math.floor(Math.random() * chars.length)];
@@ -353,7 +350,7 @@ for (let i = 0; i < 10000; i++) {
       levOk++;
     } else {
       levMismatches.push(
-        `"${pat}" vs "${m.text}": ` + `ours=${m.distance}, npm=${ref}`,
+        `"${pat}" vs "${m.text}": ours=${m.distance}, npm=${ref}`,
       );
     }
   }
@@ -370,7 +367,7 @@ for (let i = 0; i < 10000; i++) {
       damOk++;
     } else {
       damMismatches.push(
-        `"${pat}" vs "${m.text}": ` + `ours=${m.distance}, npm=${ref}`,
+        `"${pat}" vs "${m.text}": ours=${m.distance}, npm=${ref}`,
       );
     }
   }
@@ -381,7 +378,7 @@ const levStatus =
     ? "\x1b[32m✓ PASS\x1b[0m"
     : "\x1b[31m✗ FAIL\x1b[0m";
 console.log(
-  `  ${levStatus} Levenshtein: ` + `${levOk}/${levTotal} match js-levenshtein`,
+  `  ${levStatus} Levenshtein: ${levOk}/${levTotal} match js-levenshtein`,
 );
 for (const m of levMismatches.slice(0, 5)) {
   console.log(`    MISMATCH: ${m}`);
