@@ -7,8 +7,8 @@ This file is a generated inventory of detected third-party components and declar
 Some licenses may require additional attribution text or redistribution steps.
 
 Project: root
-- @emnapi/runtime 2.0.0-beta.2 — MIT
-- @napi-rs/wasm-runtime 1.2.6 — MIT
+- @emnapi/runtime 2.0.0-beta.3 — MIT
+- @napi-rs/wasm-runtime 1.2.7 — MIT
 - @quansync/fs 1.0.0 — MIT
 - acorn 8.19.0 — MIT
 - aho-corasick 1.1.5 — MIT OR Unlicense

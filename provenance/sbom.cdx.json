@@ -6489,7 +6489,7 @@
           "name": "toyobayashi"
         }
       ],
-      "bom-ref": "pkg:npm/@emnapi/runtime@2.0.0-beta.2",
+      "bom-ref": "pkg:npm/@emnapi/runtime@2.0.0-beta.3",
       "description": "emnapi runtime",
       "evidence": {
         "identity": [
@@ -6533,10 +6533,10 @@
           "value": "node_modules/@emnapi/runtime/package.json"
         }
       ],
-      "purl": "pkg:npm/%40emnapi/runtime@2.0.0-beta.2",
+      "purl": "pkg:npm/%40emnapi/runtime@2.0.0-beta.3",
       "scope": "required",
       "type": "library",
-      "version": "2.0.0-beta.2"
+      "version": "2.0.0-beta.3"
     },
     {
       "authors": [
@@ -6544,7 +6544,7 @@
           "name": "LongYinan (https://github.com/Brooooooklyn)"
         }
       ],
-      "bom-ref": "pkg:npm/@napi-rs/wasm-runtime@1.2.6",
+      "bom-ref": "pkg:npm/@napi-rs/wasm-runtime@1.2.7",
       "description": "Runtime and polyfill for wasm targets",
       "evidence": {
         "identity": [
@@ -6596,10 +6596,10 @@
           "value": "node_modules/@napi-rs/wasm-runtime/package.json"
         }
       ],
-      "purl": "pkg:npm/%40napi-rs/wasm-runtime@1.2.6",
+      "purl": "pkg:npm/%40napi-rs/wasm-runtime@1.2.7",
       "scope": "required",
       "type": "library",
-      "version": "1.2.6"
+      "version": "1.2.7"
     },
     {
       "authors": [
