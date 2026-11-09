@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::panic;
 
 use napi::bindgen_prelude::{
@@ -440,22 +441,38 @@ fn pack_entity_result(
 }
 
 /// A builder is consumed by finish or finishAsync, including failed finishes.
+///
+/// Methods take `&self`: NAPI keeps the receiver borrowed until a returned
+/// `AsyncTask` settles, so a `&mut self` finishAsync would make every later
+/// call fail with a borrow error instead of reporting the consumed builder.
 #[napi]
 pub struct EntityIndexBuilder {
-  inner: Option<core::entity::EntityIndexBuilder>,
+  inner: RefCell<Option<core::entity::EntityIndexBuilder>>,
 }
 
 impl EntityIndexBuilder {
-  fn active(&mut self) -> Result<&mut core::entity::EntityIndexBuilder> {
-    self.inner.as_mut().ok_or_else(|| {
+  fn with_active<T>(
+    &self,
+    action: impl FnOnce(&mut core::entity::EntityIndexBuilder) -> Result<T>,
+  ) -> Result<T> {
+    let mut inner = self.inner.try_borrow_mut().map_err(|_| {
+      Error::from_reason("Entity builder is already in use")
+    })?;
+    let builder = inner.as_mut().ok_or_else(|| {
       Error::from_reason("Entity builder has already been consumed")
-    })
+    })?;
+    action(builder)
   }
 
-  fn take(&mut self) -> Result<core::entity::EntityIndexBuilder> {
-    self.inner.take().ok_or_else(|| {
-      Error::from_reason("Entity builder has already been consumed")
-    })
+  fn take(&self) -> Result<core::entity::EntityIndexBuilder> {
+    self
+      .inner
+      .try_borrow_mut()
+      .map_err(|_| Error::from_reason("Entity builder is already in use"))?
+      .take()
+      .ok_or_else(|| {
+        Error::from_reason("Entity builder has already been consumed")
+      })
   }
 }
 
@@ -484,36 +501,41 @@ impl EntityIndexBuilder {
       Ok(Err(error)) => return Err(core_to_napi_error(&error)),
       Err(error) => return Err(panic_to_napi_error(error.as_ref())),
     };
-    Ok(Self { inner: Some(inner) })
+    Ok(Self {
+      inner: RefCell::new(Some(inner)),
+    })
   }
 
   #[napi]
-  pub fn intern(&mut self, form: u32, text: String) -> Result<u32> {
-    self
-      .active()?
-      .intern(form, &text)
-      .map_err(|e| core_to_napi_error(&e))
+  pub fn intern(&self, form: u32, text: String) -> Result<u32> {
+    self.with_active(|builder| {
+      builder
+        .intern(form, &text)
+        .map_err(|e| core_to_napi_error(&e))
+    })
   }
 
   #[napi]
-  pub fn add_alias(&mut self, alias: EntityAliasInput) -> Result<u32> {
-    self
-      .active()?
-      .add_alias(alias.into())
-      .map_err(|e| core_to_napi_error(&e))
+  pub fn add_alias(&self, alias: EntityAliasInput) -> Result<u32> {
+    self.with_active(|builder| {
+      builder
+        .add_alias(alias.into())
+        .map_err(|e| core_to_napi_error(&e))
+    })
   }
 
   #[napi]
-  pub fn finish_step(&mut self, max_units: u32) -> Result<bool> {
-    self
-      .active()?
-      .finish_step(max_units)
-      .map_err(|e| core_to_napi_error(&e))
+  pub fn finish_step(&self, max_units: u32) -> Result<bool> {
+    self.with_active(|builder| {
+      builder
+        .finish_step(max_units)
+        .map_err(|e| core_to_napi_error(&e))
+    })
   }
 
   #[napi]
   pub fn finish(
-    &mut self,
+    &self,
     token_weights: Vec<Float64Array>,
   ) -> Result<EntityIndex> {
     let weights = token_weights.into_iter().map(|w| w.to_vec()).collect();
@@ -526,7 +548,7 @@ impl EntityIndexBuilder {
 
   #[napi(ts_return_type = "Promise<EntityIndex>")]
   pub fn finish_async(
-    &mut self,
+    &self,
     token_weights: Vec<Float64Array>,
   ) -> Result<AsyncTask<EntityFinishTask>> {
     let weights = token_weights.into_iter().map(|w| w.to_vec()).collect();

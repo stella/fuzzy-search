@@ -18,11 +18,11 @@ categories = ["text-processing"]
 crate-type = ["cdylib"]
 
 [dependencies]
-napi = { version = "=3.11.0", default-features = false, features = [
+napi = { version = "=3.16.1", default-features = false, features = [
   "napi9",
   "serde-json",
 ] }
-napi-derive = "=3.6.0"
+napi-derive = "=3.7.0"
 stella-fuzzy-search-core = { version = "1.4.2", path = "crates/core" }
 
 [build-dependencies]
