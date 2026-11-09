@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import jsLev from "js-levenshtein";
 
 import { distance, FuzzySearch } from "../src/index";
 
@@ -169,7 +170,7 @@ describe("Czech names", () => {
       ],
       { wholeWords: true },
     );
-    const text = "Gais1erová a Snytrová podepsali " + "smlouvu s Nowák.";
+    const text = "Gais1erová a Snytrová podepsali smlouvu s Nowák.";
     const matches = fs.findIter(text);
     expect(matches).toHaveLength(3);
     expect(matches[0]!.text).toBe("Gais1erová");
@@ -653,17 +654,7 @@ describe("distance()", () => {
 // (counts UTF-16 surrogate pairs as two chars).
 
 describe("distance() vs js-levenshtein", () => {
-  // We need the npm package for this test.
-  // Skip gracefully if not installed.
-  let jsLev: ((a: string, b: string) => number) | null = null;
-  try {
-    jsLev = require("../__bench__/node_modules/js-levenshtein");
-  } catch {
-    // bench deps not installed
-  }
-
   test("ASCII: identical to js-levenshtein", () => {
-    if (!jsLev) return;
     const pairs = [
       ["", ""],
       ["abc", "abc"],
@@ -679,8 +670,6 @@ describe("distance() vs js-levenshtein", () => {
   });
 
   test("emoji: divergence from js-levenshtein on supplementary plane", () => {
-    if (!jsLev) return;
-
     // Same emoji: both agree (surrogate pairs
     // happen to match char-by-char).
     expect(distance("😀x", "😀y")).toBe(1);

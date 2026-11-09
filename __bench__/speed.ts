@@ -289,7 +289,7 @@ if (corpusScenarios.length > 0) {
     printSpeedups(times);
   }
 } else {
-  console.log("\nNo corpora found. " + "Run: bun run bench:download");
+  console.log("\nNo corpora found. Run: bun run bench:download");
 }
 
 console.log("\n" + "=".repeat(62));

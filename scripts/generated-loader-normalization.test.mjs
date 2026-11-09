@@ -3,6 +3,7 @@ import { parse } from "acorn";
 import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { compileFunction } from "node:vm";
 
 import { normalizeGeneratedLoader } from "./generated-loader-normalization.mjs";
 
@@ -204,8 +205,7 @@ const binding = load()
         source,
         "__prepareWasmEnvCleanupWithTurns",
       );
-      // oxlint-disable-next-line typescript/no-implied-eval -- Executes functions extracted from the real generated loader.
-      const createHarness = Function(`${schedulerHandshake}
+      const createHarness = compileFunction(`${schedulerHandshake}
 ${scheduleTimer}
 ${yieldTurn}
 ${prepare}
@@ -268,8 +268,7 @@ return {
       );
       const scheduleTimer = extractFunction(source, "__scheduleTimer");
       const drain = extractFunction(source, "__drainWasiAsyncWork");
-      // oxlint-disable-next-line typescript/no-implied-eval -- Executes functions extracted from the real generated loader.
-      const createHarness = Function(`${schedulerHandshake}
+      const createHarness = compileFunction(`${schedulerHandshake}
 ${scheduleTimer}
 ${drain}
 let __wasiAsyncWorkDrainPromise
@@ -389,9 +388,7 @@ new Worker(new URL("./w.mjs", import.meta.url), { type: "module" })
     );
     const createWorker = extractFunction(source, "__createWasiWorker");
     const attempts = [];
-    // oxlint-disable-next-line typescript/no-implied-eval -- Executes the worker factory extracted from the real generated loader.
-    const run = Function(
-      "attempts",
+    const run = compileFunction(
       `${getExecArgv}
 ${identifiesInvalidArgument}
 ${removeInvalidArgument}
@@ -413,6 +410,7 @@ function Worker(filename, options) {
 }
 return __createWasiWorker("worker.mjs")
 `,
+      ["attempts"],
     );
 
     const worker = run(attempts);

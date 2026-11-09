@@ -1,22 +1,31 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
+import { at, list, mapping, parseJson, text } from "./structured";
+
 const root = new URL("../", import.meta.url);
-const parseWorkflow = (path: string) =>
+const parseWorkflow = (path: string): unknown =>
   Bun.YAML.parse(readFileSync(new URL(path, root), "utf8"));
+const steps = (workflow: unknown, job: string) =>
+  list(at(workflow, "jobs", job, "steps"), `${job} steps`).map((step) =>
+    mapping(step, `${job} step`),
+  );
 
 test("the aggregate CI result depends on every validation job", () => {
   const workflow = parseWorkflow(".github/workflows/ci.yml");
-  const jobs = workflow.jobs;
-  const aggregate = jobs["ci-result"];
+  const jobs = mapping(at(workflow, "jobs"), "jobs");
+  const aggregate = mapping(jobs["ci-result"], "ci-result");
   const validationJobs = Object.keys(jobs).filter(
     (name) => name !== "ci-result",
   );
+  const needs = list(aggregate["needs"], "ci-result needs").map((need) =>
+    text(need, "ci-result need"),
+  );
 
-  expect(aggregate.if).toBe("always()");
-  expect(
-    [...aggregate.needs].sort((left, right) => left.localeCompare(right)),
-  ).toEqual(validationJobs.sort((left, right) => left.localeCompare(right)));
+  expect(aggregate["if"]).toBe("always()");
+  expect(needs.sort((left, right) => left.localeCompare(right))).toEqual(
+    validationJobs.sort((left, right) => left.localeCompare(right)),
+  );
 });
 
 test("CI and CLA workflows handle merge queue checks", () => {
@@ -25,25 +34,31 @@ test("CI and CLA workflows handle merge queue checks", () => {
     ".github/workflows/cla.yml",
   ]) {
     const workflow = parseWorkflow(path);
-    expect(workflow.on.merge_group.types).toEqual(["checks_requested"]);
+    expect(at(workflow, "on", "merge_group", "types")).toEqual([
+      "checks_requested",
+    ]);
   }
 });
 
 test("CI runs the aggregate result regression tests", () => {
   const workflow = parseWorkflow(".github/workflows/ci.yml");
   expect(
-    workflow.jobs.checks.steps.some((step: { run?: string }) =>
-      step.run?.includes("scripts/ci-result.test.ts"),
+    steps(workflow, "checks").some(
+      (step) =>
+        typeof step["run"] === "string" &&
+        step["run"].includes("scripts/ci-result.test.ts"),
     ),
   ).toBeTrue();
 });
 
 test("release artifacts retain the complete NAPI WASI loader bundle", () => {
   const workflow = parseWorkflow(".github/workflows/release.yml");
-  const upload = workflow.jobs.build.steps.find((step: { uses?: string }) =>
-    step.uses?.startsWith("actions/upload-artifact@"),
+  const upload = steps(workflow, "build").find(
+    (step) =>
+      typeof step["uses"] === "string" &&
+      step["uses"].startsWith("actions/upload-artifact@"),
   );
-  const path = upload?.with?.path;
+  const path = upload === undefined ? undefined : at(upload, "with", "path");
   if (typeof path !== "string") {
     throw new Error("Release upload must declare artifact paths");
   }
@@ -57,10 +72,10 @@ test("release artifacts retain the complete NAPI WASI loader bundle", () => {
       (pattern) =>
         pattern.startsWith("!") && new Bun.Glob(pattern.slice(1)).match(file),
     );
-  const manifest = JSON.parse(
+  const manifest = parseJson(
     readFileSync(new URL("package.json", root), "utf8"),
   );
-  const binary = manifest.napi.binaryName;
+  const binary = text(at(manifest, "napi", "binaryName"), "napi.binaryName");
   for (const file of [
     `${binary}.wasm32-wasi.wasm`,
     `${binary}.wasi.cjs`,

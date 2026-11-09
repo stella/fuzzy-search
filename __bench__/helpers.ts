@@ -1,7 +1,6 @@
 import { distance as fastLev } from "fastest-levenshtein";
 import Fuse from "fuse.js";
-
-const fuzzball = require("fuzzball");
+import { extract as fuzzballExtract, ratio as fuzzballRatio } from "fuzzball";
 
 import { FuzzySearch } from "../src/index";
 import { requiredAt, speedupRows } from "./required-at";
@@ -159,8 +158,8 @@ export const libs: Lib[] = [
       const words = h.split(/\s+/);
       let count = 0;
       for (const pat of patterns) {
-        const results = fuzzball.extract(pat.pattern, words, {
-          scorer: fuzzball.ratio,
+        const results = fuzzballExtract(pat.pattern, words, {
+          scorer: fuzzballRatio,
           cutoff: 70,
         });
         count += results.length;
