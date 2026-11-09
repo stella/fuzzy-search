@@ -455,9 +455,10 @@ impl EntityIndexBuilder {
     &self,
     action: impl FnOnce(&mut core::entity::EntityIndexBuilder) -> Result<T>,
   ) -> Result<T> {
-    let mut inner = self.inner.try_borrow_mut().map_err(|_| {
-      Error::from_reason("Entity builder is already in use")
-    })?;
+    let mut inner = self
+      .inner
+      .try_borrow_mut()
+      .map_err(|_| Error::from_reason("Entity builder is already in use"))?;
     let builder = inner.as_mut().ok_or_else(|| {
       Error::from_reason("Entity builder has already been consumed")
     })?;
