@@ -1,6 +1,6 @@
 {
   "name": "@stll/fuzzy-search-linux-arm64-gnu",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "cpu": [
     "arm64"
   ],
