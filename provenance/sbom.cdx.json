@@ -5115,7 +5115,7 @@
       "version": "0.0.0"
     },
     {
-      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.4.3",
+      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
       "evidence": {
         "identity": [
           {
@@ -5140,9 +5140,9 @@
           "value": "fuzz/Cargo.lock"
         }
       ],
-      "purl": "pkg:cargo/stella-fuzzy-search-core@1.4.3",
+      "purl": "pkg:cargo/stella-fuzzy-search-core@1.1.5",
       "type": "library",
-      "version": "1.4.3"
+      "version": "1.1.5"
     },
     {
       "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.4.3",
@@ -7667,12 +7667,12 @@
         "pkg:cargo/unicode-normalization@0.1.25",
         "pkg:cargo/unicode-segmentation@1.13.3"
       ],
-      "ref": "pkg:cargo/stella-fuzzy-search-core@1.4.3"
+      "ref": "pkg:cargo/stella-fuzzy-search-core@1.1.5"
     },
     {
       "dependsOn": [
         "pkg:cargo/libfuzzer-sys@0.4.13",
-        "pkg:cargo/stella-fuzzy-search-core@1.4.3"
+        "pkg:cargo/stella-fuzzy-search-core@1.1.5"
       ],
       "ref": "pkg:cargo/stella-fuzzy-search-core-fuzz@0.0.0"
     },
