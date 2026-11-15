@@ -54,15 +54,12 @@ test("generated cloud setup is a fixed point and preserves the startup hook", ()
   expect(before.at(1)).toContain(".agents/cloud-setup.sh");
 });
 
-test("cloud setup provisions and verifies the authorized Hawk compiler", () => {
+test("cloud setup uses the shared compiler without an additional Hawk toolchain", () => {
   const setup = read(".agents/cloud-setup.sh");
   expect(setup).toContain(
-    "toolchain install 1.97.1 --profile minimal --no-self-update",
+    "toolchain install 1.99.1 --profile minimal --no-self-update",
   );
-  expect(setup).toContain(
-    `[[ "$additional_version" == 'rustc 1.97.1 '* ]] || return 1`,
-  );
-  expect(setup).toContain('rustc" +1.97.1 --version');
+  expect(setup).not.toContain("1.97.1");
 });
 
 test("generated Dependabot coverage is a fixed point including standalone WASM manifests", () => {
