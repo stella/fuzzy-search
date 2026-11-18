@@ -380,8 +380,7 @@ primary_rust_ready() {
 rust_ready() {
   local additional_version
   primary_rust_ready || return 1
-  additional_version="$(rust_run local "$CARGO_HOME/bin/rustc" +1.97.1 --version)" || return 1
-  [[ "$additional_version" == 'rustc 1.97.1 '* ]] || return 1
+
   return 0
 }
 verify_rust() { rust_ready || fail 'Pinned Rust, components or targets are unavailable; run install'; }
@@ -415,9 +414,7 @@ esac
   if ! primary_rust_ready; then
     rust_run network "$CARGO_HOME/bin/rustup" toolchain install 1.99.1 --profile minimal --no-self-update '--component' 'clippy' '--component' 'rustfmt'
   fi
-  if ! additional_version="$(rust_run local "$CARGO_HOME/bin/rustc" +1.97.1 --version)" || [[ "$additional_version" != 'rustc 1.97.1 '* ]]; then
-    rust_run network "$CARGO_HOME/bin/rustup" toolchain install 1.97.1 --profile minimal --no-self-update
-  fi
+
   rust_run local "$CARGO_HOME/bin/rustup" default 1.99.1
   verify_rust
   for tool in rustup cargo rustc rustdoc cargo-clippy clippy-driver rustfmt cargo-fmt; do
