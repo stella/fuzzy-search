@@ -53,12 +53,7 @@ test("CI runs the aggregate result regression tests", () => {
 
 test("release artifacts retain the complete NAPI WASI loader bundle", () => {
   const workflow = parseWorkflow(".github/workflows/release.yml");
-  const upload = steps(workflow, "build").find(
-    (step) =>
-      typeof step["uses"] === "string" &&
-      step["uses"].startsWith("actions/upload-artifact@"),
-  );
-  const path = upload === undefined ? undefined : at(upload, "with", "path");
+  const path = at(workflow, "jobs", "test", "with", "wasm-artifact-paths");
   if (typeof path !== "string") {
     throw new Error("Release upload must declare artifact paths");
   }

@@ -138,121 +138,22 @@ jobs:
       - run: bun run test:runtime:bun
       - run: bun run test:runtime:node
 
-  build:
-    name: Build - ${{ matrix.settings.target }}
+  test:
+    name: Build and test
     needs: [preflight, verify]
     if: needs.preflight.outputs.already-released != 'true'
-    runs-on: ${{ matrix.settings.os }}
-    env:
-      CARGO_INCREMENTAL: 0
-    strategy:
-      fail-fast: false
-      matrix:
-        settings:
-          - target: x86_64-apple-darwin
-            os: macos-15
-          - target: aarch64-apple-darwin
-            os: macos-15
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-24.04
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-24.04
-            use-cross: true
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-          - target: wasm32-wasip1-threads
-            os: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version-file: package.json
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
-        with:
-          toolchain: "1.99.1"
-          targets: ${{ matrix.settings.target }}
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-        with:
-          shared-key: release-build-${{ matrix.settings.target }}
-      - run: bun install --frozen-lockfile
-      - name: Build native
-        if: >-
-          !matrix.settings.use-cross
-          && matrix.settings.target != 'wasm32-wasip1-threads'
-        run: bun run build --target ${{ matrix.settings.target }}
-      - name: Build cross-compile
-        if: ${{ matrix.settings.use-cross }}
-        run: >
-          bun run build
-          --target ${{ matrix.settings.target }}
-          --use-napi-cross
-      - name: Build WASM
-        if: matrix.settings.target == 'wasm32-wasip1-threads'
-        run: bun run build:wasm
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: bindings-${{ matrix.settings.target }}
-          path: |
-            *.node
-            *.wasm
-            !*.debug.wasm
-            *.cjs
-            *.wasi*.d.cts
-            *.wasi-browser.js
-            wasi-worker*.mjs
-          if-no-files-found: error
-
-  test:
-    name: Test (${{ matrix.os }})
-    needs: [preflight, build]
-    if: needs.preflight.outputs.already-released != 'true'
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, macos-15, windows-latest]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version-file: package.json
-      - run: bun install --frozen-lockfile
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          path: artifacts
-      - name: Move artifacts
-        shell: bash
-        run: |
-          set -euo pipefail
-          ls -R artifacts/
-          for dir in artifacts/bindings-*; do
-            cp -- "$dir"/*.node . 2>/dev/null || true
-            cp -- "$dir"/*.wasm . 2>/dev/null || true
-            cp -- "$dir"/*.cjs . 2>/dev/null || true
-            cp -- "$dir"/*.wasi*.d.cts . 2>/dev/null || true
-            cp -- "$dir"/*.wasi-browser.js . 2>/dev/null || true
-            cp -- "$dir"/wasi-worker*.mjs . 2>/dev/null || true
-          done
-          ls -la -- *.node 2>/dev/null || echo "No .node files"
-          ls -la -- *.wasm 2>/dev/null || echo "No .wasm files"
-      # Repository tooling tests run on Linux in CI; other platforms verify
-      # the packaged library against its runtime tests.
-      - name: Test
-        if: runner.os == 'Linux'
-        run: bun test
-      - name: Test package runtime
-        if: runner.os != 'Linux'
-        run: bun test ./__test__
-      - name: Property tests
-        if: matrix.os == 'ubuntu-24.04'
-        run: bun run test:props
+    permissions:
+      contents: read
+    uses: stella/.github/.github/workflows/rust-napi-release.yml@ba1d8b5e67dd5b252f6d3edd0c9fa047c5d386fc
+    with:
+      wasm-artifact-paths: |
+        *.wasm
+        !*.debug.wasm
+        *.cjs
+        *.wasi*.d.cts
+        *.wasi-browser.js
+        wasi-worker*.mjs
+      property-test-command: bun run test:props
 
   pack:
     name: Pack

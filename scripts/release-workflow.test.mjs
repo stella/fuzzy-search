@@ -115,11 +115,18 @@ test("the WASI build artifact uploads the root loader its metadata names", () =>
   expect(JSON.parse(read("package.json")).files).toContain(rootEntry);
   expect(read("scripts/build-native.mjs")).toMatch(/"--js",\s*"index\.cjs",/u);
 
-  const uploads = Bun.YAML.parse(workflow).jobs.build.steps.filter((step) =>
-    String(step.uses).startsWith("actions/upload-artifact@"),
+  // The shared release workflow uploads the WASI build with these globs.
+  const release = Bun.YAML.parse(workflow).jobs.test;
+  expect(release.uses).toMatch(
+    /^stella\/\.github\/\.github\/workflows\/rust-napi-release\.yml@[0-9a-f]{40}$/u,
   );
-  expect(uploads).toHaveLength(1);
-  const patterns = String(uploads[0].with.path).trim().split(/\s+/u);
+  expect(release.needs).toEqual(["preflight", "verify"]);
+  expect(release.if).toBe("needs.preflight.outputs.already-released != 'true'");
+  expect(release.permissions).toEqual({ contents: "read" });
+  expect(release.secrets).toBeUndefined();
+  const patterns = String(release.with["wasm-artifact-paths"])
+    .trim()
+    .split(/\s+/u);
   const matches = (pattern) => new Bun.Glob(pattern).match(rootEntry);
   expect(
     patterns.some((pattern) => !pattern.startsWith("!") && matches(pattern)),

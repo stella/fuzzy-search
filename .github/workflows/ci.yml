@@ -192,8 +192,10 @@ jobs:
   napi-ci:
     if: ${{ always() && !cancelled() && needs.check-changes.result == 'success' && (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') }}
     needs: [check-changes, trust-check]
-    uses: stella/.github/.github/workflows/rust-napi-ci.yml@156afa9596e6a469c10e329f459168d34a00e0fd
+    uses: stella/.github/.github/workflows/rust-napi-ci.yml@ba1d8b5e67dd5b252f6d3edd0c9fa047c5d386fc
     with:
+      # Pull requests run one Ubuntu job; the merge queue runs every platform.
+      scope: ${{ github.event_name == 'pull_request' && 'pr' || 'full' }}
       typecheck: true
       node-version: ${{ needs.check-changes.outputs.node-version }}
       trusted: ${{ (github.event_name != 'pull_request' || needs.trust-check.outputs.trusted == 'true') && 'true' || 'false' }}
