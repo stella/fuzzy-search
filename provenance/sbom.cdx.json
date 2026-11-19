@@ -4955,7 +4955,7 @@
       "version": "0.0.0"
     },
     {
-      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.4.3",
+      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.4.2",
       "evidence": {
         "identity": [
           {
@@ -4977,11 +4977,37 @@
       "properties": [
         {
           "name": "SrcFile",
-          "value": "Cargo.lock"
-        },
+          "value": "fuzz/Cargo.lock"
+        }
+      ],
+      "purl": "pkg:cargo/stella-fuzzy-search-core@1.4.2",
+      "type": "library",
+      "version": "1.4.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/stella-fuzzy-search-core@1.4.3",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "Cargo.lock",
+            "confidence": 0.6,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 0.6,
+                "technique": "manifest-analysis",
+                "value": "Cargo.lock"
+              }
+            ]
+          }
+        ]
+      },
+      "group": "",
+      "name": "stella-fuzzy-search-core",
+      "properties": [
         {
           "name": "SrcFile",
-          "value": "fuzz/Cargo.lock"
+          "value": "Cargo.lock"
         }
       ],
       "purl": "pkg:cargo/stella-fuzzy-search-core@1.4.3",
@@ -7410,8 +7436,18 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/bon@3.10.3",
+        "pkg:cargo/fst@0.4.7",
+        "pkg:cargo/unicode-case-mapping@1.0.0",
+        "pkg:cargo/unicode-normalization@0.1.26",
+        "pkg:cargo/unicode-segmentation@1.13.3"
+      ],
+      "ref": "pkg:cargo/stella-fuzzy-search-core@1.4.2"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/libfuzzer-sys@0.4.13",
-        "pkg:cargo/stella-fuzzy-search-core@1.4.3"
+        "pkg:cargo/stella-fuzzy-search-core@1.4.2"
       ],
       "ref": "pkg:cargo/stella-fuzzy-search-core-fuzz@0.0.0"
     },
