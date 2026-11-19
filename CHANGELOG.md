@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.3
+
+### Patch Changes
+
+- [#246](https://github.com/stella/fuzzy-search/pull/246) [`07d8a25`](https://github.com/stella/fuzzy-search/commit/07d8a255fcccbc2ae3aba3f7cb9892c8b69b06f4) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Move the WebAssembly packages to `@emnapi/core` and `@emnapi/runtime` 2.0.0-beta.3 with `@napi-rs/wasm-runtime` 1.2.7.
+
+- [#245](https://github.com/stella/fuzzy-search/pull/245) [`4a10d4f`](https://github.com/stella/fuzzy-search/commit/4a10d4f9975423fa3f80d79c32437a7090f8196c) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Build the native binding with napi 3.16 and napi-derive 3.7. `EntityIndexBuilder` calls made while `finishAsync` is pending keep reporting that the builder was consumed.
+
+- [#257](https://github.com/stella/fuzzy-search/pull/257) [`ea14a5d`](https://github.com/stella/fuzzy-search/commit/ea14a5df39e4a6df2f49ea7afbde2e3b4e5ebfac) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Build native and WebAssembly packages with Rust 1.100.0.
+
+- [#258](https://github.com/stella/fuzzy-search/pull/258) [`58d5d55`](https://github.com/stella/fuzzy-search/commit/58d5d5504a9cc9779d4e9618bc0ee12730715c2f) Thanks [@jan-kubica](https://github.com/jan-kubica)! - Raise the Rust core crate's minimum supported Rust version to 1.100 and reject unused Cargo dependencies at build time.
+
 ## 1.4.2
 
 ### Patch Changes
