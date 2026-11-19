@@ -2,7 +2,7 @@
 name = "stella-fuzzy-search-core"
 version = "1.4.2"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.100"
 description = "Approximate substring matching core"
 license = "Apache-2.0"
 publish = ["crates-io"]
