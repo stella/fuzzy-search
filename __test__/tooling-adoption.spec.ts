@@ -57,7 +57,7 @@ test("generated cloud setup is a fixed point and preserves the startup hook", ()
 test("cloud setup uses the shared compiler without an additional Hawk toolchain", () => {
   const setup = read(".agents/cloud-setup.sh");
   expect(setup).toContain(
-    "toolchain install 1.99.1 --profile minimal --no-self-update",
+    "toolchain install 1.100.0 --profile minimal --no-self-update",
   );
   expect(setup).not.toContain("1.97.1");
 });

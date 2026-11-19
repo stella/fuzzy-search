@@ -79,7 +79,7 @@ jobs:
           node-version-file: .node-version
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
-          toolchain: "1.99.1"
+          toolchain: "1.100.0"
       - name: Check crates.io version
         id: preflight
         run: node scripts/crate-release.mjs preflight
@@ -108,7 +108,7 @@ jobs:
       - run: node scripts/version-sync.mjs check
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
-          toolchain: "1.99.1"
+          toolchain: "1.100.0"
           components: clippy, rustfmt
           targets: wasm32-wasip1-threads
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
@@ -144,7 +144,7 @@ jobs:
     if: needs.preflight.outputs.already-released != 'true'
     permissions:
       contents: read
-    uses: stella/.github/.github/workflows/rust-napi-release.yml@ba1d8b5e67dd5b252f6d3edd0c9fa047c5d386fc
+    uses: stella/.github/.github/workflows/rust-napi-release.yml@964e75f409643716a2c8ff29c26235f18d2e34a0
     with:
       wasm-artifact-paths: |
         *.wasm
@@ -290,11 +290,11 @@ jobs:
         && needs.attest.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@156afa9596e6a469c10e329f459168d34a00e0fd
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@964e75f409643716a2c8ff29c26235f18d2e34a0
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
-      rust-toolchain: "1.99.1"
+      rust-toolchain: "1.100.0"
     permissions:
       contents: read
       attestations: write
@@ -312,11 +312,11 @@ jobs:
         && needs.verify.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@156afa9596e6a469c10e329f459168d34a00e0fd
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@964e75f409643716a2c8ff29c26235f18d2e34a0
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
-      rust-toolchain: "1.99.1"
+      rust-toolchain: "1.100.0"
     permissions:
       contents: read
       attestations: write
@@ -382,7 +382,7 @@ jobs:
         && needs.preflight.outputs.already-released != 'true'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/npm-version-finalize.yml@156afa9596e6a469c10e329f459168d34a00e0fd
+    uses: stella/.github/.github/workflows/npm-version-finalize.yml@964e75f409643716a2c8ff29c26235f18d2e34a0
     with:
       package-files: |
         package.json
