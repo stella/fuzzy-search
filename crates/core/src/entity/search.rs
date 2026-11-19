@@ -22,11 +22,11 @@ use crate::{Error, Result};
 pub(super) const MIN_WEIGHT: f64 = 1e-150;
 pub(super) const MAX_WEIGHT: f64 = 1e150;
 const MIN_SUBNORMAL: f64 = f64::from_bits(1);
-const ROUNDING_FACTOR: f64 = 1.0 + 4.0 * f64::EPSILON;
+const ROUNDING_FACTOR: f64 = 4.0_f64.mul_add(f64::EPSILON, 1.0);
 
 // Bound arithmetic includes relative rounding and absolute underflow error.
 // Infinity deliberately widens a bound; zero operands stay exactly zero.
-fn upward(value: f64) -> f64 {
+const fn upward(value: f64) -> f64 {
   value.mul_add(ROUNDING_FACTOR, MIN_SUBNORMAL).next_up()
 }
 
