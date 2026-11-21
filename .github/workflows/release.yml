@@ -40,7 +40,7 @@ jobs:
       github.event_name != 'workflow_dispatch'
       || inputs.publish_to_npm != true
       || github.ref == 'refs/heads/main'
-    uses: stella/.github/.github/workflows/npm-version-preflight.yml@156afa9596e6a469c10e329f459168d34a00e0fd
+    uses: stella/.github/.github/workflows/npm-version-preflight.yml@2664e46f02aea7164ba71bcdd485a686166993a4
     with:
       package-files: |
         package.json
@@ -127,7 +127,7 @@ jobs:
         env:
           RUSTDOCFLAGS: -Dwarnings
       - run: cargo test --workspace
-      - uses: stella/.github/actions/provenance-check@156afa9596e6a469c10e329f459168d34a00e0fd
+      - uses: stella/.github/actions/provenance-check@2664e46f02aea7164ba71bcdd485a686166993a4
         with:
           provenance-version: v0.1.3
       - run: cargo publish --dry-run --locked --package stella-fuzzy-search-core
@@ -144,7 +144,7 @@ jobs:
     if: needs.preflight.outputs.already-released != 'true'
     permissions:
       contents: read
-    uses: stella/.github/.github/workflows/rust-napi-release.yml@964e75f409643716a2c8ff29c26235f18d2e34a0
+    uses: stella/.github/.github/workflows/rust-napi-release.yml@2664e46f02aea7164ba71bcdd485a686166993a4
     with:
       wasm-artifact-paths: |
         *.wasm
@@ -290,7 +290,7 @@ jobs:
         && needs.attest.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@964e75f409643716a2c8ff29c26235f18d2e34a0
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@2664e46f02aea7164ba71bcdd485a686166993a4
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
@@ -312,7 +312,7 @@ jobs:
         && needs.verify.result == 'success'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/crates-io-publish.yml@964e75f409643716a2c8ff29c26235f18d2e34a0
+    uses: stella/.github/.github/workflows/crates-io-publish.yml@2664e46f02aea7164ba71bcdd485a686166993a4
     with:
       crate-name: stella-fuzzy-search-core
       manifest-path: crates/core/Cargo.toml
@@ -382,7 +382,7 @@ jobs:
         && needs.preflight.outputs.already-released != 'true'
         && (github.event_name == 'push'
             || inputs.publish_to_npm))
-    uses: stella/.github/.github/workflows/npm-version-finalize.yml@964e75f409643716a2c8ff29c26235f18d2e34a0
+    uses: stella/.github/.github/workflows/npm-version-finalize.yml@2664e46f02aea7164ba71bcdd485a686166993a4
     with:
       package-files: |
         package.json
