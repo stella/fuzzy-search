@@ -95,7 +95,7 @@
     "oxlint": "1.93.0",
     "oxlint-tsgolint": "7.0.2006",
     "tsdown": "0.23.7",
-    "vite": "8.3.7"
+    "vite": "8.3.8"
   },
   "overrides": {
     "emnapi": "2.0.0-beta.3"
